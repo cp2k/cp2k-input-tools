@@ -19,6 +19,10 @@ class InvalidTokenCharError(TokenizerError):
     pass
 
 
+class PreprocessorError(TokenizerError):
+    pass
+
+
 class CP2KInputTokenizer(transitions.Machine):
     def begin_basic_token(self, _, colnr):
         self._current_token_start = colnr
@@ -57,7 +61,7 @@ class CP2KInputTokenizer(transitions.Machine):
     def is_matching_quote(self, content, colnr):
         return self._tracking_quote_char == content[colnr]
 
-    def __init__(self):
+    def __init__(self, varstack=None):
         super().__init__(
             self,
             initial="lookout",
@@ -137,6 +141,86 @@ class CP2KInputTokenizer(transitions.Machine):
         self._tracking_quote_char = None
         self._current_token_start = 0
         self._tokens = []
+        self._varstack = {}
+        # conditional blocks can not be nested and not spawn multiple files
+        self._conditional_block = None
+
+        if varstack:
+            self._varstack = varstack
+
+    def _resolve_variables(self, line):
+        while True:
+            # TODO: integrate this in the state machine (probably as a sub-HSM), because
+            #       with regexes we don't get nested bracketing right
+            match = re.search(r"\$(?P<var>\w+\b|{.+})", line)
+            if not match:
+                break
+
+            var = match.group("var")
+            if var[0] == "{":
+                # resolve nested variables recursively, the result will be a variable name
+                varname = self._resolve_variables(var.strip("{}")).upper()
+            else:
+                varname = var.upper()
+
+            line = re.sub(f"\${var}", self._varstack[varname], line)
+
+        return line
+
+    def _parse_preprocessor(self, line):
+        # TODO: regex do not cover all corner cases (like trailing quotes)
+
+        conditional_match =  re.match(r"\s*@(?P<stmt>IF|ENDIF)\s*(?P<cond>.*)", line, flags=re.IGNORECASE)
+        if conditional_match:
+            stmt = conditional_match.group("stmt")
+            condition = conditional_match.group("cond").strip()
+
+            if stmt.upper() == "ENDIF":
+                if self._conditional_block is None:
+                    raise PreprocessorError("found @ENDIF without a previous @IF")
+                # TODO: do not ignore garbage after the @ENDIF
+
+                self._conditional_block = None
+            else:
+                if self._conditional_block is not None:
+                    raise PreprocessorError("nested @IF detected")
+
+                # prefix-whitespace are consumed in the regex, suffix with the strip() above
+                if not condition or condition == "0":
+                    self._conditional_block = False
+                elif "==" in condition:
+                    lhs, rhs = [s.strip() for s in condition.split("==", maxsplit=1)]
+                    self._conditional_block = lhs == rhs
+                elif "/=" in condition:
+                    lhs, rhs = [s.strip() for s in condition.split("/=", maxsplit=1)]
+                    self._conditional_block = lhs != rhs
+                else:
+                    self._conditional_block = True
+
+            return
+
+        if self._conditional_block == False:
+            # ignore all other preprocessor directives if we are in a conditional block
+            # and the condition was false
+            return
+
+        set_match = re.match(r"\s*@SET\s+(?P<var>\w+)\s+(?P<value>.+)", line, flags=re.IGNORECASE)
+        if set_match:
+            self._varstack[set_match.group("var").upper()] = set_match.group("value")
+            return
+
+        include_match =  re.match(r"\s*@INCLUDE\s+(?P<file>('[^']+')|(\"[^']+\")|[^'\"].*)", line, flags=re.IGNORECASE)
+        if include_match:
+            with open(include_match.group("file").strip("'\""), "r") as included_handle:
+                included_token_iter = CP2KInputTokenizer(self._varstack)  # here we start sharing the variable stack
+                # the tokens from here can be yielded directly since the nested tokenizer has the variable stack
+                # and with the reference we ensure that we get ours updated as well (intended side-effect)
+                yield from included_token_iter.token_iter(included_handle)
+
+            return
+
+        raise PreprocessorError(f"unknown preprocessor directive found: {line}")
+
 
     def token_iter(self, fhandle):
         char_map = {
@@ -150,8 +234,29 @@ class CP2KInputTokenizer(transitions.Machine):
         }
 
         for linenr, line in enumerate(fhandle):
+
+            # TODO: here we are losing the original line which is bad for error reporting
+            # TODO: this is potentially a waste of resources since we might be in a conditional section
+            #       but the other preprocessing part comes later and depends on variables being resolved
+            line = self._resolve_variables(line)
+
+            if re.match(r"\s*@", line):
+                # the preprocessor can yield it's own tokens (in case of an include)
+                # but also change our state (_varstack, _conditional_block)
+                yield from self._parse_preprocessor(line)
+                # ... in any way, this line will not be seen by the rest of the state machine
+                continue
+
+            # None == True/False always evaluates to False, so the following
+            # is never true if we are NOT in a conditional block
+            # If we are in a conditional block and the condition was False, ignore this line.
+            if self._conditional_block == False:
+                continue
+
             for colnr, char in enumerate(line):
                 char_map.get(char, self.token_char)(line, colnr)
+                # TODO: variable substitution could introduce new line endings,
+                #       which could lump tokens from different lines together
 
             self.nl_char(line, len(line))
             if self._tokens:
@@ -320,128 +425,132 @@ class CP2KInputParser:
 
         self._tokenizer = CP2KInputTokenizer()
         self._parse_tree = ET.parse(xmlspec)
+        self._nodes = [self._parse_tree.getroot()]
+        self._tree = {}
+        self._treerefs = [self._tree]
 
-    def parse(self, content):
-        nodes = [self._parse_tree.getroot()]
+    def _parse_section(self, tokens):
+        section_name = tokens.pop(0)[1:].upper()
 
-        tree = {}
-        treerefs = [tree]
+        if section_name == "END":
+            if tokens and tokens[0].upper() not in [
+                e.text for e in self._nodes[-1].iterfind("./NAME")
+            ]:
+                raise SectionMismatchError()
 
-        for tokens in self._tokenizer.token_iter(content):
+            if len(tokens) > 1:
+                raise ParserError("garbage at section end")
+
+            self._nodes.pop()
+            self._treerefs.pop()
+            return
+
+        # check all section nodes for matching names or aliases
+        for sec in self._nodes[-1].iterfind("./SECTION"):
+            if section_name not in [e.text for e in sec.iterfind("./NAME")]:
+                continue
+
+            self._nodes += [
+                sec
+            ]  # add the current XML section node to the stack of nodes
+
+            repeats = True if sec.get("repeats") == "yes" else False
+
+            if repeats:
+                if section_name not in self._treerefs[-1]:
+                    self._treerefs[-1][section_name] = []
+
+                self._treerefs[-1][section_name] += [{}]
+                self._treerefs += [self._treerefs[-1][section_name][-1]]
+            else:
+                if section_name in self._treerefs[-1]:
+                    raise InvalidNameError(
+                        f"the section '{section_name}' can only be mentioned once"
+                    )
+
+                self._treerefs[-1][section_name] = {}
+                self._treerefs += [self._treerefs[-1][section_name]]
+
+            # check whether we got a parameter for the section and validate it
+            param = sec.find("./SECTION_PARAMETERS")
+            if param:  # validate the section parameter like a kw datatype
+                # there is no way we get a second section parameter, assign directly
+                self._treerefs[-1]["_"] = parse_tokens(
+                    param, tokens, "SECTION_PARAMETERS"
+                )["values"]
+
+            break
+        else:
+            raise RuntimeError(f"invalid section '{section_name}'")
+
+    def _parse_keyword(self, tokens):
+        token_name = tokens[0].upper()
+        default_kw = None
+
+        for kw in self._nodes[-1].iterfind("./KEYWORD"):
+            try:
+                data = parse_tokens(kw, tokens)
+
+                if data["repeats"]:
+                    if data["name"] not in self._treerefs[-1]:
+                        self._treerefs[-1][data["name"]] = []
+
+                    self._treerefs[-1][data["name"]] += [data["values"]]
+                else:
+                    if data["name"] in self._treerefs[-1]:
+                        raise InvalidNameError(
+                            f"the keyword '{token_name}' can only be mentioned once"
+                        )
+
+                    self._treerefs[-1][data["name"]] = data["values"]
+
+            except InvalidNameError:
+                # but let's see whether we found the DEFAULT_KEYWORD (could be used later)
+                if kw.find("./NAME[@type='default']").text == "DEFAULT_KEYWORD":
+                    default_kw = kw
+
+                continue
+
+            break
+
+        else:
+            # no match so far, and if we didn't find a default keyword, then that's it
+            if not default_kw:
+                raise RuntimeError(f"invalid keyword '{token_name}'")
+
+            # if there is a default keyword, parse the data with that
+            data = parse_tokens(default_kw_node, tokens, "DEFAULT_KEYWORD")
+
+            if data["repeats"]:
+                if "*" not in self._treerefs[-1]:
+                    self._treerefs[-1]["*"] = []
+                self._treerefs[-1]["*"] += [data["values"]]
+            else:
+                if "*" in self._treerefs[-1]:
+                    raise InvalidNameError(
+                        f"the default keyword in section '...' can only be used once"
+                    )
+                self._treerefs[-1]["*"] = data["values"]
+
+
+    def parse(self, fhandle):
+        for tokens in self._tokenizer.token_iter(fhandle):
             # filter all comments:
             tokens = [t for t in tokens if t[0] not in "!#"]
             if not tokens:
                 continue  # go to next if the comment was the only token
 
             if tokens[0].startswith("&"):
-                section_name = tokens.pop(0)[1:].upper()
-
-                if section_name == "END":
-                    if tokens and tokens[0].upper() not in [
-                        e.text for e in nodes[-1].iterfind("./NAME")
-                    ]:
-                        raise SectionMismatchError()
-
-                    if len(tokens) > 1:
-                        raise ParserError("garbage at section end")
-
-                    nodes.pop()
-                    treerefs.pop()
-                    continue
-
-                # check all section nodes for matching names or aliases
-                for sec in nodes[-1].iterfind("./SECTION"):
-                    if section_name not in [e.text for e in sec.iterfind("./NAME")]:
-                        continue
-
-                    nodes += [
-                        sec
-                    ]  # add the current XML section node to the stack of nodes
-
-                    repeats = True if sec.get("repeats") == "yes" else False
-
-                    if repeats:
-                        if section_name not in treerefs[-1]:
-                            treerefs[-1][section_name] = []
-
-                        treerefs[-1][section_name] += [{}]
-                        treerefs += [treerefs[-1][section_name][-1]]
-                    else:
-                        if section_name in treerefs[-1]:
-                            raise InvalidNameError(
-                                f"the section '{section_name}' can only be mentioned once"
-                            )
-
-                        treerefs[-1][section_name] = {}
-                        treerefs += [treerefs[-1][section_name]]
-
-                    # check whether we got a parameter for the section and validate it
-                    param = sec.find("./SECTION_PARAMETERS")
-                    if param:  # validate the section parameter like a kw datatype
-                        # there is no way we get a second section parameter, assign directly
-                        treerefs[-1]["_"] = parse_tokens(
-                            param, tokens, "SECTION_PARAMETERS"
-                        )["values"]
-
-                    break
-                else:
-                    raise RuntimeError(f"invalid section '{section_name}'")
-
+                self._parse_section(tokens)
             else:
-                token_name = tokens[0].upper()
-                default_kw = None
+                self._parse_keyword(tokens)
 
-                for kw in nodes[-1].iterfind("./KEYWORD"):
-                    try:
-                        data = parse_tokens(kw, tokens)
-
-                        if data["repeats"]:
-                            if data["name"] not in treerefs[-1]:
-                                treerefs[-1][data["name"]] = []
-
-                            treerefs[-1][data["name"]] += [data["values"]]
-                        else:
-                            if data["name"] in treerefs[-1]:
-                                raise InvalidNameError(
-                                    f"the keyword '{token_name}' can only be mentioned once"
-                                )
-
-                            treerefs[-1][data["name"]] = data["values"]
-
-                    except InvalidNameError:
-                        # but let's see whether we found the DEFAULT_KEYWORD (could be used later)
-                        if kw.find("./NAME[@type='default']").text == "DEFAULT_KEYWORD":
-                            default_kw = kw
-
-                        continue
-
-                    break
-
-                else:
-                    # no match so far, and if we didn't find a default keyword, then that's it
-                    if not default_kw:
-                        raise RuntimeError(f"invalid keyword '{token_name}'")
-
-                    # if there is a default keyword, parse the data with that
-                    data = parse_tokens(default_kw_node, tokens, "DEFAULT_KEYWORD")
-
-                    if data["repeats"]:
-                        if "*" not in treerefs[-1]:
-                            treerefs[-1]["*"] = []
-                        treerefs[-1]["*"] += [data["values"]]
-                    else:
-                        if "*" in treerefs[-1]:
-                            raise InvalidNameError(
-                                f"the default keyword in section '...' can only be used once"
-                            )
-                        treerefs[-1]["*"] = data["values"]
-
-        return tree
+        return self._tree
 
 
 parser = CP2KInputParser("cp2k_input.xml")
 # parser.parse("    \t FOO \t  ' \\' \"  ! baz'  BAR   .13  ! comment  y\n abc")
-with open("test01.inp", "r") as fhandle:
+with open("test02.inp", "r") as fhandle:
     tree = parser.parse(fhandle)
     import json
 
