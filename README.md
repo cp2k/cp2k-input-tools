@@ -2,6 +2,11 @@
 
 PoC of a fully validating CP2K input file parser including preprocessing capabilities
 
+## Requirements
+
+* Python 3.6+
+* https://pypi.org/project/transitions/
+
 ## Idea
 
 * have a pure-python CP2K input file linter with proper syntax error reporting (context, etc.)
@@ -20,6 +25,7 @@ PoC of a fully validating CP2K input file parser including preprocessing capabil
 * [ ] preprocessor: doing var replacement before other pre-processor directives (possible waste of time plus we allow some tricks which CP2K doesn't)
 * [ ] preprocessor: variable substitution might add additional line endings which we are currently lumping together with tokens from the other lines
 * [ ] parser: unit conversion of values
+* [ ] parser: parsing the XML is sloooow (easily 70% of the time), pickle or generate Python code directly instead and keep XML parsing as backup?
 
 ## Observations
 
