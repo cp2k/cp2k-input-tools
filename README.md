@@ -18,9 +18,7 @@ PoC of a fully validating CP2K input file parser including preprocessing capabil
 ## TODOs
 
 * [ ] general: give full context on errors (add it to exceptions)
-* [ ] preprocessor: uses regexes where we should employ another state machine to get nested variables right (possibly use the HSM feature of the transitions pkg)
 * [ ] preprocessor: some of the regexes do not cover all corner cases
-* [ ] preprocessor: we ignore some garbage where we shouldn't
 * [ ] preprocessor: losing original context when replacing variables
 * [ ] preprocessor: variable substitution might add additional line endings which we are currently lumping together with tokens from the other lines
 * [ ] parser: unit conversion of values
@@ -29,3 +27,4 @@ PoC of a fully validating CP2K input file parser including preprocessing capabil
 ## Observations
 
 * nested if/endif blocks wouldn't be too difficult (needs sharing of state between nested tokenizers, similar stack building like in the parser for nodes)
+* CP2K doesn't do nested variable interpolation, wouldn't be so difficult either

@@ -148,21 +148,50 @@ class CP2KInputTokenizer(transitions.Machine):
             self._varstack = varstack
 
     def _resolve_variables(self, line):
+        var_start = 0
+        var_end = 0
+
+        # the following algorithm is from CP2Ks cp_parser_inpp_methods.F to reproduce its behavior :(
+
+        # first replace all "${...}"  with no nesting, meaning that ${foo${bar}} means foo$bar is the key
         while True:
-            # TODO: integrate this in the state machine (probably as a sub-HSM), because
-            #       with regexes we don't get nested bracketing right
-            match = re.search(r"\$(?P<var>\w+\b|{.+})", line)
-            if not match:
+            var_start = line.find("${", var_end+1)
+            if var_start < 0:
                 break
 
-            var = match.group("var")
-            if var[0] == "{":
-                # resolve nested variables recursively, the result will be a variable name
-                varname = self._resolve_variables(var.strip("{}")).upper()
-            else:
-                varname = var.upper()
+            var_end = line.find("}", var_start+2)
+            if var_end < 0:
+                raise PreprocessorError("unterminated variable found")
 
-            line = re.sub(f"\${var}", self._varstack[varname], line)
+            key = line[var_start+2:var_end]  # without ${ and }
+            try:
+                value = self._varstack[key.upper()]
+            except KeyError:
+                raise PreprocessorError(f"undefined variable '{key}'") from None
+
+            line = f"{line[:var_start]}{value}{line[var_end+1:]}"
+
+        var_start = 0
+        var_end = 0
+
+        while True:
+            var_start = line.find("$", var_end+1)
+            if var_start < 0:
+                break
+
+            # if not found we get a -1, which is the last char in the string
+            var_end = line.find(" ", var_start+1)
+            if var_end < 0:
+                # -1 would be the last entry, but in a range it is without the specified entry
+                var_end = len(line)
+
+            key = line[var_start+1:var_end]
+            try:
+                value = self._varstack[key.upper()]
+            except KeyError:
+                raise PreprocessorError(f"undefined variable '{key}'") from None
+
+            line = f"{line[:var_start]}{value}{line[var_end+1:]}"
 
         return line
 
