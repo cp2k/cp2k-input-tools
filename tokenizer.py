@@ -208,7 +208,10 @@ class CP2KInputTokenizer(transitions.Machine):
             if stmt.upper() == "ENDIF":
                 if self._conditional_block is None:
                     raise PreprocessorError("found @ENDIF without a previous @IF")
-                # TODO: do not ignore garbage after the @ENDIF
+
+                # check for garbage which is not a comment, note: we're stricter than CP2K here
+                if condition and not condition.startswith("!"):
+                    raise PreprocessorError("garbage found after @ENDIF")
 
                 self._conditional_block = None
             else:
