@@ -288,12 +288,3 @@ class CP2KInputParser:
                 self._parse_keyword(tokens)
 
         return self._tree
-
-
-parser = CP2KInputParser("cp2k_input.xml")
-# parser.parse("    \t FOO \t  ' \\' \"  ! baz'  BAR   .13  ! comment  y\n abc")
-with open("test02.inp", "r") as fhandle:
-    tree = parser.parse(fhandle)
-    import json
-
-    print(json.dumps(tree, indent=2))
