@@ -5,10 +5,12 @@ import argparse
 
 from parser import CP2KInputParser
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Convert CP2K input to JSON (default) or YAML')
-    parser.add_argument('file', metavar='<file>', type=str, help="CP2K input file")
-    parser.add_argument('-y', '--yaml', action='store_true')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Convert CP2K input to JSON (default) or YAML"
+    )
+    parser.add_argument("file", metavar="<file>", type=str, help="CP2K input file")
+    parser.add_argument("-y", "--yaml", action="store_true")
     args = parser.parse_args()
 
     cp2k_parser = CP2KInputParser("cp2k_input.xml")
@@ -18,7 +20,9 @@ if __name__ == '__main__':
 
     if args.yaml:
         import yaml
+
         print(yaml.dump(tree, indent=2))
     else:
         import json
+
         print(json.dumps(tree, indent=2))

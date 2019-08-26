@@ -155,15 +155,15 @@ class CP2KInputTokenizer(transitions.Machine):
 
         # first replace all "${...}"  with no nesting, meaning that ${foo${bar}} means foo$bar is the key
         while True:
-            var_start = line.find("${", var_end+1)
+            var_start = line.find("${", var_end + 1)
             if var_start < 0:
                 break
 
-            var_end = line.find("}", var_start+2)
+            var_end = line.find("}", var_start + 2)
             if var_end < 0:
                 raise PreprocessorError("unterminated variable found")
 
-            key = line[var_start+2:var_end]  # without ${ and }
+            key = line[var_start + 2 : var_end]  # without ${ and }
             try:
                 value = self._varstack[key.upper()]
             except KeyError:
@@ -175,17 +175,17 @@ class CP2KInputTokenizer(transitions.Machine):
         var_end = 0
 
         while True:
-            var_start = line.find("$", var_end+1)
+            var_start = line.find("$", var_end + 1)
             if var_start < 0:
                 break
 
             # if not found we get a -1, which is the last char in the string
-            var_end = line.find(" ", var_start+1)
+            var_end = line.find(" ", var_start + 1)
             if var_end < 0:
                 # -1 would be the last entry, but in a range it is without the specified entry
                 var_end = len(line)
 
-            key = line[var_start+1:var_end]
+            key = line[var_start + 1 : var_end]
             try:
                 value = self._varstack[key.upper()]
             except KeyError:
