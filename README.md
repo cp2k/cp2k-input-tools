@@ -22,7 +22,6 @@ PoC of a fully validating CP2K input file parser including preprocessing capabil
 * [ ] preprocessor: some of the regexes do not cover all corner cases
 * [ ] preprocessor: we ignore some garbage where we shouldn't
 * [ ] preprocessor: losing original context when replacing variables
-* [ ] preprocessor: doing var replacement before other pre-processor directives (possible waste of time plus we allow some tricks which CP2K doesn't)
 * [ ] preprocessor: variable substitution might add additional line endings which we are currently lumping together with tokens from the other lines
 * [ ] parser: unit conversion of values
 * [ ] parser: parsing the XML is sloooow (easily 70% of the time), pickle or generate Python code directly instead and keep XML parsing as backup?

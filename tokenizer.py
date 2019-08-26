@@ -186,6 +186,9 @@ class CP2KInputTokenizer(transitions.Machine):
                 if self._conditional_block is not None:
                     raise PreprocessorError("nested @IF detected")
 
+                # resolve any variables inside the condition
+                condition = self._resolve_variables(condition)
+
                 # prefix-whitespace are consumed in the regex, suffix with the strip() above
                 if not condition or condition == "0":
                     self._conditional_block = False
@@ -209,7 +212,9 @@ class CP2KInputTokenizer(transitions.Machine):
             r"\s*@SET\s+(?P<var>\w+)\s+(?P<value>.+)", line, flags=re.IGNORECASE
         )
         if set_match:
-            self._varstack[set_match.group("var").upper()] = set_match.group("value")
+            # resolve other variables in the definition first
+            value = self._resolve_variables(set_match.group("value"))
+            self._varstack[set_match.group("var").upper()] = value
             return
 
         include_match = re.match(
@@ -218,7 +223,10 @@ class CP2KInputTokenizer(transitions.Machine):
             flags=re.IGNORECASE,
         )
         if include_match:
-            with open(include_match.group("file").strip("'\""), "r") as included_handle:
+            # strip quotes and resolve variables for the filename
+            filename = self._resolve_variables(include_match.group("file").strip("'\""))
+
+            with open(filename, "r") as included_handle:
                 included_token_iter = CP2KInputTokenizer(
                     self._varstack
                 )  # here we start sharing the variable stack
@@ -242,18 +250,15 @@ class CP2KInputTokenizer(transitions.Machine):
         }
 
         for linenr, line in enumerate(fhandle):
-
-            # TODO: here we are losing the original line which is bad for error reporting
-            # TODO: this is potentially a waste of resources since we might be in a conditional section
-            #       but the other preprocessing part comes later and depends on variables being resolved
-            line = self._resolve_variables(line)
-
             if re.match(r"\s*@", line):
                 # the preprocessor can yield it's own tokens (in case of an include)
                 # but also change our state (_varstack, _conditional_block)
                 yield from self._parse_preprocessor(line)
                 # ... in any way, this line will not be seen by the rest of the state machine
                 continue
+
+            # TODO: here we are losing the original line which is bad for error reporting
+            line = self._resolve_variables(line)
 
             # None == True/False always evaluates to False, so the following
             # is never true if we are NOT in a conditional block
@@ -270,3 +275,6 @@ class CP2KInputTokenizer(transitions.Machine):
             if self._tokens:
                 yield tuple(line[s:e] for s, e in self._tokens)
                 self._tokens = []
+
+        if self._conditional_block is not None:
+            raise PreprocessorError(f"conditional block not closed at end of file")
