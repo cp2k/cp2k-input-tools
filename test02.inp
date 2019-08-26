@@ -1,6 +1,6 @@
 &GLOBAL
    PRINT_LEVEL MEDIUM
-   PROJECT fatman.calc
+   PROJECT "fatman.calc"
    RUN_TYPE ENERGY
 &END GLOBAL
 @if yes /= yes
