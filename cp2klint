@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+# coding: utf-8
+
+import argparse
+
+from parser import CP2KInputParser
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Check the passed CP2K file for syntax errors')
+    parser.add_argument('file', metavar='<file>', type=str, help="CP2K input file")
+    args = parser.parse_args()
+
+    cp2k_parser = CP2KInputParser("cp2k_input.xml")
+
+    with open(args.file, "r") as fhandle:
+        tree = cp2k_parser.parse(fhandle)
+
+    print("All done! Happy calculating!")
