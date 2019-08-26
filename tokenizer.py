@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
+import collections
 import re
 
 import transitions
@@ -20,6 +21,9 @@ class InvalidTokenCharError(TokenizerError):
 
 class PreprocessorError(TokenizerError):
     pass
+
+
+Token = collections.namedtuple("Token", ["string", "colnr", "linenr", "filename"])
 
 
 class CP2KInputTokenizer(transitions.Machine):
@@ -196,8 +200,6 @@ class CP2KInputTokenizer(transitions.Machine):
         return line
 
     def _parse_preprocessor(self, line):
-        # TODO: regex do not cover all corner cases (like trailing quotes)
-
         conditional_match = re.match(
             r"\s*@(?P<stmt>IF|ENDIF)\s*(?P<cond>.*)", line, flags=re.IGNORECASE
         )
@@ -305,7 +307,9 @@ class CP2KInputTokenizer(transitions.Machine):
 
             self.nl_char(line, len(line))
             if self._tokens:
-                yield tuple(line[s:e] for s, e in self._tokens)
+                yield tuple(
+                    Token(line[s:e], s, linenr, fhandle.name) for s, e in self._tokens
+                )
                 self._tokens = []
 
         if self._conditional_block is not None:

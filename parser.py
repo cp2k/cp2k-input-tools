@@ -41,6 +41,10 @@ class InvalidParameterError(ParserError):
     pass
 
 
+class NameRepetitionError(ParserError):
+    pass
+
+
 def bool_kw_converter(string):
     string = string.upper()
 
@@ -77,7 +81,7 @@ KW_VALUE_CONVERTERS = {
 def parse_tokens(element, tokens, key=None):
     if not key:
         # do not use tokens.pop(0) here since it is a reference and it might still be needed
-        key = tokens[0]
+        key = tokens[0].string
         tokens = tokens[1:]
 
     if key not in [e.text for e in element.iterfind("./NAME")]:
@@ -122,15 +126,15 @@ def parse_tokens(element, tokens, key=None):
     values = []
 
     for token in tokens:
-        if token.startswith("["):
+        if token.string.startswith("["):
             if not default_unit:
                 raise InvalidParameterError(
                     f"unit specified for value in keyword '{key}', but no default unit available"
                 )
-            current_unit = token.strip("[]")
+            current_unit = token.string.strip("[]")
             continue
 
-        value = value_converter(token)
+        value = value_converter(token.string)
 
         assert (
             current_unit == default_unit
@@ -173,16 +177,19 @@ class CP2KInputParser:
         self._treerefs = [self._tree]
 
     def _parse_section(self, tokens):
-        section_name = tokens.pop(0)[1:].upper()
+        section_token = tokens.pop(0)
+        section_name = section_token.string[1:].upper()
 
         if section_name == "END":
-            if tokens and tokens[0].upper() not in [
+            if tokens and tokens[0].string.upper() not in [
                 e.text for e in self._nodes[-1].iterfind("./NAME")
             ]:
-                raise SectionMismatchError()
+                raise SectionMismatchError(
+                    "could not match open section with name:", tokens[0]
+                )
 
             if len(tokens) > 1:
-                raise ParserError("garbage at section end")
+                raise ParserError("garbage at section end:", tokens[1:])
 
             self._nodes.pop()
             self._treerefs.pop()
@@ -208,7 +215,8 @@ class CP2KInputParser:
             else:
                 if section_name in self._treerefs[-1]:
                     raise InvalidNameError(
-                        f"the section '{section_name}' can only be mentioned once"
+                        f"the section '{section_name}' can not be defined multiple times:",
+                        section_token,
                     )
 
                 self._treerefs[-1][section_name] = {}
@@ -224,10 +232,11 @@ class CP2KInputParser:
 
             break
         else:
-            raise RuntimeError(f"invalid section '{section_name}'")
+            raise RuntimeError(f"invalid section '{section_name}'", section_token)
 
     def _parse_keyword(self, tokens):
-        token_name = tokens[0].upper()
+        keyword_token = tokens[0]
+        keyword_name = keyword_token.string.upper()
         default_kw = None
 
         for kw in self._nodes[-1].iterfind("./KEYWORD"):
@@ -241,8 +250,9 @@ class CP2KInputParser:
                     self._treerefs[-1][data["name"]] += [data["values"]]
                 else:
                     if data["name"] in self._treerefs[-1]:
-                        raise InvalidNameError(
-                            f"the keyword '{token_name}' can only be mentioned once"
+                        raise NameRepetitionError(
+                            f"the keyword '{keyword_name}' can only be mentioned once",
+                            keyword_token,
                         )
 
                     self._treerefs[-1][data["name"]] = data["values"]
@@ -259,7 +269,9 @@ class CP2KInputParser:
         else:
             # no match so far, and if we didn't find a default keyword, then that's it
             if not default_kw:
-                raise RuntimeError(f"invalid keyword '{token_name}'")
+                raise InvalidNameError(
+                    f"invalid keyword '{keyword_name}'", keyword_token
+                )
 
             # if there is a default keyword, parse the data with that
             data = parse_tokens(default_kw_node, tokens, "DEFAULT_KEYWORD")
@@ -270,19 +282,20 @@ class CP2KInputParser:
                 self._treerefs[-1]["*"] += [data["values"]]
             else:
                 if "*" in self._treerefs[-1]:
-                    raise InvalidNameError(
-                        f"the default keyword in section '...' can only be used once"
+                    raise NameRepetitionError(
+                        f"the default keyword in section '...' can only be used once",
+                        keyword_token,
                     )
                 self._treerefs[-1]["*"] = data["values"]
 
     def parse(self, fhandle):
         for tokens in self._tokenizer.token_iter(fhandle):
             # filter all comments:
-            tokens = [t for t in tokens if t[0] not in "!#"]
+            tokens = [t for t in tokens if t.string[0] not in "!#"]
             if not tokens:
                 continue  # go to next if the comment was the only token
 
-            if tokens[0].startswith("&"):
+            if tokens[0].string.startswith("&"):
                 self._parse_section(tokens)
             else:
                 self._parse_keyword(tokens)
