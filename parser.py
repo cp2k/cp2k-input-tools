@@ -206,21 +206,23 @@ class CP2KInputParser:
 
             repeats = True if sec.get("repeats") == "yes" else False
 
-            if repeats:
-                if section_name not in self._treerefs[-1]:
-                    self._treerefs[-1][section_name] = []
-
-                self._treerefs[-1][section_name] += [{}]
-                self._treerefs += [self._treerefs[-1][section_name][-1]]
-            else:
-                if section_name in self._treerefs[-1]:
-                    raise InvalidNameError(
-                        f"the section '{section_name}' can not be defined multiple times:",
-                        section_token,
-                    )
-
+            if section_name not in self._treerefs[-1]:
                 self._treerefs[-1][section_name] = {}
                 self._treerefs += [self._treerefs[-1][section_name]]
+
+            elif repeats:
+                if isinstance(self._treerefs[-1][section_name], list):
+                    self._treerefs[-1][section_name] += [{}]
+                else:
+                    self._treerefs[-1][section_name] = [self._treerefs[-1][section_name], {}]
+
+                self._treerefs += [self._treerefs[-1][section_name][-1]]
+
+            else:
+                raise InvalidNameError(
+                    f"the section '{section_name}' can not be defined multiple times:",
+                    section_token,
+                )
 
             # check whether we got a parameter for the section and validate it
             param = sec.find("./SECTION_PARAMETERS")
@@ -243,17 +245,24 @@ class CP2KInputParser:
             try:
                 data = parse_tokens(kw, tokens)
 
-                if data["repeats"]:
-                    if data["name"] not in self._treerefs[-1]:
-                        self._treerefs[-1][data["name"]] = []
+                if data["name"] not in self._treerefs[-1]:
+                    # even if it is a repeating element, store it as a single value first
+                    self._treerefs[-1][data["name"]] = data["values"]
 
-                    self._treerefs[-1][data["name"]] += [data["values"]]
+                # if the keyword already exists and is a repeating element
+                elif data["repeats"]:
+                    if isinstance(self._treerefs[-1][data["name"]], list):
+                        # ... and already a list, simply append
+                        self._treerefs[-1][data["name"]] += [data["values"]]
+                    else:
+                        # ... otherwise turn it into a list now
+                        self._treerefs[-1][data["name"]] = [self._treerefs[-1][data["name"]], data["values"]]
+
                 else:
-                    if data["name"] in self._treerefs[-1]:
-                        raise NameRepetitionError(
-                            f"the keyword '{keyword_name}' can only be mentioned once",
-                            keyword_token,
-                        )
+                    raise NameRepetitionError(
+                        f"the keyword '{keyword_name}' can only be mentioned once",
+                        keyword_token,
+                    )
 
                     self._treerefs[-1][data["name"]] = data["values"]
 
@@ -276,17 +285,20 @@ class CP2KInputParser:
             # if there is a default keyword, parse the data with that
             data = parse_tokens(default_kw_node, tokens, "DEFAULT_KEYWORD")
 
-            if data["repeats"]:
-                if "*" not in self._treerefs[-1]:
-                    self._treerefs[-1]["*"] = []
-                self._treerefs[-1]["*"] += [data["values"]]
-            else:
-                if "*" in self._treerefs[-1]:
-                    raise NameRepetitionError(
-                        f"the default keyword in section '...' can only be used once",
-                        keyword_token,
-                    )
+            if "*" not in self._treerefs[-1]:
                 self._treerefs[-1]["*"] = data["values"]
+
+            elif data["repeats"]:
+                if isinstance(self._treerefs[-1]["*"], list):
+                    self._treerefs[-1]["*"] += [data["values"]]
+                else:
+                    self._treerefs[-1]["*"] = data[self._treerefs[-1]["*"], data["values"]]
+
+            else:
+                raise NameRepetitionError(
+                    f"the default keyword in section '...' can only be used once",
+                    keyword_token,
+                )
 
     def parse(self, fhandle):
         for tokens in self._tokenizer.token_iter(fhandle):
