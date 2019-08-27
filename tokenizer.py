@@ -23,10 +23,12 @@ class PreprocessorError(Exception):
     pass
 
 
-Token = collections.namedtuple("Token", ["string", "colnr", "linenr", "filename"])
-ConditionalBlock = collections.namedtuple(
-    "ConditionalBlock", ["condition", "line", "linenr"]
-)
+def Context(**kwargs):
+    return collections.defaultdict(lambda: None, **kwargs)
+
+Token = collections.namedtuple("Token", ["string", "ctx"])
+Variable = collections.namedtuple("Variable", ["value", "ctx"])
+ConditionalBlock = collections.namedtuple("ConditionalBlock", ["condition", "ctx"])
 
 
 class CP2KInputTokenizer(transitions.Machine):
@@ -47,14 +49,14 @@ class CP2KInputTokenizer(transitions.Machine):
         # end of the basic token is determined by the character that follows
         self._tokens += [(self._current_token_start, colnr + 1)]
 
-    def unterminated_string(self, line, colnr):
+    def unterminated_string(self, _, colnr):
         raise UnterminatedStringError(
-            f"unterminated string detected, starting at {self._current_token_start}"
+            f"unterminated string detected", Context(colnr=colnr, ref_colnr=self._current_token_start)
         )
 
-    def invalid_token_char(self, _, colnr):
+    def invalid_token_char(self, content, colnr):
         raise InvalidTokenCharError(
-            f"invalid character detected at index {colnr} (token started in {self._current_token_start})"
+            f"invalid keyword character found", Context(colnr=colnr, ref_colnr=self._current_token_start)
         )
 
     def is_not_escaped(self, content, colnr):
@@ -154,31 +156,33 @@ class CP2KInputTokenizer(transitions.Machine):
         if varstack:
             self._varstack = varstack
 
-    def _resolve_variables(self, line, linenr):
+    def _resolve_variables(self, line):
         var_start = 0
         var_end = 0
+
+        ctx = Context(line=line)
 
         # the following algorithm is from CP2Ks cp_parser_inpp_methods.F to reproduce its behavior :(
 
         # first replace all "${...}"  with no nesting, meaning that ${foo${bar}} means foo$bar is the key
         while True:
-            var_start = line.find("${", var_end + 1)
+            var_start = line.find("${", var_end)
             if var_start < 0:
                 break
 
             var_end = line.find("}", var_start + 2)
             if var_end < 0:
-                raise PreprocessorError(
-                    f"unterminated variable found in line {linenr}: {line}"
-                )
+                ctx["colnr"] = len(line) - 1
+                ctx["ref_colnr"] = var_start
+                raise PreprocessorError(f"unterminated variable", ctx)
 
             key = line[var_start + 2 : var_end]  # without ${ and }
             try:
-                value = self._varstack[key.upper()]
+                value = self._varstack[key.upper()].value
             except KeyError:
-                raise PreprocessorError(
-                    f"undefined variable '{key}' in line {linenr}: {line}"
-                ) from None
+                ctx["colnr"] = var_start
+                ctx["ref_colnr"] = var_end
+                raise PreprocessorError(f"undefined variable '{key}'", ctx) from None
 
             line = f"{line[:var_start]}{value}{line[var_end+1:]}"
 
@@ -186,69 +190,74 @@ class CP2KInputTokenizer(transitions.Machine):
         var_end = 0
 
         while True:
-            var_start = line.find("$", var_end + 1)
+            var_start = line.find("$", var_end)
             if var_start < 0:
                 break
 
-            # if not found we get a -1, which is the last char in the string
             var_end = line.find(" ", var_start + 1)
             if var_end < 0:
                 # -1 would be the last entry, but in a range it is without the specified entry
-                var_end = len(line)
+                var_end = len(line.rstrip())
 
             key = line[var_start + 1 : var_end]
             try:
-                value = self._varstack[key.upper()]
+                value = self._varstack[key.upper()].value
             except KeyError:
-                raise PreprocessorError(
-                    f"undefined variable '{key}' in line {linenr}: {line}"
-                ) from None
+                ctx["colnr"] = var_start
+                ctx["ref_colnr"] = var_end - 1
+                raise PreprocessorError(f"undefined variable '{key}'", ctx) from None
 
             line = f"{line[:var_start]}{value}{line[var_end+1:]}"
 
         return line
 
-    def _parse_preprocessor(self, line, linenr):
+    def _parse_preprocessor(self, line):
         conditional_match = re.match(
             r"\s*@(?P<stmt>IF|ENDIF)\s*(?P<cond>.*)", line, flags=re.IGNORECASE
         )
+
+        ctx = Context(line=line)
+
         if conditional_match:
             stmt = conditional_match.group("stmt")
             condition = conditional_match.group("cond").strip()
 
             if stmt.upper() == "ENDIF":
                 if self._conditional_block is None:
-                    raise PreprocessorError(
-                        "found @ENDIF without a previous @IF in line {linenr}: {line}"
-                    )
+                    raise PreprocessorError("found @ENDIF without a previous @IF", ctx)
 
                 # check for garbage which is not a comment, note: we're stricter than CP2K here
                 if condition and not condition.startswith("!"):
-                    raise PreprocessorError(
-                        "garbage found after @ENDIF in line {linenr}: {line}"
-                    )
+                    ctx["colnr"] = conditional_match.start("cond")
+                    ctx["ref_colnr"] = conditional_match.end("cond")
+                    raise PreprocessorError("garbage found after @ENDIF", ctx)
 
                 self._conditional_block = None
             else:
                 if self._conditional_block is not None:
-                    raise PreprocessorError(
-                        "nested @IF detected in line {linenr}: {line}"
-                    )
+                    ctx["ref_line"] = self._conditional_block.ctx["line"]
+                    raise PreprocessorError("nested @IF are not allowed", ctx)
 
                 # resolve any variables inside the condition
-                condition = self._resolve_variables(condition, linenr)
+                try:
+                    condition = self._resolve_variables(condition)
+                except PreprocessorError as exc:
+                    exc.args[1]["colnr"] += conditional_match.start("cond")
+                    exc.args[1]["ref_colnr"] += conditional_match.start("cond")
+                    raise
+
 
                 # prefix-whitespace are consumed in the regex, suffix with the strip() above
                 if not condition or condition == "0":
-                    self._conditional_block = ConditionalBlock(False, line, linenr)
+                    self._conditional_block = ConditionalBlock(False, ctx)
                 elif "==" in condition:
                     lhs, rhs = [s.strip() for s in condition.split("==", maxsplit=1)]
-                    self._conditional_block = ConditionalBlock(lhs == rhs, line, linenr)
+                    self._conditional_block = ConditionalBlock(lhs == rhs, ctx)
                 elif "/=" in condition:
                     lhs, rhs = [s.strip() for s in condition.split("/=", maxsplit=1)]
-                    self._conditional_block = ConditionalBlock(lhs != rhs, line, linenr)
+                    self._conditional_block = ConditionalBlock(lhs != rhs, ctx)
                 else:
-                    self._conditional_block = ConditionalBlock(True, line, linenr)
+                    self._conditional_block = ConditionalBlock(True, ctx)
 
             return
 
@@ -260,8 +269,8 @@ class CP2KInputTokenizer(transitions.Machine):
         )
         if set_match:
             # resolve other variables in the definition first
-            value = self._resolve_variables(set_match.group("value"), linenr)
-            self._varstack[set_match.group("var").upper()] = value
+            value = self._resolve_variables(set_match.group("value"))
+            self._varstack[set_match.group("var").upper()] = Variable(value, ctx)
             return
 
         include_match = re.match(
@@ -270,12 +279,15 @@ class CP2KInputTokenizer(transitions.Machine):
             flags=re.IGNORECASE,
         )
         if include_match:
-            # strip quotes and resolve variables for the filename
-            filename = self._resolve_variables(
-                include_match.group("file").strip("'\""), linenr
-            )
+            # resolve variables first
+            try:
+                filename = self._resolve_variables(include_match.group("file"))
+            except PreprocessorError as exc:
+                exc.args[1]["colnr"] += include_match.start("file")
+                exc.args[1]["ref_colnr"] += include_match.start("file")
+                raise
 
-            with open(filename, "r") as included_handle:
+            with open(filename.strip("'\""), "r") as included_handle:
                 included_token_iter = CP2KInputTokenizer(
                     self._varstack
                 )  # here we start sharing the variable stack
@@ -285,7 +297,7 @@ class CP2KInputTokenizer(transitions.Machine):
 
             return
 
-        raise PreprocessorError(f"unknown preprocessor directive found: {line}")
+        raise PreprocessorError(f"unknown preprocessor directive found", ctx)
 
     def token_iter(self, fhandle):
         char_map = {
@@ -297,32 +309,38 @@ class CP2KInputTokenizer(transitions.Machine):
             '"': self.quote_char,
             "\n": self.nl_char,
         }
+        try:
+            for linenr, line in enumerate(fhandle):
+                if re.match(r"\s*@", line):
+                    # the preprocessor can yield it's own tokens (in case of an include)
+                    # but also change our state (_varstack, _conditional_block)
+                    yield from self._parse_preprocessor(line)
+                    # ... in any way, this line will not be seen by the rest of the state machine
+                    continue
 
-        for linenr, line in enumerate(fhandle):
-            if re.match(r"\s*@", line):
-                # the preprocessor can yield it's own tokens (in case of an include)
-                # but also change our state (_varstack, _conditional_block)
-                yield from self._parse_preprocessor(line, linenr)
-                # ... in any way, this line will not be seen by the rest of the state machine
-                continue
+                # TODO: here we are losing the original line which is bad for error reporting
+                line = self._resolve_variables(line)
 
-            # TODO: here we are losing the original line which is bad for error reporting
-            line = self._resolve_variables(line, linenr)
+                if self._conditional_block and not self._conditional_block.condition:
+                    continue
 
-            if self._conditional_block and not self._conditional_block.condition:
-                continue
+                for colnr, char in enumerate(line):
+                    char_map.get(char, self.token_char)(line, colnr)
 
-            for colnr, char in enumerate(line):
-                char_map.get(char, self.token_char)(line, colnr)
+                self.nl_char(line, len(line))
+                if self._tokens:
+                    yield tuple(
+                        Token(line[s:e], Context(colnr=s, linenr=linenr, filename=fhandle.name)) for s, e in self._tokens
+                    )
+                    self._tokens = []
 
-            self.nl_char(line, len(line))
-            if self._tokens:
-                yield tuple(
-                    Token(line[s:e], s, linenr, fhandle.name) for s, e in self._tokens
+            if self._conditional_block is not None:
+                raise PreprocessorError(
+                    f"conditional block not closed at end of file", Context(ref_line=self._conditional_block.ctx["line"])
                 )
-                self._tokens = []
 
-        if self._conditional_block is not None:
-            raise PreprocessorError(
-                f"conditional block not closed at end of file '{fhandle.name}', started on line {self._conditional_block.linenr}: {self._conditional_block.line}"
-            )
+        except (PreprocessorError,TokenizerError) as exc:
+            exc.args[1]["filename"] = fhandle.name
+            exc.args[1]["linenr"] = linenr
+            exc.args[1]["line"] = line
+            raise

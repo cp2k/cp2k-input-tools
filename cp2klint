@@ -2,8 +2,12 @@
 # coding: utf-8
 
 import argparse
+import sys
+import re
 
 from parser import CP2KInputParser
+from tokenizer import PreprocessorError, TokenizerError
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Check the passed CP2K file for syntax errors')
@@ -13,6 +17,38 @@ if __name__ == '__main__':
     cp2k_parser = CP2KInputParser("cp2k_input.xml")
 
     with open(args.file, "r") as fhandle:
-        tree = cp2k_parser.parse(fhandle)
+        try:
+            tree = cp2k_parser.parse(fhandle)
+        except (PreprocessorError, TokenizerError) as exc:
+            ctx = exc.args[1]
+            line = ctx["line"].rstrip()
+
+            print(f"Syntax error: {exc.args[0]} in {ctx['filename']}:")
+            print(f"  {ctx['linenr']:>4}: {line}")
+
+            if ctx["colnr"] is not None:
+                marker = ctx["colnr"]  # position of the marker
+                count = 0  # number of underline chars after (positiv) or before (negative) the marker if ref_colnr given
+                nchars = ctx["colnr"]  # relevant line length
+
+                if ctx["ref_colnr"] is not None:
+                    count = ctx["ref_colnr"] - ctx["colnr"]
+                    nchars = min(ctx["ref_colnr"], ctx["colnr"])  # correct if ref comes before
+
+                # replace all non-ws chars with spaces:
+                # - assuming a monospace font
+                # - preserving other whitespace we don't know the width
+                underline = re.sub(r"\S", " ", ctx["line"][:nchars])
+
+                if count >= 0:
+                    print(f"{str():>6}  {underline}^{str():~>{count}}")
+                else:
+                    print(f"{str():>6}  {underline}{str():~>{-count}}^")
+
+            if ctx["ref_line"] is not None:
+                print("previous definition line:")
+                print(f"  {str():>4}: {ctx['ref_line'].rstrip()}")
+
+            sys.exit(1)
 
     print("All done! Happy calculating!")

@@ -17,7 +17,7 @@ PoC of a fully validating CP2K input file parser including preprocessing capabil
 
 ## TODOs
 
-* [ ] general: abstract context storing in exceptions to make it possible to render the string on the caller-side
+* [ ] parser: improve error reporting with context (tokenizer/preprocessor is already done)
 * [ ] preprocessor: losing original context when replacing variables
 * [ ] parser: unit conversion of values
 * [ ] parser: parsing the XML is sloooow (easily 70% of the time), pickle or generate Python code directly instead and keep XML parsing as backup?
