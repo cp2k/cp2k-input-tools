@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+# coding: utf-8
+
+import argparse
+
+from generator import CP2KInputGenerator
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Convert JSON or YAML input to CP2K"
+    )
+    parser.add_argument("file", metavar="<file>", type=str, help="JSON or YAML input file")
+    parser.add_argument("-y", "--yaml", action="store_true")
+    args = parser.parse_args()
+
+    with open(args.file, "r") as fhandle:
+        if args.yaml:
+            import yaml
+            from yaml import SafeLoader
+
+            tree = yaml.load(fhandle, Loader=SafeLoader)
+        else:
+            import json
+
+            tree = json.load(fhandle)
+
+    cp2k_generator = CP2KInputGenerator("cp2k_input.xml")
+
+    for line in cp2k_generator.line_iter(tree):
+        print(line)
