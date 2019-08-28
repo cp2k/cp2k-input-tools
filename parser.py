@@ -206,6 +206,10 @@ class CP2KInputParser:
 
             repeats = True if sec.get("repeats") == "yes" else False
 
+            # CP2K uses the same names for keywords and sections (in the same section), prefix sections
+            # using the '+' allows for unquoted section names in YAML
+            section_name = f"+{section_name}"
+
             if section_name not in self._treerefs[-1]:
                 self._treerefs[-1][section_name] = {}
                 self._treerefs += [self._treerefs[-1][section_name]]
