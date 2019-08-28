@@ -3,6 +3,4 @@
    PROJECT "fatman.calc"
    RUN_TYPE ENERGY
 &END GLOBAL
-@if yes /= yes
 @include "test02.fragment.inp"
-@endif
