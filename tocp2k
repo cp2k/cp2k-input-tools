@@ -3,7 +3,7 @@
 
 import argparse
 
-from generator import CP2KInputGenerator
+from cp2k_input.generator import CP2KInputGenerator
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

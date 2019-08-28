@@ -5,8 +5,8 @@ import argparse
 import sys
 import re
 
-from parser import CP2KInputParser
-from tokenizer import PreprocessorError, TokenizerError
+from cp2k_input.parser import CP2KInputParser
+from cp2k_input.tokenizer import PreprocessorError, TokenizerError
 
 
 if __name__ == '__main__':

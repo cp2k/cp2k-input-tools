@@ -4,7 +4,7 @@
 import re
 import xml.etree.ElementTree as ET
 
-from tokenizer import CP2KInputTokenizer
+from .tokenizer import CP2KInputTokenizer
 
 
 def parse_dt_kw(element):
