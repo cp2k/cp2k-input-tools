@@ -5,6 +5,14 @@ import argparse
 
 from cp2k_input.parser import CP2KInputParser
 
+
+def key_trafo(string):
+    if len(string) <= 3:
+        return string.upper()
+
+    return string.lower()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Convert CP2K input to JSON (default) or YAML"
@@ -13,7 +21,7 @@ if __name__ == "__main__":
     parser.add_argument("-y", "--yaml", action="store_true")
     args = parser.parse_args()
 
-    cp2k_parser = CP2KInputParser("cp2k_input.xml")
+    cp2k_parser = CP2KInputParser("cp2k_input.xml", key_trafo=key_trafo)
 
     with open(args.file, "r") as fhandle:
         tree = cp2k_parser.parse(fhandle)

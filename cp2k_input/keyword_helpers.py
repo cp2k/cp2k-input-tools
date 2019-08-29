@@ -65,7 +65,7 @@ def get_datatype(kw_node):
 Keyword = collections.namedtuple("Keyword", ["name", "repeats", "values"])
 
 
-def parse_keyword(kw_node, vstring):
+def parse_keyword(kw_node, vstring, key_trafo=str):
     datatype = get_datatype(kw_node)
 
     # for a string datatype, no tokenization shall be done
@@ -110,6 +110,10 @@ def parse_keyword(kw_node, vstring):
 
         value = datatype.parser(token)
 
+        if datatype.type == "keyword":
+            # keywords are also matched case insensitive, apply the same rules as for the keys
+            value = key_trafo(value)
+
         assert (
             current_unit == default_unit
         ), f"unit conversion not (yet) implemented (keyword: '{key}')"
@@ -130,8 +134,12 @@ def parse_keyword(kw_node, vstring):
     if len(values) == 1:
         values = values[0]
 
+    key_name = kw_node.find("./NAME[@type='default']").text
+    if key_name == "DEFAULT_KEYWORD":
+        key_name = "*"
+
     return Keyword(
-        kw_node.find("./NAME[@type='default']").text,
+        key_trafo(key_name),
         True if kw_node.get("repeats") == "yes" else False,
         values,
     )

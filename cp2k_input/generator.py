@@ -1,3 +1,5 @@
+
+import re
 import collections
 import xml.etree.ElementTree as ET
 
@@ -66,18 +68,28 @@ class CP2KInputGenerator:
         kind = dt.get("kind")
         n_var = int(dt.find("./N_VAR").text)
 
+        def word_renderer(string):
+            # words with whitespaces need to be quoted
+            if re.search(r"\s", string):
+                return f"\"{string}\""
+
+            return string
+
+        def bool_renderer(string):
+            # TODO: better check for passed values
+            if bool(string):
+                return ".TRUE."
+
+            return ".FALSE."
+
         TYPE_RENDERERS = {
             "integer": lambda v: str(v),
             "keyword": lambda v: v,
-            "logical": lambda v: ".TRUE."
-            if bool(v)
-            else ".FALSE.",  # TODO: better check for passed values
+            "logical": bool_renderer,
             "real": lambda v: str(v),
             "string": lambda v: v,
-            "word": lambda v: v,
+            "word": word_renderer,
         }
-
-        # print(f"repeats: {repeats}, n_var: {n_var}, is_list: {isinstance(value, list)}")
 
         if isinstance(value, list):
             if not repeats and n_var == 1:
@@ -86,7 +98,6 @@ class CP2KInputGenerator:
                 )
 
             nested_list = any(isinstance(v, list) for v in value)
-            # print(f"nested_list: {nested_list}")
 
             if repeats and n_var == 1 and nested_list:
                 raise GeneratorError(
@@ -139,16 +150,15 @@ class CP2KInputGenerator:
             for key, value in content.items():
                 section = None
 
-                # a section can be explicitly tagged by a starting + or &, or implicitly by having a dict value
-                if key[0] in "&+":
+                if key.startswith(("&", "+")):  # a section can be explicitly tagged by a starting + or &
                     section_name = key[1:].upper()
                     section = self._get_section(section_name, value, node)
-                elif isinstance(value, dict):
+                elif isinstance(value, dict) or (isinstance(value, list) and isinstance(value[0], dict)):  # or implicitly by having a dict or list of dicts value
                     section_name = key.upper()
                     section = self._get_section(section_name, value, node)
 
+                # if key being parsed points to a section (resp. multiple repeated sections, add them to the stack)
                 if section:
-                    # if key being parsed points to a section (resp. multiple repeated sections, add them to the stack)
                     if isinstance(value, list):
                         treerefs += [
                             TreeNode(
@@ -179,9 +189,11 @@ class CP2KInputGenerator:
 
                     continue
 
-                keyword = self._get_keyword(key.upper(), node)
+                key_name = key.upper()
+
+                keyword = self._get_keyword(key_name, node)
                 for valuestr in self._render_keyword(value, keyword):
-                    yield f"{str():>{indent + self._shift}}{key} {valuestr}"
+                    yield f"{str():>{indent + self._shift}}{key_name} {valuestr}"
 
             if treerefs:
                 next_indent = treerefs[-1].indent

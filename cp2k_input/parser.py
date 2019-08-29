@@ -38,7 +38,7 @@ _INCLUDE_MATCH = re.compile(
 
 
 class CP2KInputParser:
-    def __init__(self, xmlspec):
+    def __init__(self, xmlspec, key_trafo=str.lower):
         # schema:
         self._parse_tree = ET.parse(xmlspec)
         self._nodes = [self._parse_tree.getroot()]
@@ -46,6 +46,7 @@ class CP2KInputParser:
         # datatree being generated:
         self._tree = {}
         self._treerefs = [self._tree]
+        self._key_trafo = key_trafo
 
         # file handling:
         self._lineiter = MultiFileLineIterator()
@@ -58,6 +59,7 @@ class CP2KInputParser:
         match = _SECTION_MATCH.match(entry.line)
 
         section_name = match.group("name").upper()
+        section_key = self._key_trafo(section_name)
         section_param = match.group("param")
 
         if section_name == "END":
@@ -86,35 +88,37 @@ class CP2KInputParser:
         ]  # add the current XML section node to the stack of nodes
         repeats = True if section_node.get("repeats") == "yes" else False
 
-        # CP2K uses the same names for keywords and sections (in the same section), prefix sections
-        # using the '+' allows for unquoted section names in YAML
-        section_name = f"+{section_name}"
+        # CP2K uses the same names for keywords and sections (in the same section)
+        # if the keyword is already present but not as a section (or list of sections),
+        # prefix the section name to resolve the ambiguity in the output format
+        if (section_key in self._treerefs[-1]) and not (
+            isinstance(self._treerefs[-1][section_key], dict) or (isinstance(self._treerefs[-1][section_key], list) and isinstance(self._treerefs[-1][section_key][0], dict))):
+            # prefix sections using the '+' allows for unquoted section names in YAML
+            section_key = f"+{section_key}"
 
-        if section_name not in self._treerefs[-1]:
+        if section_key not in self._treerefs[-1]:
             # if we encounter this section the first time, simply add it
-            self._treerefs[-1][section_name] = {}
-            self._treerefs += [self._treerefs[-1][section_name]]
+            self._treerefs[-1][section_key] = {}
+            self._treerefs += [self._treerefs[-1][section_key]]
 
         elif repeats:
             # if we already have it AND it is in fact a repeating section
-            if isinstance(self._treerefs[-1][section_name], list):
+            if isinstance(self._treerefs[-1][section_key], list):
                 # if the entry is already a list, then simply add a new empty dict for this section
-                self._treerefs[-1][section_name] += [{}]
+                self._treerefs[-1][section_key] += [{}]
             else:
                 # if the entry is not yet a list, convert it to one
-                self._treerefs[-1][section_name] = [
-                    self._treerefs[-1][section_name],
+                self._treerefs[-1][section_key] = [
+                    self._treerefs[-1][section_key],
                     {},
                 ]
 
             # the next entry in the stack shall be our newly created section
-            self._treerefs += [self._treerefs[-1][section_name][-1]]
+            self._treerefs += [self._treerefs[-1][section_key][-1]]
 
         else:
             raise InvalidNameError(
-                f"the section '{section_name}' can not be defined multiple times:",
-                section_token,
-            )
+                f"the section '{section_name}' can not be defined multiple times")
 
         # check whether we got a parameter for the section and validate it
         param_node = section_node.find("./SECTION_PARAMETERS")
@@ -145,7 +149,13 @@ class CP2KInputParser:
                 "invalid keyword specified and no default keyword for this section"
             )
 
-        kw = parse_keyword(kw_node, kw_value)
+        kw = parse_keyword(kw_node, kw_value, self._key_trafo)
+
+        # if there is already a section with the same name as this key
+        if (kw.name in self._treerefs[-1]) and (
+            isinstance(self._treerefs[-1][kw.name], dict) or (isinstance(self._treerefs[-1][kw.name], list) and isinstance(self._treerefs[-1][kw.name][0], dict))):
+            # prefix that sections key with a '+' (see also the similar thing in the sections above)
+            self._treerefs[-1][f"+{kw.name}"] = self._treerefs[-1].pop(kw.name)
 
         if kw.name not in self._treerefs[-1]:
             # even if it is a repeating element, store it as a single value first
