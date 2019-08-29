@@ -2,318 +2,333 @@
 # coding: utf-8
 
 import re
+import collections
 import xml.etree.ElementTree as ET
 
-from .tokenizer import CP2KInputTokenizer
+from .tokenizer import tokenize, Context, TokenizerError
+from .lineiterator import MultiFileLineIterator
+from .keyword_helpers import parse_keyword
+from .parser_errors import *
 
 
-def parse_dt_kw(element):
-    return {
-        "type": "keyword",
-        "n_var": int(element.find("./N_VAR").text),
-        "items": [e.text for e in element.iterfind(".//NAME")],
-    }
+def _find_node_by_name(parent, tag, name):
+    """check all specified nodes for matching names or aliases in the NAME tag"""
+
+    for node in parent.iterfind(f"./{tag}"):
+        if name.upper() in [e.text for e in node.iterfind("./NAME")]:
+            return node
+
+    return None
 
 
-TYPE_PARSERS = {
-    "integer": lambda e: {"type": "integer", "n_var": int(e.find("./N_VAR").text)},
-    "keyword": parse_dt_kw,
-    "logical": lambda e: {"type": "logical", "n_var": int(e.find("./N_VAR").text)},
-    "real": lambda e: {"type": "real", "n_var": int(e.find("./N_VAR").text)},
-    "string": lambda e: {"type": "string", "n_var": int(e.find("./N_VAR").text)},
-    "word": lambda e: {"type": "word", "n_var": int(e.find("./N_VAR").text)},
-}
+_Variable = collections.namedtuple("Variable", ["value", "ctx"])
+_ConditionalBlock = collections.namedtuple("ConditionalBlock", ["condition", "ctx"])
 
 
-class ParserError(Exception):
-    pass
+_SECTION_MATCH = re.compile(r"&(?P<name>[\w\-_]+)\s*(?P<param>.*)")
+_KEYWORD_MATCH = re.compile(r"(?P<name>[\w\-_]+)\s*(?P<value>.*)")
 
-
-class InvalidNameError(ParserError):
-    pass
-
-
-class SectionMismatchError(ParserError):
-    pass
-
-
-class InvalidParameterError(ParserError):
-    pass
-
-
-class NameRepetitionError(ParserError):
-    pass
-
-
-def bool_kw_converter(string):
-    string = string.upper()
-
-    if string in ("0", "F", ".F.", "FALSE", ".FALSE.", "N", "NO", "OFF"):
-        return False
-
-    if string in ("1", "T", ".T.", "TRUE", ".TRUE.", "Y", "YES", "ON"):
-        return True
-
-    raise InvalidParameterError(f"invalid value given for a boolean: '{string}'")
-
-
-def string_kw_converter(string):
-    return string.strip("'\"")
-
-
-FORTRAN_REAL = re.compile(r"(\d*\.\d+)[dD]([-+]?\d+)")
-
-
-def real_kw_converter(string):
-    return float(FORTRAN_REAL.sub(r"\1e\2", string))
-
-
-KW_VALUE_CONVERTERS = {
-    "keyword": string_kw_converter,
-    "logical": bool_kw_converter,
-    "integer": int,
-    "real": real_kw_converter,
-    "word": string_kw_converter,
-    "string": string_kw_converter,
-}
-
-
-def parse_tokens(element, tokens, key=None):
-    if not key:
-        # do not use tokens.pop(0) here since it is a reference and it might still be needed
-        key = tokens[0].string
-        tokens = tokens[1:]
-
-    if key not in [e.text for e in element.iterfind("./NAME")]:
-        raise InvalidNameError(f"invalid key name '{key}'")
-
-    dt = element.find("./DATA_TYPE")
-    dt_kind = dt.get("kind")
-
-    type_info = TYPE_PARSERS[dt_kind](dt)
-    kw_type = type_info["type"]
-    value_converter = KW_VALUE_CONVERTERS[kw_type]
-
-    default_value = None
-    try:
-        default_value = element.find("./DEFAULT_VALUE").text
-        default_value = value_converter(default_value)
-    except AttributeError:
-        pass
-
-    lone_keyword_value = None
-    try:
-        lone_keyword_value = element.find("./LONE_KEYWORD_VALUE").text
-        lone_keyword_value = value_converter(lone_keyword_value)
-    except AttributeError:
-        pass
-
-    if not tokens:
-        if not lone_keyword_value:
-            raise InvalidParameterError(
-                f"the keyword '{key}' expects at least one value"
-            )
-
-        tokens = [lone_keyword_value]
-
-    default_unit = None
-    try:
-        default_unit = element.find("./DEFAULT_UNIT").text
-    except AttributeError:
-        pass
-    current_unit = default_unit
-
-    values = []
-
-    for token in tokens:
-        if token.string.startswith("["):
-            if not default_unit:
-                raise InvalidParameterError(
-                    f"unit specified for value in keyword '{key}', but no default unit available"
-                )
-            current_unit = token.string.strip("[]")
-            continue
-
-        value = value_converter(token.string)
-
-        assert (
-            current_unit == default_unit
-        ), f"unit conversion not (yet) implemented (keyword: '{key}')"
-
-        values += [value]
-
-    if not values:
-        raise InvalidParameterError(
-            f"the keyword '{key}' expects at least one value, only a unit spec was given"
-        )
-
-    if (type_info["n_var"] > 0) and (type_info["n_var"] != len(values)):
-        raise InvalidParameterError(
-            f"the keyword '{key}' expects exactly {type_info['n_var']} values, {len(values)} were given"
-        )
-
-    # simplify the value if only one is given/requested
-    if len(values) == 1:
-        values = values[0]
-
-    return {
-        "name": element.find("./NAME[@type='default']").text,
-        "aliases": [e.text for e in element.findall("./NAME[@type='alias']")],
-        "repeats": True if element.get("repeats") == "yes" else False,
-        "default_value": default_value,
-        "lone_keyword_value": lone_keyword_value,
-        "type": type_info,
-        "values": values,
-    }
+_CONDITIONAL_MATCH = re.compile(
+    r"\s*@(?P<stmt>IF|ENDIF)\s*(?P<cond>.*)", flags=re.IGNORECASE
+)
+_SET_MATCH = re.compile(r"\s*@SET\s+(?P<var>\w+)\s+(?P<value>.+)", flags=re.IGNORECASE)
+_INCLUDE_MATCH = re.compile(
+    r"\s*@INCLUDE\s+(?P<file>('[^']+')|(\"[^']+\")|[^'\"].*)", flags=re.IGNORECASE
+)
 
 
 class CP2KInputParser:
     def __init__(self, xmlspec):
-
-        self._tokenizer = CP2KInputTokenizer()
+        # schema:
         self._parse_tree = ET.parse(xmlspec)
         self._nodes = [self._parse_tree.getroot()]
+
+        # datatree being generated:
         self._tree = {}
         self._treerefs = [self._tree]
 
-    def _parse_section(self, tokens):
-        section_token = tokens.pop(0)
-        section_name = section_token.string[1:].upper()
+        # file handling:
+        self._lineiter = MultiFileLineIterator()
+
+        # preprocessor state:
+        self._varstack = {}
+        self._conditional_block = None
+
+    def _parse_as_section(self, entry):
+        match = _SECTION_MATCH.match(entry.line)
+
+        section_name = match.group("name").upper()
+        section_param = match.group("param")
 
         if section_name == "END":
-            if tokens and tokens[0].string.upper() not in [
+            section_param = section_param.rstrip()
+
+            if section_param and section_param.upper() not in [
                 e.text for e in self._nodes[-1].iterfind("./NAME")
             ]:
                 raise SectionMismatchError(
-                    "could not match open section with name:", tokens[0]
+                    "could not match open section with name:", section_param
                 )
 
-            if len(tokens) > 1:
-                raise ParserError("garbage at section end:", tokens[1:])
-
+            # if the END param was a match or none was specified, go a level up
             self._nodes.pop()
             self._treerefs.pop()
             return
 
         # check all section nodes for matching names or aliases
-        for sec in self._nodes[-1].iterfind("./SECTION"):
-            if section_name not in [e.text for e in sec.iterfind("./NAME")]:
-                continue
+        section_node = _find_node_by_name(self._nodes[-1], "SECTION", section_name)
 
-            self._nodes += [
-                sec
-            ]  # add the current XML section node to the stack of nodes
+        if not section_node:
+            raise ParserError(f"invalid section '{section_name}'")
 
-            repeats = True if sec.get("repeats") == "yes" else False
+        self._nodes += [
+            section_node
+        ]  # add the current XML section node to the stack of nodes
+        repeats = True if section_node.get("repeats") == "yes" else False
 
-            # CP2K uses the same names for keywords and sections (in the same section), prefix sections
-            # using the '+' allows for unquoted section names in YAML
-            section_name = f"+{section_name}"
+        # CP2K uses the same names for keywords and sections (in the same section), prefix sections
+        # using the '+' allows for unquoted section names in YAML
+        section_name = f"+{section_name}"
 
-            if section_name not in self._treerefs[-1]:
-                self._treerefs[-1][section_name] = {}
-                self._treerefs += [self._treerefs[-1][section_name]]
+        if section_name not in self._treerefs[-1]:
+            # if we encounter this section the first time, simply add it
+            self._treerefs[-1][section_name] = {}
+            self._treerefs += [self._treerefs[-1][section_name]]
 
-            elif repeats:
-                if isinstance(self._treerefs[-1][section_name], list):
-                    self._treerefs[-1][section_name] += [{}]
-                else:
-                    self._treerefs[-1][section_name] = [self._treerefs[-1][section_name], {}]
-
-                self._treerefs += [self._treerefs[-1][section_name][-1]]
-
+        elif repeats:
+            # if we already have it AND it is in fact a repeating section
+            if isinstance(self._treerefs[-1][section_name], list):
+                # if the entry is already a list, then simply add a new empty dict for this section
+                self._treerefs[-1][section_name] += [{}]
             else:
-                raise InvalidNameError(
-                    f"the section '{section_name}' can not be defined multiple times:",
-                    section_token,
-                )
+                # if the entry is not yet a list, convert it to one
+                self._treerefs[-1][section_name] = [
+                    self._treerefs[-1][section_name],
+                    {},
+                ]
 
-            # check whether we got a parameter for the section and validate it
-            param = sec.find("./SECTION_PARAMETERS")
-            if param:  # validate the section parameter like a kw datatype
-                # there is no way we get a second section parameter, assign directly
-                self._treerefs[-1]["_"] = parse_tokens(
-                    param, tokens, "SECTION_PARAMETERS"
-                )["values"]
+            # the next entry in the stack shall be our newly created section
+            self._treerefs += [self._treerefs[-1][section_name][-1]]
 
-            break
         else:
-            raise RuntimeError(f"invalid section '{section_name}'", section_token)
+            raise InvalidNameError(
+                f"the section '{section_name}' can not be defined multiple times:",
+                section_token,
+            )
 
-    def _parse_keyword(self, tokens):
-        keyword_token = tokens[0]
-        keyword_name = keyword_token.string.upper()
-        default_kw = None
+        # check whether we got a parameter for the section and validate it
+        param_node = section_node.find("./SECTION_PARAMETERS")
+        if param_node:  # validate the section parameter like a kw datatype
+            # there is no way we get a second section parameter, assign directly
+            self._treerefs[-1]["_"] = parse_keyword(param_node, section_param).values
+        elif section_param:
+            raise ParserError("section parameters given for non-parametrized section")
 
-        for kw in self._nodes[-1].iterfind("./KEYWORD"):
+    def _parse_as_keyword(self, entry):
+        match = _KEYWORD_MATCH.match(entry.line)
+
+        kw_name = match.group("name").upper()
+        kw_value = match.group("value")
+
+        kw_node = _find_node_by_name(self._nodes[-1], "KEYWORD", kw_name)
+
+        # if no keyword with the given name has been found, check for a default keyword for this section
+        if not kw_node:
+            kw_node = _find_node_by_name(
+                self._nodes[-1], "DEFAULT_KEYWORD", "DEFAULT_KEYWORD"
+            )
+            if kw_node:  # for default keywords, the whole line is the value
+                kw_value = entry.line
+
+        if not kw_node:
+            raise InvalidNameError(
+                "invalid keyword specified and no default keyword for this section"
+            )
+
+        kw = parse_keyword(kw_node, kw_value)
+
+        if kw.name not in self._treerefs[-1]:
+            # even if it is a repeating element, store it as a single value first
+            self._treerefs[-1][kw.name] = kw.values
+
+        elif kw.repeats:  # if the keyword already exists and is a repeating element
+            if isinstance(self._treerefs[-1][kw.name], list):
+                # ... and is already a list, simply append
+                self._treerefs[-1][kw.name] += [kw.values]
+            else:
+                # ... otherwise turn it into a list now
+                self._treerefs[-1][kw.name] = [self._treerefs[-1][kw.name], kw.values]
+
+        else:
+            # TODO: improve error message
+            raise NameRepetitionError(
+                f"the keyword '{kw.name}' can only be mentioned once"
+            )
+
+    def _resolve_variables(self, line):
+        var_start = 0
+        var_end = 0
+
+        ctx = Context(line=line)
+
+        # the following algorithm is from CP2Ks cp_parser_inpp_methods.F to reproduce its behavior :(
+
+        # first replace all "${...}"  with no nesting, meaning that ${foo${bar}} means foo$bar is the key
+        while True:
+            var_start = line.find("${", var_end)
+            if var_start < 0:
+                break
+
+            var_end = line.find("}", var_start + 2)
+            if var_end < 0:
+                ctx["colnr"] = len(line) - 1
+                ctx["ref_colnr"] = var_start
+                raise PreprocessorError(f"unterminated variable", ctx)
+
+            key = line[var_start + 2 : var_end]  # without ${ and }
             try:
-                data = parse_tokens(kw, tokens)
+                value = self._varstack[key.upper()].value
+            except KeyError:
+                ctx["colnr"] = var_start
+                ctx["ref_colnr"] = var_end
+                raise PreprocessorError(f"undefined variable '{key}'", ctx) from None
 
-                if data["name"] not in self._treerefs[-1]:
-                    # even if it is a repeating element, store it as a single value first
-                    self._treerefs[-1][data["name"]] = data["values"]
+            line = f"{line[:var_start]}{value}{line[var_end+1:]}"
 
-                # if the keyword already exists and is a repeating element
-                elif data["repeats"]:
-                    if isinstance(self._treerefs[-1][data["name"]], list):
-                        # ... and already a list, simply append
-                        self._treerefs[-1][data["name"]] += [data["values"]]
-                    else:
-                        # ... otherwise turn it into a list now
-                        self._treerefs[-1][data["name"]] = [self._treerefs[-1][data["name"]], data["values"]]
+        var_start = 0
+        var_end = 0
 
-                else:
-                    raise NameRepetitionError(
-                        f"the keyword '{keyword_name}' can only be mentioned once",
-                        keyword_token,
-                    )
+        while True:
+            var_start = line.find("$", var_end)
+            if var_start < 0:
+                break
 
-                    self._treerefs[-1][data["name"]] = data["values"]
+            var_end = line.find(" ", var_start + 1)
+            if var_end < 0:
+                # -1 would be the last entry, but in a range it is without the specified entry
+                var_end = len(line.rstrip())
 
-            except InvalidNameError:
-                # but let's see whether we found the DEFAULT_KEYWORD (could be used later)
-                if kw.find("./NAME[@type='default']").text == "DEFAULT_KEYWORD":
-                    default_kw = kw
+            key = line[var_start + 1 : var_end]
+            try:
+                value = self._varstack[key.upper()].value
+            except KeyError:
+                ctx["colnr"] = var_start
+                ctx["ref_colnr"] = var_end - 1
+                raise PreprocessorError(f"undefined variable '{key}'", ctx) from None
 
-                continue
+            line = f"{line[:var_start]}{value}{line[var_end+1:]}"
 
-            break
+        return line
 
-        else:
-            # no match so far, and if we didn't find a default keyword, then that's it
-            if not default_kw:
-                raise InvalidNameError(
-                    f"invalid keyword '{keyword_name}'", keyword_token
-                )
+    def _parse_preprocessor_instruction(self, line):
+        conditional_match = _CONDITIONAL_MATCH.match(line)
 
-            # if there is a default keyword, parse the data with that
-            data = parse_tokens(default_kw_node, tokens, "DEFAULT_KEYWORD")
+        ctx = Context(line=line)
 
-            if "*" not in self._treerefs[-1]:
-                self._treerefs[-1]["*"] = data["values"]
+        if conditional_match:
+            stmt = conditional_match.group("stmt")
+            condition = conditional_match.group("cond").strip()
 
-            elif data["repeats"]:
-                if isinstance(self._treerefs[-1]["*"], list):
-                    self._treerefs[-1]["*"] += [data["values"]]
-                else:
-                    self._treerefs[-1]["*"] = data[self._treerefs[-1]["*"], data["values"]]
+            if stmt.upper() == "ENDIF":
+                if self._conditional_block is None:
+                    raise PreprocessorError("found @ENDIF without a previous @IF", ctx)
 
+                # check for garbage which is not a comment, note: we're stricter than CP2K here
+                if condition and not condition.startswith("!"):
+                    ctx["colnr"] = conditional_match.start("cond")
+                    ctx["ref_colnr"] = conditional_match.end("cond")
+                    raise PreprocessorError("garbage found after @ENDIF", ctx)
+
+                self._conditional_block = None
             else:
-                raise NameRepetitionError(
-                    f"the default keyword in section '...' can only be used once",
-                    keyword_token,
-                )
+                if self._conditional_block is not None:
+                    ctx["ref_line"] = self._conditional_block.ctx["line"]
+                    raise PreprocessorError("nested @IF are not allowed", ctx)
+
+                # resolve any variables inside the condition
+                try:
+                    condition = self._resolve_variables(condition)
+                except PreprocessorError as exc:
+                    exc.args[1]["colnr"] += conditional_match.start("cond")
+                    exc.args[1]["ref_colnr"] += conditional_match.start("cond")
+                    raise
+
+                # prefix-whitespace are consumed in the regex, suffix with the strip() above
+                if not condition or condition == "0":
+                    self._conditional_block = ConditionalBlock(False, ctx)
+                elif "==" in condition:
+                    lhs, rhs = [s.strip() for s in condition.split("==", maxsplit=1)]
+                    self._conditional_block = ConditionalBlock(lhs == rhs, ctx)
+                elif "/=" in condition:
+                    lhs, rhs = [s.strip() for s in condition.split("/=", maxsplit=1)]
+                    self._conditional_block = ConditionalBlock(lhs != rhs, ctx)
+                else:
+                    self._conditional_block = ConditionalBlock(True, ctx)
+
+            return
+
+        if self._conditional_block and not self._conditional_block.condition:
+            return
+
+        set_match = _SET_MATCH.match(line)
+        if set_match:
+            # resolve other variables in the definition first
+            value = self._resolve_variables(set_match.group("value"))
+            self._varstack[set_match.group("var").upper()] = _Variable(value, ctx)
+            return
+
+        include_match = _INCLUDE_MATCH.match(line)
+        if include_match:
+            # resolve variables first
+            try:
+                filename = self._resolve_variables(include_match.group("file"))
+            except PreprocessorError as exc:
+                exc.args[1]["colnr"] += include_match.start("file")
+                exc.args[1]["ref_colnr"] += include_match.start("file")
+                raise
+
+            fhandle = open(filename.strip("'\""), "r")
+            self._lineiter.add_file(fhandle)
+
+            return
+
+        raise PreprocessorError(f"unknown preprocessor directive found", ctx)
 
     def parse(self, fhandle):
-        for tokens in self._tokenizer.token_iter(fhandle):
-            # filter all comments:
-            tokens = [t for t in tokens if t.string[0] not in "!#"]
-            if not tokens:
-                continue  # go to next if the comment was the only token
+        self._lineiter.add_file(fhandle)
 
-            if tokens[0].string.startswith("&"):
-                self._parse_section(tokens)
-            else:
-                self._parse_keyword(tokens)
+        try:
+            for entry in self._lineiter.lines():
+                # ignore all comments:
+                if entry.line.startswith(("!", "#")):
+                    continue
+
+                if entry.line.startswith("@"):
+                    self._parse_preprocessor_instruction(entry.line)
+                    continue
+
+                # ignore everything in a disable @IF/@ENDIF block
+                if self._conditional_block and not self._conditional_block.condition:
+                    continue
+
+                entry = entry._replace(line=self._resolve_variables(entry.line))
+
+                if entry.line.startswith("&"):
+                    self._parse_as_section(entry)
+                    continue
+
+                self._parse_as_keyword(entry)
+
+            if self._conditional_block is not None:
+                raise PreprocessorError(
+                    f"conditional block not closed at end of file",
+                    Context(ref_line=self._conditional_block.ctx["line"]),
+                )
+
+        except (PreprocessorError, TokenizerError) as exc:
+            exc.args[1]["filename"] = fhandle.name
+            exc.args[1]["linenr"] = linenr
+            exc.args[1]["line"] = line
+            raise
 
         return self._tree

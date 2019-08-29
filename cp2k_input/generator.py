@@ -1,4 +1,3 @@
-
 import collections
 import xml.etree.ElementTree as ET
 
@@ -70,30 +69,36 @@ class CP2KInputGenerator:
         TYPE_RENDERERS = {
             "integer": lambda v: str(v),
             "keyword": lambda v: v,
-            "logical": lambda v: ".TRUE." if bool(v) else ".FALSE.",  # TODO: better check for passed values
+            "logical": lambda v: ".TRUE."
+            if bool(v)
+            else ".FALSE.",  # TODO: better check for passed values
             "real": lambda v: str(v),
             "string": lambda v: v,
             "word": lambda v: v,
         }
 
-        #print(f"repeats: {repeats}, n_var: {n_var}, is_list: {isinstance(value, list)}")
+        # print(f"repeats: {repeats}, n_var: {n_var}, is_list: {isinstance(value, list)}")
 
         if isinstance(value, list):
             if not repeats and n_var == 1:
-                raise GeneratorError("got multiple values for non-repeating single-valued keyword")
+                raise GeneratorError(
+                    "got multiple values for non-repeating single-valued keyword"
+                )
 
             nested_list = any(isinstance(v, list) for v in value)
-            #print(f"nested_list: {nested_list}")
+            # print(f"nested_list: {nested_list}")
 
             if repeats and n_var == 1 and nested_list:
-                raise GeneratorError("got multiple values for repeating single-valued keyword")
+                raise GeneratorError(
+                    "got multiple values for repeating single-valued keyword"
+                )
 
             # if any of the values is a list itself we know the outer list to be for the repetion and the inner for the values
             # and we only have to ensure that those entries where the inner list is not a list but a single word are also a list
             if nested_list:
                 value = [v if isinstance(v, list) else [v] for v in value]
 
-            elif n_var ==1:
+            elif n_var == 1:
                 value = [[v] for v in value]
 
             else:
@@ -115,7 +120,6 @@ class CP2KInputGenerator:
 
         for entry in value:
             yield " ".join(TYPE_RENDERERS[kind](v) for v in entry)
-
 
     def line_iter(self, tree):
         treerefs = [TreeNode([""], tree, self._parse_tree.getroot(), -self._shift)]
@@ -146,9 +150,21 @@ class CP2KInputGenerator:
                 if section:
                     # if key being parsed points to a section (resp. multiple repeated sections, add them to the stack)
                     if isinstance(value, list):
-                        treerefs += [TreeNode(path + [section_name], v, section, indent + self._shift) for v in value]
+                        treerefs += [
+                            TreeNode(
+                                path + [section_name], v, section, indent + self._shift
+                            )
+                            for v in value
+                        ]
                     else:
-                        treerefs += [TreeNode(path + [section_name], value, section, indent + self._shift)]
+                        treerefs += [
+                            TreeNode(
+                                path + [section_name],
+                                value,
+                                section,
+                                indent + self._shift,
+                            )
+                        ]
 
                     continue
 
