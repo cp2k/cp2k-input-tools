@@ -16,8 +16,8 @@ DEFAULT_CP2K_INPUT_XML = pathlib.Path(__file__).resolve().parent.joinpath("cp2k_
 
 
 def cp2klint():
-    parser = argparse.ArgumentParser(description='Check the passed CP2K file for syntax errors')
-    parser.add_argument('file', metavar='<file>', type=str, help="CP2K input file")
+    parser = argparse.ArgumentParser(description="Check the passed CP2K file for syntax errors")
+    parser.add_argument("file", metavar="<file>", type=str, help="CP2K input file")
     args = parser.parse_args()
 
     cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
@@ -68,9 +68,7 @@ def _key_trafo(string):
 
 
 def fromcp2k():
-    parser = argparse.ArgumentParser(
-        description="Convert CP2K input to JSON (default) or YAML"
-    )
+    parser = argparse.ArgumentParser(description="Convert CP2K input to JSON (default) or YAML")
     parser.add_argument("file", metavar="<file>", type=str, help="CP2K input file")
     parser.add_argument("-y", "--yaml", action="store_true")
     args = parser.parse_args()
@@ -89,10 +87,9 @@ def fromcp2k():
 
         print(json.dumps(tree, indent=2))
 
+
 def tocp2k():
-    parser = argparse.ArgumentParser(
-        description="Convert JSON or YAML input to CP2K"
-    )
+    parser = argparse.ArgumentParser(description="Convert JSON or YAML input to CP2K")
     parser.add_argument("file", metavar="<file>", type=str, help="JSON or YAML input file")
     parser.add_argument("-y", "--yaml", action="store_true")
     args = parser.parse_args()

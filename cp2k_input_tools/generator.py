@@ -1,4 +1,3 @@
-
 import re
 import collections
 import xml.etree.ElementTree as ET
@@ -82,7 +81,7 @@ class CP2KInputGenerator:
         def word_renderer(string):
             # words with whitespaces need to be quoted
             if re.search(r"\s", string):
-                return f"\"{string}\""
+                return f'"{string}"'
 
             return string
 
@@ -104,16 +103,12 @@ class CP2KInputGenerator:
 
         if isinstance(value, list):
             if not repeats and n_var == 1:
-                raise InvalidKeywordDataError(
-                    "got multiple values for non-repeating single-valued keyword"
-                )
+                raise InvalidKeywordDataError("got multiple values for non-repeating single-valued keyword")
 
             nested_list = any(isinstance(v, list) for v in value)
 
             if repeats and n_var == 1 and nested_list:
-                raise InvalidKeywordDataError(
-                    "got multiple values for repeating single-valued keyword"
-                )
+                raise InvalidKeywordDataError("got multiple values for repeating single-valued keyword")
 
             # if any of the values is a list itself we know the outer list to be for the repetion and the inner for the values
             # and we only have to ensure that those entries where the inner list is not a list but a single word are also a list
@@ -154,10 +149,7 @@ class CP2KInputGenerator:
             if not all(isinstance(v, dict) for v in content):
                 raise InvalidSectionDataError("non-section value given in repeating section")
 
-            return [
-                TreeNode(path + [name], v, node, indent + self._shift)
-                for v in content
-            ]
+            return [TreeNode(path + [name], v, node, indent + self._shift) for v in content]
 
         if not isinstance(content, dict):
             # if the value does not match the one expected for a section
@@ -178,9 +170,16 @@ class CP2KInputGenerator:
         #     - _: H
         #       basis_set: ...
         # Given that all of the values in this dict are dicts themselves and they don't contain section parameters
-        if repeats and section_params and all(isinstance(v, dict) for v in content.values()) and not any("_" in v for v in content.values()):
+        if (
+            repeats
+            and section_params
+            and all(isinstance(v, dict) for v in content.values())
+            and not any("_" in v for v in content.values())
+        ):
             # return a list of sections with this param merged into the section as normal section parameter
-            return [TreeNode(path + [name], dict(_=param, **section), node, indent + self._shift) for param, section in content.items()]
+            return [
+                TreeNode(path + [name], dict(_=param, **section), node, indent + self._shift) for param, section in content.items()
+            ]
 
         return [TreeNode(path + [name], content, node, indent + self._shift)]
 

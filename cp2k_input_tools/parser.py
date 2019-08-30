@@ -28,13 +28,9 @@ _ConditionalBlock = collections.namedtuple("ConditionalBlock", ["condition", "ct
 _SECTION_MATCH = re.compile(r"&(?P<name>[\w\-_]+)\s*(?P<param>.*)")
 _KEYWORD_MATCH = re.compile(r"(?P<name>[\w\-_]+)\s*(?P<value>.*)")
 
-_CONDITIONAL_MATCH = re.compile(
-    r"\s*@(?P<stmt>IF|ENDIF)\s*(?P<cond>.*)", flags=re.IGNORECASE
-)
+_CONDITIONAL_MATCH = re.compile(r"\s*@(?P<stmt>IF|ENDIF)\s*(?P<cond>.*)", flags=re.IGNORECASE)
 _SET_MATCH = re.compile(r"\s*@SET\s+(?P<var>\w+)\s+(?P<value>.+)", flags=re.IGNORECASE)
-_INCLUDE_MATCH = re.compile(
-    r"\s*@INCLUDE\s+(?P<file>('[^']+')|(\"[^']+\")|[^'\"].*)", flags=re.IGNORECASE
-)
+_INCLUDE_MATCH = re.compile(r"\s*@INCLUDE\s+(?P<file>('[^']+')|(\"[^']+\")|[^'\"].*)", flags=re.IGNORECASE)
 
 
 class CP2KInputParser:
@@ -65,12 +61,8 @@ class CP2KInputParser:
         if section_name == "END":
             section_param = section_param.rstrip()
 
-            if section_param and section_param.upper() not in [
-                e.text for e in self._nodes[-1].iterfind("./NAME")
-            ]:
-                raise SectionMismatchError(
-                    "could not match open section with name:", section_param
-                )
+            if section_param and section_param.upper() not in [e.text for e in self._nodes[-1].iterfind("./NAME")]:
+                raise SectionMismatchError("could not match open section with name:", section_param)
 
             # if the END param was a match or none was specified, go a level up
             self._nodes.pop()
@@ -83,16 +75,16 @@ class CP2KInputParser:
         if not section_node:
             raise ParserError(f"invalid section '{section_name}'")
 
-        self._nodes += [
-            section_node
-        ]  # add the current XML section node to the stack of nodes
+        self._nodes += [section_node]  # add the current XML section node to the stack of nodes
         repeats = True if section_node.get("repeats") == "yes" else False
 
         # CP2K uses the same names for keywords and sections (in the same section)
         # if the keyword is already present but not as a section (or list of sections),
         # prefix the section name to resolve the ambiguity in the output format
         if (section_key in self._treerefs[-1]) and not (
-            isinstance(self._treerefs[-1][section_key], dict) or (isinstance(self._treerefs[-1][section_key], list) and isinstance(self._treerefs[-1][section_key][0], dict))):
+            isinstance(self._treerefs[-1][section_key], dict)
+            or (isinstance(self._treerefs[-1][section_key], list) and isinstance(self._treerefs[-1][section_key][0], dict))
+        ):
             # prefix sections using the '+' allows for unquoted section names in YAML
             section_key = f"+{section_key}"
 
@@ -108,17 +100,13 @@ class CP2KInputParser:
                 self._treerefs[-1][section_key] += [{}]
             else:
                 # if the entry is not yet a list, convert it to one
-                self._treerefs[-1][section_key] = [
-                    self._treerefs[-1][section_key],
-                    {},
-                ]
+                self._treerefs[-1][section_key] = [self._treerefs[-1][section_key], {}]
 
             # the next entry in the stack shall be our newly created section
             self._treerefs += [self._treerefs[-1][section_key][-1]]
 
         else:
-            raise InvalidNameError(
-                f"the section '{section_name}' can not be defined multiple times")
+            raise InvalidNameError(f"the section '{section_name}' can not be defined multiple times")
 
         # check whether we got a parameter for the section and validate it
         param_node = section_node.find("./SECTION_PARAMETERS")
@@ -138,22 +126,20 @@ class CP2KInputParser:
 
         # if no keyword with the given name has been found, check for a default keyword for this section
         if not kw_node:
-            kw_node = _find_node_by_name(
-                self._nodes[-1], "DEFAULT_KEYWORD", "DEFAULT_KEYWORD"
-            )
+            kw_node = _find_node_by_name(self._nodes[-1], "DEFAULT_KEYWORD", "DEFAULT_KEYWORD")
             if kw_node:  # for default keywords, the whole line is the value
                 kw_value = entry.line
 
         if not kw_node:
-            raise InvalidNameError(
-                "invalid keyword specified and no default keyword for this section"
-            )
+            raise InvalidNameError("invalid keyword specified and no default keyword for this section")
 
         kw = parse_keyword(kw_node, kw_value, self._key_trafo)
 
         # if there is already a section with the same name as this key
         if (kw.name in self._treerefs[-1]) and (
-            isinstance(self._treerefs[-1][kw.name], dict) or (isinstance(self._treerefs[-1][kw.name], list) and isinstance(self._treerefs[-1][kw.name][0], dict))):
+            isinstance(self._treerefs[-1][kw.name], dict)
+            or (isinstance(self._treerefs[-1][kw.name], list) and isinstance(self._treerefs[-1][kw.name][0], dict))
+        ):
             # prefix that sections key with a '+' (see also the similar thing in the sections above)
             self._treerefs[-1][f"+{kw.name}"] = self._treerefs[-1].pop(kw.name)
 
@@ -171,9 +157,7 @@ class CP2KInputParser:
 
         else:
             # TODO: improve error message
-            raise NameRepetitionError(
-                f"the keyword '{kw.name}' can only be mentioned once"
-            )
+            raise NameRepetitionError(f"the keyword '{kw.name}' can only be mentioned once")
 
     def _resolve_variables(self, line):
         var_start = 0
@@ -331,8 +315,7 @@ class CP2KInputParser:
 
             if self._conditional_block is not None:
                 raise PreprocessorError(
-                    f"conditional block not closed at end of file",
-                    Context(ref_line=self._conditional_block.ctx["line"]),
+                    f"conditional block not closed at end of file", Context(ref_line=self._conditional_block.ctx["line"])
                 )
 
         except (PreprocessorError, TokenizerError) as exc:

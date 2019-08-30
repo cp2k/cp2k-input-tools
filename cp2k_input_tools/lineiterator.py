@@ -5,9 +5,7 @@ def LineContinuationError(Exception):
     pass
 
 
-LineEntry = collections.namedtuple(
-    "LineEntry", ["line", "linenr", "starts", "colnrs", "fname"]
-)
+LineEntry = collections.namedtuple("LineEntry", ["line", "linenr", "starts", "colnrs", "fname"])
 
 
 def continuation_lines(fhandle):
@@ -19,9 +17,7 @@ def continuation_lines(fhandle):
 
     for linenr, raw_line in enumerate(fhandle):
         lstripped = raw_line.lstrip()  # CP2K consequently strips all left whitespace
-        colnrs += [
-            len(raw_line) - len(lstripped)
-        ]  # remember where the original colnr started
+        colnrs += [len(raw_line) - len(lstripped)]  # remember where the original colnr started
 
         # Python has universal line endings (always only \n)
         line += lstripped.rstrip("\n")
@@ -39,9 +35,7 @@ def continuation_lines(fhandle):
         line = ""
 
     if line:
-        raise LineContinuationError(
-            "stray line continuation at end of file", fhandle.name
-        )
+        raise LineContinuationError("stray line continuation at end of file", fhandle.name)
 
 
 _FileIterPair = collections.namedtuple("FileIterPair", ["fhandle", "iter"])

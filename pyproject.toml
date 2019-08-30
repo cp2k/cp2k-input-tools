@@ -19,3 +19,7 @@ tocp2k = 'cp2k_input_tools.cli:tocp2k'
 [build-system]
 requires = ["poetry>=1.0.0b1"]
 build-backend = "poetry.masonry.api"
+
+[tool.black]
+line-length = 132
+target_version = ['py36']

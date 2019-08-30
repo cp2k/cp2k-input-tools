@@ -84,9 +84,7 @@ def parse_keyword(kw_node, vstring, key_trafo=str):
 
     if not tokens:
         if not lone_keyword_value:
-            raise InvalidParameterError(
-                f"the keyword '{key}' expects at least one value"
-            )
+            raise InvalidParameterError(f"the keyword '{key}' expects at least one value")
 
         tokens = lone_keyword_value
 
@@ -102,9 +100,7 @@ def parse_keyword(kw_node, vstring, key_trafo=str):
     for token in tokens:
         if token.startswith("["):
             if not default_unit:
-                raise InvalidParameterError(
-                    f"unit specified for value in keyword '{key}', but no default unit available"
-                )
+                raise InvalidParameterError(f"unit specified for value in keyword '{key}', but no default unit available")
             current_unit = token.strip("[]")
             continue
 
@@ -114,21 +110,15 @@ def parse_keyword(kw_node, vstring, key_trafo=str):
             # keywords are also matched case insensitive, apply the same rules as for the keys
             value = key_trafo(value)
 
-        assert (
-            current_unit == default_unit
-        ), f"unit conversion not (yet) implemented (keyword: '{key}')"
+        assert current_unit == default_unit, f"unit conversion not (yet) implemented (keyword: '{key}')"
 
         values += [value]
 
     if not values:
-        raise InvalidParameterError(
-            f"the keyword '{key}' expects at least one value, only a unit spec was given"
-        )
+        raise InvalidParameterError(f"the keyword '{key}' expects at least one value, only a unit spec was given")
 
     if (datatype.n_var > 0) and (datatype.n_var != len(values)):
-        raise InvalidParameterError(
-            f"the keyword '{key}' expects exactly {type_info['n_var']} values, {len(values)} were given"
-        )
+        raise InvalidParameterError(f"the keyword '{key}' expects exactly {type_info['n_var']} values, {len(values)} were given")
 
     # simplify the value if only one is given/requested
     if len(values) == 1:
@@ -138,8 +128,4 @@ def parse_keyword(kw_node, vstring, key_trafo=str):
     if key_name == "DEFAULT_KEYWORD":
         key_name = "*"
 
-    return Keyword(
-        key_trafo(key_name),
-        True if kw_node.get("repeats") == "yes" else False,
-        values,
-    )
+    return Keyword(key_trafo(key_name), True if kw_node.get("repeats") == "yes" else False, values)
