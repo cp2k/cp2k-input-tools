@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "cp2k-input-tools"
+version = "0.1.0"
+description = "Python tools to handle CP2K input files"
+authors = ["Tiziano Müller <tiziano.mueller@chem.uzh.ch>"]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+transitions = "^0.7.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^3.0"
+
+[tool.poetry.scripts]
+cp2klint = 'cp2k_input_tools.cli:cp2klint'
+fromcp2k = 'cp2k_input_tools.cli:fromcp2k'
+tocp2k = 'cp2k_input_tools.cli:tocp2k'
+
+[build-system]
+requires = ["poetry>=1.0.0b1"]
+build-backend = "poetry.masonry.api"
