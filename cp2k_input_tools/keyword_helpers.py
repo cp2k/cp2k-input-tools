@@ -55,7 +55,7 @@ def get_datatype(kw_node):
     if kind == "keyword":
         # the keywords parser needs the list of valid keywords for verification
         valid_keywords = [e.text for e in kw_node.iterfind(".//NAME")]
-        parser = lambda v: kw_converter_keyword(v, valid_keywords)
+        parser = lambda v: kw_converter_keyword(v, valid_keywords)  # noqa
     else:
         parser = KW_VALUE_CONVERTERS[kind]
 
@@ -84,7 +84,7 @@ def parse_keyword(kw_node, vstring, key_trafo=str):
 
     if not tokens:
         if not lone_keyword_value:
-            raise InvalidParameterError(f"the keyword '{key}' expects at least one value")
+            raise InvalidParameterError("keyword expects at least one value")
 
         tokens = lone_keyword_value
 
@@ -100,7 +100,7 @@ def parse_keyword(kw_node, vstring, key_trafo=str):
     for token in tokens:
         if token.startswith("["):
             if not default_unit:
-                raise InvalidParameterError(f"unit specified for value in keyword '{key}', but no default unit available")
+                raise InvalidParameterError("unit specified for value in keyword, but no default unit available")
             current_unit = token.strip("[]")
             continue
 
@@ -110,15 +110,15 @@ def parse_keyword(kw_node, vstring, key_trafo=str):
             # keywords are also matched case insensitive, apply the same rules as for the keys
             value = key_trafo(value)
 
-        assert current_unit == default_unit, f"unit conversion not (yet) implemented (keyword: '{key}')"
+        assert current_unit == default_unit, "unit conversion not (yet) implemented"
 
         values += [value]
 
     if not values:
-        raise InvalidParameterError(f"the keyword '{key}' expects at least one value, only a unit spec was given")
+        raise InvalidParameterError(f"keyword expects at least one value, only a unit spec was given")
 
     if (datatype.n_var > 0) and (datatype.n_var != len(values)):
-        raise InvalidParameterError(f"the keyword '{key}' expects exactly {type_info['n_var']} values, {len(values)} were given")
+        raise InvalidParameterError(f"keyword expects exactly {datatype.n_var} values, {len(values)} were given")
 
     # simplify the value if only one is given/requested
     if len(values) == 1:

@@ -24,7 +24,7 @@ def cp2klint():
 
     with open(args.file, "r") as fhandle:
         try:
-            tree = cp2k_parser.parse(fhandle)
+            cp2k_parser.parse(fhandle)
         except (PreprocessorError, TokenizerError) as exc:
             ctx = exc.args[1]
             line = ctx["line"].rstrip()
@@ -33,7 +33,6 @@ def cp2klint():
             print(f"  {ctx['linenr']:>4}: {line}")
 
             if ctx["colnr"] is not None:
-                marker = ctx["colnr"]  # position of the marker
                 count = 0  # number of underline chars after (positiv) or before (negative) the marker if ref_colnr given
                 nchars = ctx["colnr"]  # relevant line length
 

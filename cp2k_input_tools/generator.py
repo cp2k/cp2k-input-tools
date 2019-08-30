@@ -158,7 +158,7 @@ class CP2KInputGenerator:
         section_params = None
         try:
             section_params = self._get_section_parameter(node)
-        except:
+        except SectionParametersNotFoundError:
             pass
 
         # if we have a repeating section taking section parameters, we also accept the format:
