@@ -45,6 +45,10 @@ class MultiFileLineIterator:
     def __init__(self):
         self._fileiterpairs = []
 
+    def __del__(self):
+        while self._fileiterpairs:
+            self._fileiterpairs.pop().fhandle.close()
+
     def add_file(self, fhandle):
         self._fileiterpairs += [_FileIterPair(fhandle, continuation_lines(fhandle))]
 

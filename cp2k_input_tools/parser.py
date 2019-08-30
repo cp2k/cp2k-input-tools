@@ -4,11 +4,12 @@
 import re
 import collections
 import xml.etree.ElementTree as ET
+import pathlib
 
-from .tokenizer import tokenize, Context, TokenizerError
+from .tokenizer import Context, TokenizerError
 from .lineiterator import MultiFileLineIterator
 from .keyword_helpers import parse_keyword
-from .parser_errors import *
+from .parser_errors import InvalidNameError, NameRepetitionError, SectionMismatchError, ParserError, PreprocessorError
 
 
 def _find_node_by_name(parent, tag, name):
@@ -34,7 +35,15 @@ _INCLUDE_MATCH = re.compile(r"\s*@INCLUDE\s+(?P<file>('[^']+')|(\"[^']+\")|[^'\"
 
 
 class CP2KInputParser:
-    def __init__(self, xmlspec, key_trafo=str.lower):
+    def __init__(self, xmlspec, base_dir=".", key_trafo=str.lower):
+        """
+        The CP2K input parser.
+
+        :param xmlspec: Path to the `cp2k_input.xml` file generated with `cp2k --xml`
+        :param base_dir: The base directory to be used for resolving `@include` directives
+        :param key_trafo: A function object used for mangling key names, must treat input case insensitive atm
+        """
+
         # schema:
         self._parse_tree = ET.parse(xmlspec)
         self._nodes = [self._parse_tree.getroot()]
@@ -50,6 +59,7 @@ class CP2KInputParser:
         # preprocessor state:
         self._varstack = {}
         self._conditional_block = None
+        self._base_inc_dir = pathlib.Path(base_dir)
 
     def _parse_as_section(self, entry):
         match = _SECTION_MATCH.match(entry.line)
@@ -249,15 +259,15 @@ class CP2KInputParser:
 
                 # prefix-whitespace are consumed in the regex, suffix with the strip() above
                 if not condition or condition == "0":
-                    self._conditional_block = ConditionalBlock(False, ctx)
+                    self._conditional_block = _ConditionalBlock(False, ctx)
                 elif "==" in condition:
                     lhs, rhs = [s.strip() for s in condition.split("==", maxsplit=1)]
-                    self._conditional_block = ConditionalBlock(lhs == rhs, ctx)
+                    self._conditional_block = _ConditionalBlock(lhs == rhs, ctx)
                 elif "/=" in condition:
                     lhs, rhs = [s.strip() for s in condition.split("/=", maxsplit=1)]
-                    self._conditional_block = ConditionalBlock(lhs != rhs, ctx)
+                    self._conditional_block = _ConditionalBlock(lhs != rhs, ctx)
                 else:
-                    self._conditional_block = ConditionalBlock(True, ctx)
+                    self._conditional_block = _ConditionalBlock(True, ctx)
 
             return
 
@@ -281,7 +291,9 @@ class CP2KInputParser:
                 exc.args[1]["ref_colnr"] += include_match.start("file")
                 raise
 
-            fhandle = open(filename.strip("'\""), "r")
+            # if the filename is an absolute path, joinpath uses that one
+            fhandle = open(self._base_inc_dir.joinpath(filename.strip("'\"")), "r")
+            # the _lineiter takes over the handle and closes it at EOF
             self._lineiter.add_file(fhandle)
 
             return
@@ -319,9 +331,9 @@ class CP2KInputParser:
                 )
 
         except (PreprocessorError, TokenizerError) as exc:
-            exc.args[1]["filename"] = fhandle.name
-            exc.args[1]["linenr"] = linenr
-            exc.args[1]["line"] = line
+            exc.args[1]["filename"] = entry.fname
+            exc.args[1]["linenr"] = entry.linenr
+            exc.args[1]["line"] = entry.line
             raise
 
         return self._tree
