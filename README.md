@@ -1,6 +1,12 @@
-# cp2k-input-parser
+# cp2k-input-tools
 
-PoC of a fully validating CP2K input file parser including preprocessing capabilities
+Fully validating pure-python CP2K input file parsers including preprocessing capabilities
+
+Available commands:
+
+* `cp2klint` .. a CP2K input file linter
+* `fromcp2k` .. create a JSON or YAML configuration file from a CP2K input file
+* `tocp2k` .. convert a JSON or YAML configuration back to CP2K's input file format
 
 ## Requirements
 
@@ -21,8 +27,3 @@ PoC of a fully validating CP2K input file parser including preprocessing capabil
 * [ ] preprocessor: losing original context when replacing variables
 * [ ] parser: unit conversion of values
 * [ ] parser: parsing the XML is sloooow (easily 70% of the time), pickle or generate Python code directly instead and keep XML parsing as backup?
-
-## Observations
-
-* nested if/endif blocks wouldn't be too difficult (needs sharing of state between nested tokenizers, similar stack building like in the parser for nodes)
-* CP2K doesn't do nested variable interpolation, wouldn't be so difficult either
