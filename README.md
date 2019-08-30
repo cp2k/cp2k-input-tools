@@ -1,5 +1,7 @@
 # cp2k-input-tools
 
+[![Build Status](https://travis-ci.com/dev-zero/cp2k-input-tools.svg?branch=develop)](https://travis-ci.com/dev-zero/cp2k-input-tools) [![codecov](https://codecov.io/gh/dev-zero/cp2k-input-tools/branch/develop/graph/badge.svg)](https://codecov.io/gh/dev-zero/cp2k-input-tools)
+
 Fully validating pure-python CP2K input file parsers including preprocessing capabilities
 
 Available commands:
