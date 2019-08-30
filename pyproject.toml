@@ -3,6 +3,17 @@ name = "cp2k-input-tools"
 version = "0.1.0"
 description = "Python tools to handle CP2K input files"
 authors = ["Tiziano Müller <tiziano.mueller@chem.uzh.ch>"]
+license = "MIT"
+classifiers = [
+    "Development Status :: 3 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Intended Audience :: Science/Research",
+]
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.6"
