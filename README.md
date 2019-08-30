@@ -15,6 +15,8 @@ Available commands:
 * Python 3.6+
 * https://pypi.org/project/transitions/
 
+For development: https://poetry.eustace.io/
+
 ## Idea
 
 * have a pure-python CP2K input file linter with proper syntax error reporting (context, etc.)
