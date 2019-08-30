@@ -10,16 +10,18 @@ transitions = "^0.7.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
+codecov = "^2.0.15"
+pytest-cov = "^2.7.1"
 
 [tool.poetry.scripts]
 cp2klint = 'cp2k_input_tools.cli:cp2klint'
 fromcp2k = 'cp2k_input_tools.cli:fromcp2k'
 tocp2k = 'cp2k_input_tools.cli:tocp2k'
 
+[tool.black]
+line-length = 132
+target_version = ['py36']
 [build-system]
 requires = ["poetry>=1.0.0b1"]
 build-backend = "poetry.masonry.api"
 
-[tool.black]
-line-length = 132
-target_version = ['py36']
