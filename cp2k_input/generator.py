@@ -8,6 +8,26 @@ class GeneratorError(Exception):
     pass
 
 
+class SectionNotFoundError(Exception):
+    pass
+
+
+class KeywordNotFoundError(Exception):
+    pass
+
+
+class SectionParametersNotFoundError(Exception):
+    pass
+
+
+class InvalidSectionDataError(Exception):
+    pass
+
+
+class InvalidKeywordDataError(Exception):
+    pass
+
+
 TreeNode = collections.namedtuple("TreeNode", ["name", "dictref", "xmlnode", "indent"])
 
 
@@ -16,21 +36,12 @@ class CP2KInputGenerator:
         self._parse_tree = ET.parse(xmlspec)
         self._shift = indent_shift
 
-    def _get_section(self, name, content, node):
+    def _get_section(self, name, node):
         for section in node.iterfind("./SECTION"):
             if name.upper() in [e.text for e in section.iterfind("./NAME")]:
                 break
         else:  # if we come to the end without a break:
-            raise GeneratorError("invalid section")
-
-        repeats = True if section.get("repeats") == "yes" else False
-
-        if repeats and not isinstance(content, (dict, list)):
-            # repeating sections can be list of dicts or directly dicts
-            raise GeneratorError("invalid repeating section")
-        elif not isinstance(content, dict):
-            # non-repeating sections can only be dicts
-            raise GeneratorError("invalid non-repeating section")
+            raise SectionNotFoundError()
 
         return section
 
@@ -40,7 +51,7 @@ class CP2KInputGenerator:
             if name.upper() in [e.text for e in kw.iterfind("./NAME")]:
                 break
         else:  # if we come to the end without a break:
-            raise GeneratorError(f"invalid keyword")
+            raise KeywordNotFoundError(f"keyword {name} not allowed")
 
         return kw
 
@@ -51,7 +62,7 @@ class CP2KInputGenerator:
         if sparam:
             return sparam
 
-        raise GeneratorError(f"invalid section parameter")
+        raise SectionParametersNotFoundError("section does not take any parameters")
 
     def _get_default_keyword(self, section_node):
         # there is only one
@@ -93,14 +104,14 @@ class CP2KInputGenerator:
 
         if isinstance(value, list):
             if not repeats and n_var == 1:
-                raise GeneratorError(
+                raise InvalidKeywordDataError(
                     "got multiple values for non-repeating single-valued keyword"
                 )
 
             nested_list = any(isinstance(v, list) for v in value)
 
             if repeats and n_var == 1 and nested_list:
-                raise GeneratorError(
+                raise InvalidKeywordDataError(
                     "got multiple values for repeating single-valued keyword"
                 )
 
@@ -132,6 +143,47 @@ class CP2KInputGenerator:
         for entry in value:
             yield " ".join(TYPE_RENDERERS[kind](v) for v in entry)
 
+    def _parse_section(self, name, node, path, content, indent):
+        repeats = True if node.get("repeats") == "yes" else False
+
+        # if a section contains a list, the only option is that it is a
+        if isinstance(content, list):
+            if not repeats:
+                raise InvalidSectionDataError("multiple entries given for non-repeating section")
+
+            if not all(isinstance(v, dict) for v in content):
+                raise InvalidSectionDataError("non-section value given in repeating section")
+
+            return [
+                TreeNode(path + [name], v, node, indent + self._shift)
+                for v in content
+            ]
+
+        if not isinstance(content, dict):
+            # if the value does not match the one expected for a section
+            raise InvalidSectionDataError()
+
+        section_params = None
+        try:
+            section_params = self._get_section_parameter(node)
+        except:
+            pass
+
+        # if we have a repeating section taking section parameters, we also accept the format:
+        #   kind:
+        #     H:
+        #       basis_set: ...
+        # instead of:
+        #   kind:
+        #     - _: H
+        #       basis_set: ...
+        # Given that all of the values in this dict are dicts themselves and they don't contain section parameters
+        if repeats and section_params and all(isinstance(v, dict) for v in content.values()) and not any("_" in v for v in content.values()):
+            # return a list of sections with this param merged into the section as normal section parameter
+            return [TreeNode(path + [name], dict(_=param, **section), node, indent + self._shift) for param, section in content.items()]
+
+        return [TreeNode(path + [name], content, node, indent + self._shift)]
+
     def line_iter(self, tree):
         treerefs = [TreeNode([""], tree, self._parse_tree.getroot(), -self._shift)]
 
@@ -152,31 +204,24 @@ class CP2KInputGenerator:
 
                 if key.startswith(("&", "+")):  # a section can be explicitly tagged by a starting + or &
                     section_name = key[1:].upper()
-                    section = self._get_section(section_name, value, node)
-                elif isinstance(value, dict) or (isinstance(value, list) and isinstance(value[0], dict)):  # or implicitly by having a dict or list of dicts value
+                else:
                     section_name = key.upper()
-                    section = self._get_section(section_name, value, node)
 
-                # if key being parsed points to a section (resp. multiple repeated sections, add them to the stack)
-                if section:
-                    if isinstance(value, list):
-                        treerefs += [
-                            TreeNode(
-                                path + [section_name], v, section, indent + self._shift
-                            )
-                            for v in value
-                        ]
-                    else:
-                        treerefs += [
-                            TreeNode(
-                                path + [section_name],
-                                value,
-                                section,
-                                indent + self._shift,
-                            )
-                        ]
-
+                try:
+                    # if key being parsed points to a section (resp. multiple repeated sections, add them to the stack)
+                    section = self._get_section(section_name, node)
+                    treerefs += self._parse_section(section_name, section, path, value, indent)
                     continue
+                except SectionNotFoundError:
+                    # if no section name was found then go on parsing it as a key
+                    pass
+                except InvalidSectionDataError as exc:
+                    # if the value for this key didn't match the one expected for a section
+                    # check whether there is also a key with the same name and if there is, continue
+                    try:
+                        self._get_keyword(section_name, node)
+                    except KeywordNotFoundError:
+                        raise exc from None
 
                 if key == "_":  # section parameters are handled above
                     continue
