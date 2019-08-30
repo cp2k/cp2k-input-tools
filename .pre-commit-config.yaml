@@ -1,0 +1,14 @@
+# # Install pre-commit hooks via
+# pre-commit install
+
+- repo: https://github.com/ambv/black
+  rev: stable
+  hooks:
+  - id: black
+    language_version: "python3"
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v2.3.0
+  hooks:
+  - id: flake8
+    language_version: "python3"
+    additional_dependencies: ["flake8-bugbear"]
