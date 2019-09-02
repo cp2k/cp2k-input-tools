@@ -5,7 +5,7 @@ description = "Python tools to handle CP2K input files"
 authors = ["Tiziano Müller <tiziano.mueller@chem.uzh.ch>"]
 license = "MIT"
 classifiers = [
-    "Development Status :: 3 - Beta",
+    "Development Status :: 4 - Beta",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Environment :: Console",
