@@ -1,0 +1,7 @@
+{
+  "global": {
+    "print_level": "medium",
+    "project_name": "fatman.calc",
+    "run_type": "energy"
+  }
+}
