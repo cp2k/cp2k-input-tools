@@ -28,4 +28,16 @@ def test_simple_inclusion():
         tree = cp2k_parser.parse(fhandle)
 
     assert isinstance(tree, dict)
+    assert "global" in tree
     assert "force_eval" in tree
+
+
+def test_conditional_inclusion():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML, base_dir=TEST_DIR.joinpath("inputs/"))
+
+    with open(TEST_DIR.joinpath("inputs/test03.inp"), "r") as fhandle:
+        tree = cp2k_parser.parse(fhandle)
+
+    assert isinstance(tree, dict)
+    assert "global" in tree
+    assert "force_eval" not in tree
