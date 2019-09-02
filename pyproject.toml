@@ -18,7 +18,11 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.6"
 transitions = "^0.7.0"
-pyyaml = {version = "^5.1.2", extras = ["yaml"]}
+pyyaml = {version = "^5.1.2", optional = true}
+
+[tool.poetry.extras]
+yaml = ["pyyaml"]
+
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
 codecov = "^2.0.15"
