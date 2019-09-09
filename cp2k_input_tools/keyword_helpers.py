@@ -54,7 +54,7 @@ def get_datatype(kw_node):
 
     if kind == "keyword":
         # the keywords parser needs the list of valid keywords for verification
-        valid_keywords = [e.text for e in kw_node.iterfind(".//NAME")]
+        valid_keywords = [e.text for e in dt.iterfind(".//NAME")]
         parser = lambda v: kw_converter_keyword(v, valid_keywords)  # noqa
     else:
         parser = KW_VALUE_CONVERTERS[kind]
