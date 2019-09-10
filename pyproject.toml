@@ -19,6 +19,7 @@ readme = "README.md"
 python = "^3.6"
 transitions = "^0.7.0"
 pyyaml = {version = "^5.1.2", optional = true}
+pint = "^0.9"
 
 [tool.poetry.extras]
 yaml = ["pyyaml"]

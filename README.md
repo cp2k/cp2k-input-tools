@@ -30,12 +30,10 @@ For development: https://poetry.eustace.io/
 
 ## TODOs
 
-* parser: improve error reporting with context (tokenizer/preprocessor is already done)
-* preprocessor: don't lose original context when interpolatin variables
-* parser: unit conversion of values
+* parser: improve error reporting with context
+* preprocessor: don't lose original context when interpolating variables
 * parser: parsing the XML is slow (easily 70% of the time), pickle or generate Python code directly instead and keep XML parsing as backup
-* parser: generate AST using an emitting (`yield`) parser for more flexibility
-* parser: support for canonical output format
+* parser: maybe generate AST using an emitting (`yield`) parser for more flexibility
 
 # The CP2K JSON and YAML formats
 
