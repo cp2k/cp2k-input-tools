@@ -287,9 +287,6 @@ class CP2KInputParser:
 
         raise PreprocessorError(f"unknown preprocessor directive found", ctx)
 
-    def _tree_cleanup(self):
-        pass
-
     def parse(self, fhandle):
         self._lineiter.add_file(fhandle)
 
@@ -325,8 +322,6 @@ class CP2KInputParser:
             exc.args[1]["linenr"] = entry.linenr
             exc.args[1]["line"] = entry.line
             raise
-
-        self._tree_cleanup()
 
         return self._tree
 
@@ -387,8 +382,11 @@ class CP2KInputParserSimplified(CP2KInputParser):
         else:
             raise InvalidNameError(f"the section '{section_key}' can not be defined multiple times")
 
-    def _tree_cleanup(self):
-        # this tree cleanup implements Rule #3 of the simplified format
+    def parse(self, fhandle):
+        super().parse(fhandle)
+
+        # implement Rule #3 of the simplified format, as a post-process step
+
         treerefs = [self._tree]
         nodes = [
             self._parse_tree.getroot()
@@ -441,3 +439,5 @@ class CP2KInputParserSimplified(CP2KInputParser):
                         nodes += [section_node] * len(value)
 
                 # else: it could still have been a keyword (cases where we have same name of sections and keywords)
+
+        return self._tree
