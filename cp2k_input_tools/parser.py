@@ -113,12 +113,13 @@ class CP2KInputParser:
         self._add_tree_section(section_key, repeats)
 
         # check whether we got a parameter for the section and validate it
-        param_node = section_node.find("./SECTION_PARAMETERS")
-        if param_node:  # validate the section parameter like a kw datatype
-            # there is no way we get a second section parameter, assign directly
-            self._treerefs[-1]["_"] = parse_keyword(param_node, section_param).values
-        elif section_param:
-            raise ParserError("section parameters given for non-parametrized section")
+        if section_param:
+            param_node = section_node.find("./SECTION_PARAMETERS")
+            if param_node:  # validate the section parameter like a kw datatype
+                # there is no way we get a second section parameter, assign directly
+                self._treerefs[-1]["_"] = parse_keyword(param_node, section_param).values
+            else:
+                raise ParserError("section parameters given for non-parametrized section")
 
     def _add_tree_keyword(self, kw):
         if kw.name not in self._treerefs[-1]:
@@ -398,7 +399,7 @@ class CP2KInputParserSimplified(CP2KInputParser):
             node = nodes.pop()
 
             for key, value in tree.items():
-                section_node = _find_node_by_name(node, "SECTION", key)
+                section_node = _find_node_by_name(node, "SECTION", key.lstrip("+"))
 
                 if not section_node:
                     # if the given key is a keyword, ignore it
@@ -409,10 +410,13 @@ class CP2KInputParserSimplified(CP2KInputParser):
                     for kw in itertools.chain(section_node.iterfind("./KEYWORD/NAME"), section_node.iterfind("./SECTION/NAME"))
                 ]
 
-                if isinstance(value, dict):  # found a single section
+                if isinstance(value, dict):  # found a single section (already simplified according to rule #2)
+
                     if "_" in value and not str(value["_"]).upper() in valid_keys:  # and one with a default parameter, transform it
                         tree[key] = {value["_"]: {k: v for k, v in value.items() if k != "_"}}
-                        treerefs += [tree[key]]
+                        treerefs += [
+                            tree[key][value["_"]]  # tree[key][value["_"]] is at this point not a valid section name anymore
+                        ]
                     else:
                         treerefs += [value]
 
@@ -420,15 +424,20 @@ class CP2KInputParserSimplified(CP2KInputParser):
 
                 elif isinstance(value, list) and isinstance(value[0], dict):  # found a repeated section
                     if (
-                        all("_" in d for d in value)
-                        and len(set(d["_"] for d in value)) == len(value)
-                        and not any(str(d["_"]).upper() in valid_keys for d in value)
+                        all("_" in d for d in value)  # check if all entries have a section parameter
+                        and len(set(d["_"] for d in value)) == len(value)  # check if the given section parameters are unique
+                        and not any(
+                            str(d["_"]).upper() in valid_keys for d in value
+                        )  # and that none of the section parameters collides with a keyword or section name
                     ):
-                        # if all the sections have a default parameter and the parameter is unique
-                        tree[key] = {d["_"]: {k: v for k, v in value.items() if k != "_"} for d in value}
-                        treerefs += [tree[key]]
-                        nodes += [section_node]
+                        tree[key] = {d["_"]: {k: v for k, v in d.items() if k != "_"} for d in value}
+                        treerefs += tree[
+                            key
+                        ].values()  # only add the values (sections) since the key names in here are not valid section names
+                        nodes += [section_node] * len(tree[key])
                     else:
                         # otherwise unpack the list
                         treerefs += value
                         nodes += [section_node] * len(value)
+
+                # else: it could still have been a keyword (cases where we have same name of sections and keywords)
