@@ -32,7 +32,7 @@ For development: https://poetry.eustace.io/
 
 * parser: improve error reporting with context
 * preprocessor: don't lose original context when interpolating variables
-* parser: parsing the XML is slow (easily 70% of the time), pickle or generate Python code directly instead and keep XML parsing as backup
+* parser: parsing the XML is slow (easily 70% of the time), pickle or generate Python code directly instead and keep XML parsing as fallback
 * parser: maybe generate AST using an emitting (`yield`) parser for more flexibility
 
 # The CP2K JSON and YAML formats
@@ -111,7 +111,7 @@ would generate the (canonical) JSON:
         "+xc_functional": {
           "_": "PBE"
         }
-      }
+      },
       "+subsys": {
         "cell": {
           "A": [ 4.07419, 0, 0 ],
