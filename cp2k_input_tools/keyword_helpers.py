@@ -1,8 +1,15 @@
 import collections
 import re
+import pathlib
+
+import pint
 
 from .parser_errors import InvalidParameterError
 from .tokenizer import tokenize
+
+
+UREG = pint.UnitRegistry()
+UREG.load_definitions(str(pathlib.Path(__file__).resolve().parent.joinpath("pint_units.txt")))
 
 
 def kw_converter_bool(string):
@@ -54,7 +61,7 @@ def get_datatype(kw_node):
 
     if kind == "keyword":
         # the keywords parser needs the list of valid keywords for verification
-        valid_keywords = [e.text for e in kw_node.iterfind(".//NAME")]
+        valid_keywords = [e.text for e in dt.iterfind(".//NAME")]
         parser = lambda v: kw_converter_keyword(v, valid_keywords)  # noqa
     else:
         parser = KW_VALUE_CONVERTERS[kind]
@@ -93,6 +100,10 @@ def parse_keyword(kw_node, vstring, key_trafo=str):
         default_unit = kw_node.find("./DEFAULT_UNIT").text
     except AttributeError:
         pass
+
+    if default_unit:
+        default_unit = UREG.parse_expression(default_unit)
+
     current_unit = default_unit
 
     values = []
@@ -101,7 +112,7 @@ def parse_keyword(kw_node, vstring, key_trafo=str):
         if token.startswith("["):
             if not default_unit:
                 raise InvalidParameterError("unit specified for value in keyword, but no default unit available")
-            current_unit = token.strip("[]")
+            current_unit = UREG.parse_expression(token.strip("[]"))
             continue
 
         value = datatype.parser(token)
@@ -110,7 +121,9 @@ def parse_keyword(kw_node, vstring, key_trafo=str):
             # keywords are also matched case insensitive, apply the same rules as for the keys
             value = key_trafo(value)
 
-        assert current_unit == default_unit, "unit conversion not (yet) implemented"
+        if current_unit != default_unit:
+            # interpret the given value in the specified unit, convert it and get the raw value
+            value = (value * current_unit).to(default_unit).magnitude
 
         values += [value]
 

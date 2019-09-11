@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cp2k-input-tools"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python tools to handle CP2K input files"
 authors = ["Tiziano Müller <tiziano.mueller@chem.uzh.ch>"]
 license = "MIT"
@@ -18,6 +18,11 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.6"
 transitions = "^0.7.0"
+pyyaml = {version = "^5.1.2", optional = true}
+pint = "^0.9"
+
+[tool.poetry.extras]
+yaml = ["pyyaml"]
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"

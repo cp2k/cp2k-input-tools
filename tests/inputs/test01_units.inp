@@ -1,0 +1,79 @@
+&FORCE_EVAL
+   METHOD Quickstep
+   &DFT
+      BASIS_SET_FILE_NAME "./BASIS_SETS"
+      POTENTIAL_FILE_NAME ./POTENTIALS
+      &KPOINTS
+         FULL_GRID .FALSE.
+         PARALLEL_GROUP_SIZE -1
+         #SCHEME MONKHORST-PACK 30 30 30
+         SCHEME MONKHORST-PACK 3 3 3
+         SYMMETRY .FALSE.
+      &END KPOINTS
+      &MGRID
+         CUTOFF 1000
+         REL_CUTOFF 100
+      &END MGRID
+      &POISSON
+         PERIODIC XYZ
+      &END POISSON
+      &PRINT
+         &OVERLAP_CONDITION ON
+            1-NORM .TRUE.
+            DIAGONALIZATION .TRUE.
+         &END OVERLAP_CONDITION
+      &END PRINT
+      &QS
+         EPS_DEFAULT 1e-16
+         EXTRAPOLATION USE_GUESS
+         METHOD GAPW
+      &END QS
+      &SCF
+         ADDED_MOS 40
+         EPS_SCF 1e-08
+         MAX_SCF 50
+         # &MIXING
+         #    ALPHA 0.6
+         #    BETA 1.0
+         #    NBROYDEN 15
+         #    METHOD BROYDEN_MIXING
+         # &END MIXING
+         &SMEAR True
+            ELECTRONIC_TEMPERATURE [K] 300
+            METHOD FERMI_DIRAC
+         &END SMEAR
+      &END SCF
+      &XC
+         &XC_FUNCTIONAL PBE
+         &END XC_FUNCTIONAL
+      &END XC
+   &END DFT
+   &SUBSYS
+      &CELL
+         A [bohr] 7.7 0.0 0.0
+         B [angstrom] 2.037095 3.52835204 0.0
+         C [angstrom] 2.037095 1.17611735 3.32656221
+         PERIODIC XYZ
+         &CELL_REF
+            A [angstrom] 4.32947291598 0.0 0.0
+            B [angstrom] 2.16473645799 3.7494335304 0.0
+            C [angstrom] 2.16473645799 1.24981118034 3.53499983838
+            PERIODIC XYZ
+         &END CELL_REF
+      &END CELL
+      &KIND Ge
+         ELEMENT Ge
+         POTENTIAL ALL-q32
+         BASIS_SET ORB pob-TZVP
+      &END KIND
+      &TOPOLOGY
+         COORD_FILE ./struct.xyz
+         COORD_FILE_FORMAT XYZ
+      &END TOPOLOGY
+   &END SUBSYS
+&END FORCE_EVAL
+&GLOBAL
+   PRINT_LEVEL MEDIUM
+   PROJECT fatman.calc
+   RUN_TYPE ENERGY
+&END GLOBAL

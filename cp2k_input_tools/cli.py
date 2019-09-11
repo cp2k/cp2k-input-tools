@@ -3,7 +3,7 @@ import sys
 import re
 import pathlib
 
-from .parser import CP2KInputParser
+from .parser import CP2KInputParser, CP2KInputParserSimplified
 from .parser_errors import PreprocessorError
 from .tokenizer import TokenizerError
 from .generator import CP2KInputGenerator
@@ -63,13 +63,36 @@ def _key_trafo(string):
     return string.lower()
 
 
+def _fromcp2k_trafo_arg(value):
+    if "auto" in value:
+        return _key_trafo
+    elif value == "lower":
+        return str.lower
+    elif value == "upper":
+        return str.upper
+    else:
+        raise argparse.ArgumentTypeError(f"unknown option '{value}'")
+
+
 def fromcp2k():
     parser = argparse.ArgumentParser(description="Convert CP2K input to JSON (default) or YAML")
     parser.add_argument("file", metavar="<file>", type=str, help="CP2K input file")
-    parser.add_argument("-y", "--yaml", action="store_true")
+    parser.add_argument("-y", "--yaml", action="store_true", help="output yaml instead of json")
+    parser.add_argument("-c", "--canonical", action="store_true", help="use the canonical output format")
+    parser.add_argument("-b", "--base-dir", type=str, default=".", help="search path used for relative @include's")
+    parser.add_argument(
+        "-t",
+        "--trafo",
+        type=_fromcp2k_trafo_arg,
+        default="auto",
+        help="transformation applied to key and section names (auto, upper, lower)",
+    )
     args = parser.parse_args()
 
-    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML, key_trafo=_key_trafo)
+    if args.canonical:
+        cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML, base_dir=args.base_dir, key_trafo=args.trafo)
+    else:
+        cp2k_parser = CP2KInputParserSimplified(DEFAULT_CP2K_INPUT_XML, base_dir=args.base_dir, key_trafo=args.trafo)
 
     with open(args.file, "r") as fhandle:
         tree = cp2k_parser.parse(fhandle)
