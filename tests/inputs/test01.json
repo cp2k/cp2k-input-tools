@@ -1,4 +1,110 @@
 {
+  "force_eval": {
+    "method": "quickstep",
+    "DFT": {
+      "basis_set_file_name": "./BASIS_SETS",
+      "potential_file_name": "./POTENTIALS",
+      "kpoints": {
+        "full_grid": false,
+        "parallel_group_size": -1,
+        "scheme": [
+          "MONKHORST-PACK",
+          "3",
+          "3",
+          "3"
+        ],
+        "symmetry": false
+      },
+      "mgrid": {
+        "cutoff": 1000.0,
+        "rel_cutoff": 100.0
+      },
+      "poisson": {
+        "periodic": "XYZ"
+      },
+      "print": {
+        "overlap_condition": {
+          "ON": {
+            "1-norm": true,
+            "diagonalization": true
+          }
+        }
+      },
+      "QS": {
+        "eps_default": 1e-16,
+        "extrapolation": "use_guess",
+        "method": "gapw"
+      },
+      "SCF": {
+        "added_mos": 40,
+        "eps_scf": 1e-08,
+        "max_scf": 50,
+        "smear": {
+          "true": {
+            "electronic_temperature": 300.0,
+            "method": "fermi_dirac"
+          }
+        }
+      },
+      "XC": {
+        "xc_functional": {
+          "_": "PBE"
+        }
+      }
+    },
+    "subsys": {
+      "cell": {
+        "A": [
+          4.07419,
+          0.0,
+          0.0
+        ],
+        "B": [
+          2.037095,
+          3.52835204,
+          0.0
+        ],
+        "C": [
+          2.037095,
+          1.17611735,
+          3.32656221
+        ],
+        "periodic": "XYZ",
+        "cell_ref": {
+          "A": [
+            4.32947291598,
+            0.0,
+            0.0
+          ],
+          "B": [
+            2.16473645799,
+            3.7494335304,
+            0.0
+          ],
+          "C": [
+            2.16473645799,
+            1.24981118034,
+            3.53499983838
+          ],
+          "periodic": "XYZ"
+        }
+      },
+      "kind": {
+        "Ge": {
+          "element": "Ge",
+          "potential": "ALL-q32",
+          "basis_set": [
+            "ORB",
+            "pob-TZVP"
+          ]
+        }
+      },
+      "topology": {
+        "coord_file_name": "./struct.xyz",
+        "coord_file_format": "XYZ"
+      }
+    }
+  },
   "global": {
     "print_level": "medium",
     "project_name": "fatman.calc",

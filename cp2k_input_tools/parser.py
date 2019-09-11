@@ -2,6 +2,7 @@ import re
 import collections
 import xml.etree.ElementTree as ET
 import pathlib
+import itertools
 
 from .tokenizer import Context, TokenizerError
 from .lineiterator import MultiFileLineIterator
@@ -329,7 +330,7 @@ class CP2KInputParser:
         return self._tree
 
 
-class SimplifiedOuputMixin:
+class CP2KInputParserSimplified(CP2KInputParser):
     """Implement structured output simplification. Rules #1 and #2 are applied on the fly, rule #3 is done in the cleanup"""
 
     def _add_tree_keyword(self, kw):
@@ -386,28 +387,48 @@ class SimplifiedOuputMixin:
             raise InvalidNameError(f"the section '{section_key}' can not be defined multiple times")
 
     def _tree_cleanup(self):
+        # this tree cleanup implements Rule #3 of the simplified format
         treerefs = [self._tree]
+        nodes = [
+            self._parse_tree.getroot()
+        ]  # the XML tree is needed to detect ambiguities when section params match section keywords
 
         while treerefs:
             tree = treerefs.pop()
+            node = nodes.pop()
 
             for key, value in tree.items():
+                section_node = _find_node_by_name(node, "SECTION", key)
+
+                if not section_node:
+                    # if the given key is a keyword, ignore it
+                    continue
+
+                valid_keys = [
+                    kw.text
+                    for kw in itertools.chain(section_node.iterfind("./KEYWORD/NAME"), section_node.iterfind("./SECTION/NAME"))
+                ]
+
                 if isinstance(value, dict):  # found a single section
-                    if "_" in value:  # and one with a default parameter, transform it
+                    if "_" in value and not str(value["_"]).upper() in valid_keys:  # and one with a default parameter, transform it
                         tree[key] = {value["_"]: {k: v for k, v in value.items() if k != "_"}}
                         treerefs += [tree[key]]
                     else:
                         treerefs += [value]
 
+                    nodes += [section_node]
+
                 elif isinstance(value, list) and isinstance(value[0], dict):  # found a repeated section
-                    if all("_" in d for d in value) and len(set(d["_"] for d in value)) == len(value):
+                    if (
+                        all("_" in d for d in value)
+                        and len(set(d["_"] for d in value)) == len(value)
+                        and not any(str(d["_"]).upper() in valid_keys for d in value)
+                    ):
                         # if all the sections have a default parameter and the parameter is unique
                         tree[key] = {d["_"]: {k: v for k, v in value.items() if k != "_"} for d in value}
                         treerefs += [tree[key]]
+                        nodes += [section_node]
                     else:
                         # otherwise unpack the list
                         treerefs += value
-
-
-class CP2KInputParserSimplified(SimplifiedOuputMixin, CP2KInputParser):
-    pass
+                        nodes += [section_node] * len(value)

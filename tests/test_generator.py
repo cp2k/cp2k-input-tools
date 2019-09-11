@@ -1,10 +1,8 @@
-import pathlib
 import json
 
+from . import TEST_DIR
 from cp2k_input_tools.generator import CP2KInputGenerator
 from cp2k_input_tools.cli import DEFAULT_CP2K_INPUT_XML
-
-TEST_DIR = pathlib.Path(__file__).resolve().parent
 
 
 def test_simple():
@@ -14,5 +12,4 @@ def test_simple():
         tree = json.load(fhandle)
 
     lines = list(cp2k_generator.line_iter(tree))
-    print(lines)
     assert any("&GLOBAL" in line for line in lines)

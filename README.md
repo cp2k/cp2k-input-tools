@@ -64,6 +64,11 @@ The following example input:
    &DFT
       BASIS_SET_FILE_NAME "./BASIS_SETS"
       POTENTIAL_FILE_NAME ./POTENTIALS
+      &XC
+         &XC_FUNCTIONAL PBE
+         &END XC_FUNCTIONAL
+      &END XC
+   &END DFT
    &SUBSYS
       &CELL
          A [angstrom] 4.07419 0.0 0.0
@@ -102,6 +107,11 @@ would generate the (canonical) JSON:
         ],
         "potential_file_name": "./POTENTIALS"
       },
+      "+XC": {
+        "+xc_functional": {
+          "_": "PBE"
+        }
+      }
       "+subsys": {
         "cell": {
           "A": [ 4.07419, 0, 0 ],
@@ -140,9 +150,9 @@ While there is no solution to remedy the first caveat, the second can be solved 
 
 Still based on the canonical format the simplified format relaxes some of the rules
 
-1. a section must only be prefixed with a `+` if a keyword with the same name is present at the same time in the same section
-2. if a repeated keyword or section contains only one entry, the list can be omitted (in case of ambiguity priority is given to keyword repetition rather than multiple values)
-3. repeatable sections with default parameters can be formulated as dictionaries (as long as the default parameters are unique)
+1. a section must only be prefixed with a `+` if a keyword with the same name is present at the same time in the same section (since we can figure out whether the user wanted to specify the section or the keyword by inspecting the value for the key: `dict` for a section)
+2. if a repeated keyword or section contains only one entry, the list can be omitted (in case of ambiguity priority is given to multiple values per keyword rather than keyword repetition)
+3. sections with default parameters can be formulated as dictionaries, as long as the default parameter values are unique and do not match section keyword or subsection names
 
 the example from before in the simplified format:
 
@@ -158,6 +168,11 @@ the example from before in the simplified format:
     "DFT": {
       "basis_set_file_name": "./BASIS_SETS",
       "potential_file_name": "./POTENTIALS"
+    },
+    "xc": {
+      "xc_functional": {
+        "_": "PBE"
+      }
     },
     "subsys": {
       "cell": {
@@ -192,6 +207,9 @@ force_eval:
   DFT:
     basis_set_file_name: ./BASIS_SETS
     potential_file_name: ./POTENTIALS
+  XC:
+    xc_functional:
+      _: PBE  # this can NOT be simplified since PBE could also be a subsection of xc_functional
   method: quickstep
   subsys:
     cell:

@@ -1,6 +1,7 @@
 import re
 import collections
 import xml.etree.ElementTree as ET
+import itertools
 
 
 class GeneratorError(Exception):
@@ -24,6 +25,14 @@ class InvalidSectionDataError(Exception):
 
 
 class InvalidKeywordDataError(Exception):
+    pass
+
+
+class InvalidBooleanDataError(Exception):
+    pass
+
+
+class SimplifiedSectionAmbiguityError(Exception):
     pass
 
 
@@ -85,16 +94,20 @@ class CP2KInputGenerator:
 
             return string
 
-        def bool_renderer(string):
-            # TODO: better check for passed values
-            if bool(string):
+        def bool_renderer(val):
+            """the given value may or may not be a boolean, make sure we also accept other datatypes"""
+
+            if str(val).upper() in ("1", "T", ".T.", "TRUE", ".TRUE.", "Y", "YES", "ON"):
                 return ".TRUE."
 
-            return ".FALSE."
+            if str(val).upper() in ("0", "F", ".F.", "FALSE", ".FALSE.", "N", "NO", "OFF"):
+                return ".FALSE."
+
+            raise InvalidBooleanDataError(f"the given value '{val}' could not be recognized as a CP2K boolean value")
 
         TYPE_RENDERERS = {
             "integer": lambda v: str(v),
-            "keyword": lambda v: v,
+            "keyword": lambda v: str(v).upper(),
             "logical": bool_renderer,
             "real": lambda v: str(v),
             "string": lambda v: v,
@@ -161,7 +174,7 @@ class CP2KInputGenerator:
         except SectionParametersNotFoundError:
             pass
 
-        # if we have a repeating section taking section parameters, we also accept the format:
+        # if we have a section taking section parameters, we also accept the format:
         #   kind:
         #     H:
         #       basis_set: ...
@@ -170,12 +183,18 @@ class CP2KInputGenerator:
         #     - _: H
         #       basis_set: ...
         # Given that all of the values in this dict are dicts themselves and they don't contain section parameters
-        if (
-            repeats
-            and section_params
-            and all(isinstance(v, dict) for v in content.values())
-            and not any("_" in v for v in content.values())
-        ):
+        if section_params and all(isinstance(v, dict) for v in content.values()) and not any("_" in v for v in content.values()):
+            valid_keys = [kw.text for kw in itertools.chain(node.iterfind("./KEYWORD/NAME"), node.iterfind("./SECTION/NAME"))]
+            valid_keys += [f"+{kw.text}" for kw in node.iterfind("./SECTION/NAME")]
+
+            # if we get a tree directly from Python, keys could still be non-strings (after a JSON/YAML roundtrip, they are)
+            if any(str(k).upper() in valid_keys for k in content.keys()):
+                raise SimplifiedSectionAmbiguityError(
+                    f"the section '{name}' contains elements which could either be"
+                    f" keywords/subsections or section parameters within the simplified"
+                    f" format scheme. Please use the canonical format for this section."
+                )
+
             # return a list of sections with this param merged into the section as normal section parameter
             return [
                 TreeNode(path + [name], dict(_=param, **section), node, indent + self._shift) for param, section in content.items()

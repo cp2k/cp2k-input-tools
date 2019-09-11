@@ -1,11 +1,8 @@
-import pathlib
-
 import pytest
 
+from . import TEST_DIR
 from cp2k_input_tools.parser import CP2KInputParser, CP2KInputParserSimplified
 from cp2k_input_tools.cli import DEFAULT_CP2K_INPUT_XML
-
-TEST_DIR = pathlib.Path(__file__).resolve().parent
 
 
 def test_simple_simplified():
