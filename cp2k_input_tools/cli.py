@@ -1,15 +1,12 @@
 import argparse
 import sys
 import re
-import pathlib
 
+from . import DEFAULT_CP2K_INPUT_XML
 from .parser import CP2KInputParser, CP2KInputParserSimplified
 from .parser_errors import PreprocessorError
 from .tokenizer import TokenizerError
 from .generator import CP2KInputGenerator
-
-
-DEFAULT_CP2K_INPUT_XML = pathlib.Path(__file__).resolve().parent.joinpath("cp2k_input.xml")
 
 
 def cp2klint():

@@ -35,6 +35,80 @@ For development: https://poetry.eustace.io/
 * parser: parsing the XML is slow (easily 70% of the time), pickle or generate Python code directly instead and keep XML parsing as fallback
 * parser: maybe generate AST using an emitting (`yield`) parser for more flexibility
 
+# Usage
+
+## Command Line Interface
+
+Generate JSON or YAML from a CP2K input file:
+
+```console
+$ fromcp2k --help
+usage: fromcp2k [-h] [-y] [-c] [-b BASE_DIR] [-t TRAFO] <file>
+
+Convert CP2K input to JSON (default) or YAML
+
+positional arguments:
+  <file>                CP2K input file
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -y, --yaml            output yaml instead of json
+  -c, --canonical       use the canonical output format
+  -b BASE_DIR, --base-dir BASE_DIR
+                        search path used for relative @include's
+  -t TRAFO, --trafo TRAFO
+                        transformation applied to key and section names (auto,
+                        upper, lower)
+```
+
+Generate a CP2K input file from a JSON or YAML:
+
+```console
+$ tocp2k --help
+usage: tocp2k [-h] [-y] <file>
+
+Convert JSON or YAML input to CP2K
+
+positional arguments:
+  <file>      JSON or YAML input file
+
+optional arguments:
+  -h, --help  show this help message and exit
+  -y, --yaml
+```
+
+## API
+
+Convert a CP2K input file to a nested Python dictionary:
+
+```python
+from cp2k_input_tools.parser import CP2KInputParser, CP2KInputParserSimplified
+
+canonical = False
+
+if canonical:
+    parser = CP2KInputParser()
+else:
+    parser = CP2KInputParserSimplified()
+
+with open("project.inp") as fhandle:
+    tree = parser.parse(fhandle)
+```
+
+Convert a nested Python dictionary back to a CP2K input file:
+
+```python
+from cp2k_input_tools.generator import CP2KInputGenerator
+
+generator = CP2KInputGenerator()
+
+tree = {"global": {}}  # ... the input tree
+
+with open("project.inp", "w") as fhandle:
+    for line in generator.line_iter(tree):
+        fhandle.write(f"{line}\n")
+```
+
 # The CP2K JSON and YAML formats
 
 A reference to the CP2K input format can be found here: https://manual.cp2k.org/
