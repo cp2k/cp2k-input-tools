@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.2.1] - 2019-09-12
+
+* make API easier to use by moving the default XML path
+* add API documentation to README.md
+
 ## [0.2.0] - 2019-09-11
 
 * improve test coverage (a lot)
