@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 import pathlib
 import itertools
 
+from . import DEFAULT_CP2K_INPUT_XML
 from .tokenizer import Context, TokenizerError
 from .lineiterator import MultiFileLineIterator
 from .keyword_helpers import parse_keyword
@@ -33,13 +34,13 @@ _INCLUDE_MATCH = re.compile(r"\s*@INCLUDE\s+(?P<file>('[^']+')|(\"[^']+\")|[^'\"
 
 
 class CP2KInputParser:
-    def __init__(self, xmlspec, base_dir=".", key_trafo=str.lower):
+    def __init__(self, xmlspec=DEFAULT_CP2K_INPUT_XML, base_dir=".", key_trafo=str.lower):
         """
         The CP2K input parser.
 
         :param xmlspec: Path to the `cp2k_input.xml` file generated with `cp2k --xml`
         :param base_dir: The base directory to be used for resolving `@include` directives
-        :param key_trafo: A function object used for mangling key names, must treat input case insensitive atm
+        :param key_trafo: A function object used for mangling key names, must treat input case-insensitive
         """
 
         # schema:
@@ -288,6 +289,11 @@ class CP2KInputParser:
         raise PreprocessorError(f"unknown preprocessor directive found", ctx)
 
     def parse(self, fhandle):
+        """Parse a CP2K input file
+        :param fhandle: An open file handle. Included files will be opened/closed transparently.
+        :return: A nested dictionary, the parsed option "tree"
+        """
+
         self._lineiter.add_file(fhandle)
 
         try:
