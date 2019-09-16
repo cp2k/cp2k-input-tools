@@ -298,8 +298,8 @@ class CP2KInputParser:
 
         try:
             for entry in self._lineiter.lines():
-                # ignore all comments:
-                if entry.line.startswith(("!", "#")):
+                # ignore empty lines and comments:
+                if not entry.line or entry.line.startswith(("!", "#")):
                     continue
 
                 if entry.line.startswith("@"):
