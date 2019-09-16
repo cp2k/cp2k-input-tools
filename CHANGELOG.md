@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.2.2] - 2019-09-16
+
+* fix issue with parsing empty lines
+
 ## [0.2.1] - 2019-09-12
 
 * make API easier to use by moving the default XML path
