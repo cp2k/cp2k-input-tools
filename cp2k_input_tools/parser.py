@@ -8,7 +8,14 @@ from . import DEFAULT_CP2K_INPUT_XML
 from .tokenizer import Context, TokenizerError
 from .lineiterator import MultiFileLineIterator
 from .keyword_helpers import parse_keyword
-from .parser_errors import InvalidNameError, NameRepetitionError, SectionMismatchError, ParserError, PreprocessorError
+from .parser_errors import (
+    InvalidNameError,
+    NameRepetitionError,
+    SectionMismatchError,
+    ParserError,
+    PreprocessorError,
+    InvalidParameterError,
+)
 
 
 def _find_node_by_name(parent, tag, name):
@@ -154,7 +161,11 @@ class CP2KInputParser:
         if not kw_node:
             raise InvalidNameError("invalid keyword specified and no default keyword for this section")
 
-        kw = parse_keyword(kw_node, kw_value, self._key_trafo)
+        try:
+            kw = parse_keyword(kw_node, kw_value, self._key_trafo)
+        except InvalidParameterError as exc:
+            raise InvalidParameterError(f"invalid values for keyword: {match.group('name')}", Context()) from exc
+
         self._add_tree_keyword(kw)
 
     def _resolve_variables(self, line):
@@ -323,7 +334,7 @@ class CP2KInputParser:
                     f"conditional block not closed at end of file", Context(ref_line=self._conditional_block.ctx["line"])
                 )
 
-        except (PreprocessorError, TokenizerError) as exc:
+        except (PreprocessorError, TokenizerError, InvalidParameterError) as exc:
             exc.args[1]["filename"] = entry.fname
             exc.args[1]["linenr"] = entry.linenr
             exc.args[1]["line"] = entry.line
