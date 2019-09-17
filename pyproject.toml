@@ -26,9 +26,10 @@ pint = "^0.9"
 yaml = ["pyyaml"]
 
 [tool.poetry.dev-dependencies]
-pytest = "^3.0"
+pytest = "^4.0"
 codecov = "^2.0.15"
 pytest-cov = "^2.7.1"
+pytest-console-scripts = "^0.1.10"
 
 [tool.poetry.scripts]
 cp2klint = 'cp2k_input_tools.cli:cp2klint'
