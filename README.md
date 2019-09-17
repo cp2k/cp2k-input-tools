@@ -4,11 +4,11 @@
 
 Fully validating pure-python CP2K input file parsers including preprocessing capabilities
 
-Available commands:
+Available commands (also available through an API, see below):
 
 * `cp2klint` .. a CP2K input file linter
-* `fromcp2k` .. create a (almost simplified) JSON or YAML configuration file from a CP2K input file (includes validation)
-* `tocp2k` .. convert a (simplified) JSON or YAML configuration back to CP2K's input file format (includes validation)
+* `fromcp2k` .. create a JSON or YAML configuration file from a CP2K input file (includes validation)
+* `tocp2k` .. convert a JSON or YAML configuration back to CP2K's input file format (includes validation)
 
 For a description of the JSON/YAML formats used, see below.
 
