@@ -4,7 +4,7 @@ import re
 
 from . import DEFAULT_CP2K_INPUT_XML
 from .parser import CP2KInputParser, CP2KInputParserSimplified
-from .parser_errors import PreprocessorError
+from .parser_errors import PreprocessorError, InvalidParameterError
 from .tokenizer import TokenizerError
 from .generator import CP2KInputGenerator
 
@@ -19,12 +19,16 @@ def cp2klint():
     with open(args.file, "r") as fhandle:
         try:
             cp2k_parser.parse(fhandle)
-        except (PreprocessorError, TokenizerError) as exc:
+        except (PreprocessorError, TokenizerError, InvalidParameterError) as exc:
             ctx = exc.args[1]
             line = ctx["line"].rstrip()
 
-            print(f"Syntax error: {exc.args[0]} in {ctx['filename']}:")
-            print(f"  {ctx['linenr']:>4}: {line}")
+            print(f"Syntax error: {exc.args[0]}, in {ctx['filename']}:")
+
+            if exc.__cause__:
+                print(f"              {exc.__cause__}")
+
+            print(f"line {ctx['linenr']:>4}: {line}")
 
             if ctx["colnr"] is not None:
                 count = 0  # number of underline chars after (positiv) or before (negative) the marker if ref_colnr given
@@ -40,13 +44,13 @@ def cp2klint():
                 underline = re.sub(r"\S", " ", ctx["line"][:nchars])
 
                 if count >= 0:
-                    print(f"{str():>6}  {underline}^{str():~>{count}}")
+                    print(f"{str():>9}  {underline}^{str():~>{count}}")
                 else:
-                    print(f"{str():>6}  {underline}{str():~>{-count}}^")
+                    print(f"{str():>9}  {underline}{str():~>{-count}}^")
 
             if ctx["ref_line"] is not None:
-                print("previous definition line:")
-                print(f"  {str():>4}: {ctx['ref_line'].rstrip()}")
+                print("previous definition:")
+                print(f"line {str():>4}: {ctx['ref_line'].rstrip()}")
 
             sys.exit(1)
 

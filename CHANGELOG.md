@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.2.3] - 2019-09-24
+
+* fix issue with preprocessor variable substitution
+
 ## [0.2.2] - 2019-09-16
 
 * fix issue with parsing empty lines
