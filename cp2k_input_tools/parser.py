@@ -178,7 +178,7 @@ class CP2KInputParser:
 
         # first replace all "${...}"  with no nesting, meaning that ${foo${bar}} means foo$bar is the key
         while True:
-            var_start = line.find("${", var_end)
+            var_start = line.find("${")
             if var_start < 0:
                 break
 
@@ -202,7 +202,7 @@ class CP2KInputParser:
         var_end = 0
 
         while True:
-            var_start = line.find("$", var_end)
+            var_start = line.find("$")
             if var_start < 0:
                 break
 
@@ -219,7 +219,7 @@ class CP2KInputParser:
                 ctx["ref_colnr"] = var_end - 1
                 raise PreprocessorError(f"undefined variable '{key}'", ctx) from None
 
-            line = f"{line[:var_start]}{value}{line[var_end+1:]}"
+            line = f"{line[:var_start]}{value}{line[var_end:]}"
 
         return line
 

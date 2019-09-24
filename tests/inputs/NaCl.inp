@@ -1,0 +1,102 @@
+@SET LATTICE 2.8595
+@SET HP 1
+
+&GLOBAL
+   PROJECT NaCl
+   RUN_TYPE ENERGY_FORCE
+   PRINT_LEVEL MEDIUM
+&END GLOBAL
+
+&FORCE_EVAL
+   METHOD Quickstep
+   &DFT
+      BASIS_SET_FILE_NAME  BASIS_MOLOPT
+      BASIS_SET_FILE_NAME  BASIS_MOLOPT_UCL
+      POTENTIAL_FILE_NAME  POTENTIAL
+
+      UKS .TRUE.
+
+      &QS
+         METHOD GPW
+         EXTRAPOLATION USE_GUESS
+      &END QS
+
+      &POISSON
+         PERIODIC XYZ
+      &END POISSON
+
+      &SCF
+         SCF_GUESS ATOMIC
+         MAX_SCF 50
+@IF $HP
+         EPS_SCF 1.0E-8
+@ENDIF
+      &END SCF
+
+@IF $HP
+      &KPOINTS
+         SCHEME MONKHORST-PACK 8 8 8
+         FULL_GRID .FALSE.
+         SYMMETRY .FALSE.
+      &END KPOINTS
+@ENDIF
+
+      &XC
+         &XC_FUNCTIONAL PBE
+         &END XC_FUNCTIONAL
+      &END XC
+@IF $HP
+      &MGRID
+         REL_CUTOFF 80
+         CUTOFF 800
+      &END MGRID
+@ENDIF
+   &END DFT
+
+   &SUBSYS
+      &CELL
+         A 0 $LATTICE $LATTICE
+         B ${LATTICE} 0 ${LATTICE}
+         C $LATTICE $LATTICE 0
+         PERIODIC XYZ
+      &END CELL
+      &COORD
+         SCALED
+         Na  0.0 0.0 0.0
+         Cl  0.5 0.5 0.5
+      &END COORD
+      &KIND Na
+         ELEMENT Na
+         BASIS_SET TZVPd-MOLOPT-SR-GTH
+         POTENTIAL GTH-PBE
+      &END KIND
+      &KIND Cl
+         ELEMENT Cl
+         BASIS_SET TZVP-MOLOPT-GTH
+         POTENTIAL GTH-PBE
+      &END KIND
+   &END SUBSYS
+
+   STRESS_TENSOR ANALYTICAL
+@IF
+   &PRINT
+      &STRESS_TENSOR
+         ADD_LAST NUMERIC
+         FILENAME stress_tensor
+      &END STRESS_TENSOR
+      &FORCES
+         ADD_LAST NUMERIC
+         FILENAME forces
+      &END FORCES
+   &END PRINT
+@ENDIF
+&END FORCE_EVAL
+
+&MOTION
+   &CELL_OPT
+      KEEP_ANGLES .TRUE.
+@IF $HP
+      MAX_FORCE 1.0E-5
+@ENDIF
+   &END CELL_OPT
+&END MOTION
