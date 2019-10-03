@@ -77,9 +77,14 @@ def parse_keyword(kw_node, vstring, key_trafo=str):
 
     # for a string datatype, no tokenization shall be done
     if datatype.type == "string":
-        tokens = [vstring.rstrip()]  # strip trailing whitespace
+        if vstring.startswith(("'", '"')):
+            # if the content is actually a string, employ the tokenizer do correctly determine the end of it
+            tokens = tokenize(vstring)
+        else:
+            tokens = [vstring.rstrip()]  # strip trailing whitespace
         # in case of no value, this will lead to an empty string, which is intentional
         # since we can't distinguish between an empty string and a lone keyword for a string datatype
+        # -> inline comments for strings which are not escaped will be treated as part of the string, reproducing CP2K-behaviour
     else:
         tokens = tokenize(vstring)
 
@@ -114,6 +119,10 @@ def parse_keyword(kw_node, vstring, key_trafo=str):
                 raise InvalidParameterError("unit specified for value in keyword, but no default unit available")
             current_unit = UREG.parse_expression(token.strip("[]"))
             continue
+
+        if token.startswith("!"):
+            assert token == tokens[-1], "found inline comment which is not the last token"
+            continue  # ignore inline comments
 
         value = datatype.parser(token)
 

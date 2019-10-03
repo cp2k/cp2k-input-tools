@@ -190,23 +190,36 @@ class CP2KInputGenerator:
         #   kind:
         #     - _: H
         #       basis_set: ...
-        # Given that all of the values in this dict are dicts themselves and they don't contain section parameters
-        if section_params and all(isinstance(v, dict) for v in content.values()) and not any("_" in v for v in content.values()):
+        # If all of the values in this dict are dicts themselves we therefore have to look closer,
+        # since this could either be a simplified section (like the one above) or a regular one, like:
+        #   BS:
+        #     alpha:
+        #       ...
+        #     beta:
+        #       ...
+        if section_params and all(isinstance(v, dict) for v in content.values()):
+            # 1. figure out all the valid keys in simplified and canonical mode
             valid_keys = [kw.text for kw in itertools.chain(node.iterfind("./KEYWORD/NAME"), node.iterfind("./SECTION/NAME"))]
             valid_keys += [f"+{kw.text}" for kw in node.iterfind("./SECTION/NAME")]
 
-            # if we get a tree directly from Python, keys could still be non-strings (after a JSON/YAML roundtrip, they are)
-            if any(str(k).upper() in valid_keys for k in content.keys()):
-                raise SimplifiedSectionAmbiguityError(
-                    f"the section '{name}' contains elements which could either be"
-                    f" keywords/subsections or section parameters within the simplified"
-                    f" format scheme. Please use the canonical format for this section."
-                )
+            # 2. if all of the specified keys match either section or a keyword, this is just a regular section
+            if all(str(k).upper() in valid_keys for k in content.keys()):
+                return [TreeNode(path + [name], content, node, indent + self._shift)]
 
-            # return a list of sections with this param merged into the section as normal section parameter
-            return [
-                TreeNode(path + [name], dict(_=param, **section), node, indent + self._shift) for param, section in content.items()
-            ]
+            # 3. if not any of the keys is a valid key, we can safely assume that the user specified simplified expanded section
+            if not any(str(k).upper() in valid_keys for k in content.keys()):
+                # return a list of sections with this param merged into the section as normal section parameter
+                return [
+                    TreeNode(path + [name], dict(_=param, **section), node, indent + self._shift)
+                    for param, section in content.items()
+                ]
+
+            # otherwise the user has either specified a mix (not supported) or has a typo
+            raise SimplifiedSectionAmbiguityError(
+                f"the section '{name}' contains elements which could either be"
+                f" keywords/subsections or section parameters within the simplified"
+                f" format scheme. Please use the canonical format for this section."
+            )
 
         return [TreeNode(path + [name], content, node, indent + self._shift)]
 

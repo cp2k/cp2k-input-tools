@@ -121,7 +121,7 @@ class CP2KInputParser:
         self._add_tree_section(section_key, repeats)
 
         # check whether we got a parameter for the section and validate it
-        if section_param:
+        if section_param and not section_param.startswith("!"):
             param_node = section_node.find("./SECTION_PARAMETERS")
             if param_node:  # validate the section parameter like a kw datatype
                 # there is no way we get a second section parameter, assign directly

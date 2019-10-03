@@ -131,3 +131,12 @@ def test_start_empty_lines():
         tree = cp2k_parser.parse(fhandle)
 
     assert tree
+
+
+def test_inline_comment():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    with open(TEST_DIR.joinpath("inputs/inline_comment.inp"), "r") as fhandle:
+        tree = cp2k_parser.parse(fhandle)
+
+    assert tree
