@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.2.4] - 2019-10-03
+
+* fix logic for simplified possibly ambiguous input
+* fix issue with inline comments not properly filtered
+
 ## [0.2.3] - 2019-09-24
 
 * fix issue with preprocessor variable substitution
