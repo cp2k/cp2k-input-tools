@@ -1,4 +1,5 @@
 import json
+import pytest
 
 from . import TEST_DIR
 from cp2k_input_tools.generator import CP2KInputGenerator
@@ -13,3 +14,16 @@ def test_simple():
 
     lines = list(cp2k_generator.line_iter(tree))
     assert any("&GLOBAL" in line for line in lines)
+
+
+def test_simplified_input():
+    yaml = pytest.importorskip("yaml")
+
+    cp2k_generator = CP2KInputGenerator(DEFAULT_CP2K_INPUT_XML)
+
+    with open(TEST_DIR.joinpath("inputs/NaCl-BS.simplified.yaml"), "r") as fhandle:
+        tree = yaml.load(fhandle)
+
+    lines = list(cp2k_generator.line_iter(tree))
+    with open(TEST_DIR.joinpath("inputs/NaCl-BS.simplified.inp"), "r") as fhandle:
+        assert lines == [l.strip("\n") for l in fhandle.readlines()]

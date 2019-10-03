@@ -1,4 +1,5 @@
 import json
+import pytest
 
 from . import TEST_DIR
 
@@ -33,6 +34,17 @@ def test_fromcp2k_json_canonical(script_runner):
 
 def test_tocp2k_json(script_runner):
     ret = script_runner.run("tocp2k", str(TEST_DIR.joinpath("inputs/test01.json")))
+
+    assert ret.success
+    assert ret.stderr == ""
+
+    assert "&GLOBAL" in ret.stdout
+
+
+def test_tocp2k_yaml(script_runner):
+    pytest.importorskip("yaml")
+
+    ret = script_runner.run("tocp2k", "-y", str(TEST_DIR.joinpath("inputs/NaCl-BS.yaml")))
 
     assert ret.success
     assert ret.stderr == ""
