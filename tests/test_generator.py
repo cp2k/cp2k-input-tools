@@ -17,7 +17,8 @@ def test_simple():
 
 
 def test_simplified_input():
-    yaml = pytest.importorskip("yaml")
+    ryaml = pytest.importorskip("ruamel.yaml")
+    yaml = ryaml.YAML()
 
     cp2k_generator = CP2KInputGenerator(DEFAULT_CP2K_INPUT_XML)
 

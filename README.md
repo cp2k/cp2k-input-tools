@@ -16,7 +16,7 @@ For a description of the JSON/YAML formats used, see below.
 
 * Python 3.6+
 * https://pypi.org/project/transitions/
-* optional: https://pypi.org/project/PyYAML/
+* optional: https://pypi.org/project/ruamel.yaml/ for YAML support
 
 For development: https://poetry.eustace.io/
 
