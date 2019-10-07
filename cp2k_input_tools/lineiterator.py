@@ -1,7 +1,7 @@
 import collections
 
 
-def LineContinuationError(Exception):
+class LineContinuationError(Exception):
     pass
 
 
@@ -34,7 +34,7 @@ def continuation_lines(fhandle):
         colnrs = []
         line = ""
 
-    if line:
+    if colnrs:
         raise LineContinuationError("stray line continuation at end of file", fname)
 
 
