@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.2.5] - 2019-10-07
+
+* fix parsing comments starting with # instead of ! (thanks to stanos4)
+* switch to ruamel.yaml for proper scientific notation support in YAML
+* implement parsing of fractional numbers
+
 ## [0.2.4] - 2019-10-03
 
 * fix logic for simplified possibly ambiguous input
