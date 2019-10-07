@@ -3,6 +3,9 @@ import collections
 import transitions
 
 
+COMMENT_CHARS = ("!", "#")
+
+
 class TokenizerError(Exception):
     pass
 
@@ -83,7 +86,7 @@ class CP2KInputTokenizer(transitions.Machine):
                     "dest": "lookout",
                     "conditions": ["is_not_escaped", "is_matching_quote"],
                 },
-                # a '!' initiates a comment (and terminates a token if necessary)
+                # a '!' or '#' initiates a comment (and terminates a token if necessary)
                 {"trigger": "comment_char", "source": ["lookout", "basic_token"], "dest": "comment"},
                 # ... unless inside a single or double quoted string, where it is consumed:
                 {"trigger": "comment_char", "source": "string_token", "dest": None},
@@ -107,14 +110,10 @@ class CP2KInputTokenizer(transitions.Machine):
 def tokenize(string):
     tokenizer = CP2KInputTokenizer()
 
-    char_map = {
-        " ": tokenizer.ws_char,
-        "\t": tokenizer.ws_char,
-        "!": tokenizer.comment_char,
-        "#": tokenizer.comment_char,
-        "'": tokenizer.quote_char,
-        '"': tokenizer.quote_char,
-    }
+    char_map = {" ": tokenizer.ws_char, "\t": tokenizer.ws_char, "'": tokenizer.quote_char, '"': tokenizer.quote_char}
+
+    for cchar in COMMENT_CHARS:
+        char_map[cchar] = tokenizer.comment_char
 
     for colnr, char in enumerate(string):
         char_map.get(char, tokenizer.token_char)(string, colnr)

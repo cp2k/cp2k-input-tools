@@ -5,7 +5,7 @@ import pathlib
 import pint
 
 from .parser_errors import InvalidParameterError
-from .tokenizer import tokenize
+from .tokenizer import tokenize, COMMENT_CHARS
 
 
 UREG = pint.UnitRegistry()
@@ -120,7 +120,7 @@ def parse_keyword(kw_node, vstring, key_trafo=str):
             current_unit = UREG.parse_expression(token.strip("[]"))
             continue
 
-        if token.startswith("!"):
+        if token.startswith(COMMENT_CHARS):
             assert token == tokens[-1], "found inline comment which is not the last token"
             continue  # ignore inline comments
 

@@ -21,13 +21,14 @@
          EXTRAPOLATION USE_GUESS
       &END QS
 
-      &POISSON
+      &POISSON  # a comment with the alternative comment char, after a section
          PERIODIC XYZ
       &END POISSON
 
+      # and some non-inline comment with the alternative comment char
       &SCF
          SCF_GUESS ATOMIC
-         MAX_SCF 50
+         MAX_SCF 50  # and a comment after a value
 @IF $HP
          EPS_SCF 1.0E-8
 @ENDIF
