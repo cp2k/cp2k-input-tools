@@ -140,3 +140,13 @@ def test_inline_comment():
         tree = cp2k_parser.parse(fhandle)
 
     assert tree
+
+
+def test_fractional_values():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    with open(TEST_DIR.joinpath("inputs/fractional_values.inp"), "r") as fhandle:
+        tree = cp2k_parser.parse(fhandle)
+
+    assert tree
+    assert tree["+force_eval"][0]["+subsys"]["+cell"]["a"][0] == 4.0  # specified as 8/2

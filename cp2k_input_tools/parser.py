@@ -5,7 +5,7 @@ import pathlib
 import itertools
 
 from . import DEFAULT_CP2K_INPUT_XML
-from .tokenizer import Context, TokenizerError
+from .tokenizer import Context, TokenizerError, COMMENT_CHARS
 from .lineiterator import MultiFileLineIterator
 from .keyword_helpers import parse_keyword
 from .parser_errors import (
@@ -121,7 +121,7 @@ class CP2KInputParser:
         self._add_tree_section(section_key, repeats)
 
         # check whether we got a parameter for the section and validate it
-        if section_param and not section_param.startswith("!"):
+        if section_param and not section_param.startswith(COMMENT_CHARS):
             param_node = section_node.find("./SECTION_PARAMETERS")
             if param_node:  # validate the section parameter like a kw datatype
                 # there is no way we get a second section parameter, assign directly
@@ -237,7 +237,7 @@ class CP2KInputParser:
                     raise PreprocessorError("found @ENDIF without a previous @IF", ctx)
 
                 # check for garbage which is not a comment, note: we're stricter than CP2K here
-                if condition and not condition.startswith("!"):
+                if condition and not condition.startswith(COMMENT_CHARS):
                     ctx["colnr"] = conditional_match.start("cond")
                     ctx["ref_colnr"] = conditional_match.end("cond")
                     raise PreprocessorError("garbage found after @ENDIF", ctx)
@@ -310,7 +310,7 @@ class CP2KInputParser:
         try:
             for entry in self._lineiter.lines():
                 # ignore empty lines and comments:
-                if not entry.line or entry.line.startswith(("!", "#")):
+                if not entry.line or entry.line.startswith(COMMENT_CHARS):
                     continue
 
                 if entry.line.startswith("@"):

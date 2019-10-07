@@ -32,6 +32,24 @@ def test_fromcp2k_json_canonical(script_runner):
     assert "+global" in tree
 
 
+def test_fromcp2k_yaml_simple(script_runner):
+    ryaml = pytest.importorskip("ruamel.yaml")
+    yaml = ryaml.YAML()
+
+    ret = script_runner.run("fromcp2k", "-y", str(TEST_DIR.joinpath("inputs/test01.inp")))
+    assert ret.success
+    assert ret.stderr == ""
+
+    tree = yaml.load(ret.stdout)
+
+    assert isinstance(tree, dict)
+    assert "global" in tree
+
+    with open(TEST_DIR.joinpath("inputs/test01.yaml"), "r") as fhandle:
+        # validate output against previously generated tree (to avoid regressions)
+        assert yaml.load(fhandle) == tree
+
+
 def test_tocp2k_json(script_runner):
     ret = script_runner.run("tocp2k", str(TEST_DIR.joinpath("inputs/test01.json")))
 
@@ -42,7 +60,7 @@ def test_tocp2k_json(script_runner):
 
 
 def test_tocp2k_yaml(script_runner):
-    pytest.importorskip("yaml")
+    pytest.importorskip("ruamel.yaml")
 
     ret = script_runner.run("tocp2k", "-y", str(TEST_DIR.joinpath("inputs/NaCl-BS.yaml")))
 

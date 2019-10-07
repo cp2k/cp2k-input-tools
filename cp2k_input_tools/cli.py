@@ -99,9 +99,11 @@ def fromcp2k():
         tree = cp2k_parser.parse(fhandle)
 
     if args.yaml:
-        import yaml
+        from ruamel.yaml import YAML
 
-        print(yaml.dump(tree, indent=2))
+        yaml = YAML()
+
+        yaml.dump(tree, sys.stdout)
     else:
         import json
 
@@ -116,10 +118,11 @@ def tocp2k():
 
     with open(args.file, "r") as fhandle:
         if args.yaml:
-            import yaml
-            from yaml import SafeLoader
+            from ruamel.yaml import YAML
 
-            tree = yaml.load(fhandle, Loader=SafeLoader)
+            yaml = YAML()
+
+            tree = yaml.load(fhandle)
         else:
             import json
 
