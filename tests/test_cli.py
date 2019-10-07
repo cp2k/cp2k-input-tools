@@ -32,6 +32,28 @@ def test_fromcp2k_json_canonical(script_runner):
     assert "+global" in tree
 
 
+def test_fromcp2k_json_trafo_lower(script_runner):
+    ret = script_runner.run("fromcp2k", "--trafo=lower", str(TEST_DIR.joinpath("inputs/test01.inp")))
+
+    assert ret.success
+    assert ret.stderr == ""
+
+    tree = json.loads(ret.stdout)
+
+    assert "a" in tree["force_eval"]["subsys"]["cell"]  # single letter keys would be capitalized in the "auto" trafo
+
+
+def test_fromcp2k_json_trafo_upper(script_runner):
+    ret = script_runner.run("fromcp2k", "--trafo=upper", str(TEST_DIR.joinpath("inputs/test01.inp")))
+
+    assert ret.success
+    assert ret.stderr == ""
+
+    tree = json.loads(ret.stdout)
+
+    assert "GLOBAL" in tree  # keys with more than 3 chars would be lowercase in the "auto" trafo
+
+
 def test_fromcp2k_yaml_simple(script_runner):
     ryaml = pytest.importorskip("ruamel.yaml")
     yaml = ryaml.YAML()
