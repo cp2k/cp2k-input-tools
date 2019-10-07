@@ -1,6 +1,7 @@
 import collections
 import re
 import pathlib
+from fractions import Fraction
 
 import pint
 
@@ -32,7 +33,16 @@ FORTRAN_REAL = re.compile(r"(\d*\.\d+)[dD]([-+]?\d+)")
 
 
 def kw_converter_float(string):
-    return float(FORTRAN_REAL.sub(r"\1e\2", string))
+    """convert a given string to a Python float
+
+    :param string: string with the float, can be in Fortran scientific notation or as fraction
+    """
+    string = FORTRAN_REAL.sub(r"\1e\2", string)
+
+    if "/" in string:
+        return float(Fraction(string))
+
+    return float(string)
 
 
 def kw_converter_keyword(string, allowed_values):
