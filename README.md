@@ -16,9 +16,10 @@ For a description of the JSON/YAML formats used, see below.
 
 * Python 3.6+
 * https://pypi.org/project/transitions/
+* https://pypi.org/project/pint/
 * optional: https://pypi.org/project/ruamel.yaml/ for YAML support
 
-For development: https://poetry.eustace.io/
+For development: https://poetry.eustace.io/ https://pytest.org/
 
 ## Idea
 
@@ -33,7 +34,7 @@ For development: https://poetry.eustace.io/
 * parser: improve error reporting with context
 * preprocessor: don't lose original context when interpolating variables
 * parser: parsing the XML is slow (easily 70% of the time), pickle or generate Python code directly instead and keep XML parsing as fallback
-* parser: maybe generate AST using an emitting (`yield`) parser for more flexibility
+* parser: maybe generate AST using an emitting (`yield`) parser for more flexibility, would allow for YAML generator preserving the comments
 
 # Usage
 
@@ -75,6 +76,15 @@ positional arguments:
 optional arguments:
   -h, --help  show this help message and exit
   -y, --yaml
+```
+
+Lint a CP2K input file:
+
+```console
+$ cp2klint tests/inputs/unterminated_var.inp
+Syntax error: unterminated variable, in tests/inputs/unterminated_var.inp:
+line   36: @IF ${HP
+               ~~~~^
 ```
 
 ## API
