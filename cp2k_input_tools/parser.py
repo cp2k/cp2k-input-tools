@@ -5,7 +5,7 @@ import pathlib
 import itertools
 
 from . import DEFAULT_CP2K_INPUT_XML
-from .tokenizer import Context, TokenizerError, COMMENT_CHARS
+from .tokenizer import Context, TokenizerError, COMMENT_CHARS, tokenize
 from .lineiterator import MultiFileLineIterator
 from .keyword_helpers import parse_keyword
 from .parser_errors import (
@@ -37,7 +37,7 @@ _KEYWORD_MATCH = re.compile(r"(?P<name>[\w\-_]+)\s*(?P<value>.*)")
 
 _CONDITIONAL_MATCH = re.compile(r"\s*@(?P<stmt>IF|ENDIF)\s*(?P<cond>.*)", flags=re.IGNORECASE)
 _SET_MATCH = re.compile(r"\s*@SET\s+(?P<var>\w+)\s+(?P<value>.+)", flags=re.IGNORECASE)
-_INCLUDE_MATCH = re.compile(r"\s*@INCLUDE\s+(?P<file>('[^']+')|(\"[^']+\")|[^'\"].*)", flags=re.IGNORECASE)
+_INCLUDE_MATCH = re.compile(r"\s*(?P<complete>@INCLUDE\b\s*(?P<file>.*))", flags=re.IGNORECASE)
 
 
 class CP2KInputParser:
@@ -286,9 +286,31 @@ class CP2KInputParser:
             try:
                 filename = self._resolve_variables(include_match.group("file"))
             except PreprocessorError as exc:
-                exc.args[1]["colnr"] += include_match.start("file")
+                exc.args[1]["colnr"] += include_match.start("file")  # shift colnr
                 exc.args[1]["ref_colnr"] += include_match.start("file")
                 raise
+
+            if filename.startswith(("'", '"')):
+                try:
+                    tokens = tokenize(filename)  # use the tokenizer to detect unterminated quotes
+                except TokenizerError as exc:
+                    exc.args[1]["colnr"] += include_match.start("file")  # shift colnr
+                    exc.args[1]["ref_colnr"] += include_match.start("file")
+                    raise
+
+                if len(tokens) != 1:
+                    raise PreprocessorError(
+                        "@INCLUDE requires exactly one argument",
+                        Context(colnr=include_match.start("complete"), ref_colnr=include_match.end("complete")),
+                    )
+
+                filename = tokens[0].strip("'\"")
+
+            if not filename:
+                raise PreprocessorError(
+                    "@INCLUDE requires exactly one argument",
+                    Context(colnr=include_match.start("complete"), ref_colnr=include_match.end("complete")),
+                )
 
             # if the filename is an absolute path, joinpath uses that one
             fhandle = open(self._base_inc_dir.joinpath(filename.strip("'\"")), "r")

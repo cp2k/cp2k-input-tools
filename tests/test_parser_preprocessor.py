@@ -72,3 +72,58 @@ def test_endif_garbage():
         cp2k_parser.parse(fhandle)
 
     assert "garbage found after @ENDIF" in excinfo.value.args[0]
+
+
+def test_unknown_preprocessor():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    fhandle = io.StringIO("""@FOOBAR foo""")
+
+    with pytest.raises(PreprocessorError) as excinfo:
+        cp2k_parser.parse(fhandle)
+
+    assert "unknown preprocessor directive found" in excinfo.value.args[0]
+
+
+def test_include_missing():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    fhandle = io.StringIO("@INCLUDE")
+
+    with pytest.raises(PreprocessorError) as excinfo:
+        cp2k_parser.parse(fhandle)
+
+    assert "@INCLUDE requires exactly one argument" in excinfo.value.args[0]
+
+
+def test_include_empty():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    fhandle = io.StringIO("@INCLUDE ''")
+
+    with pytest.raises(PreprocessorError) as excinfo:
+        cp2k_parser.parse(fhandle)
+
+    assert "@INCLUDE requires exactly one argument" in excinfo.value.args[0]
+
+
+def test_include_multiple():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    fhandle = io.StringIO("@INCLUDE 'foo' 'bar'")
+
+    with pytest.raises(PreprocessorError) as excinfo:
+        cp2k_parser.parse(fhandle)
+
+    assert "@INCLUDE requires exactly one argument" in excinfo.value.args[0]
+
+
+def test_include_undefined_var():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    fhandle = io.StringIO("@INCLUDE $foo")
+
+    with pytest.raises(PreprocessorError) as excinfo:
+        cp2k_parser.parse(fhandle)
+
+    assert "undefined variable" in excinfo.value.args[0]
