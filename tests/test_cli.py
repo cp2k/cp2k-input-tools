@@ -105,3 +105,11 @@ def test_cp2klint_error(script_runner):
     assert not ret.success
     assert "Syntax error" in ret.stdout
     assert "invalid values for keyword: A" in ret.stdout
+
+
+def test_cp2klint_error_context(script_runner):
+    ret = script_runner.run("cp2klint", str(TEST_DIR.joinpath("inputs/unterminated_var.inp")))
+
+    assert not ret.success
+    assert "Syntax error: unterminated variable" in ret.stdout
+    assert "line   36: @IF ${HP\n               ~~~~^" in ret.stdout

@@ -184,7 +184,7 @@ class CP2KInputParser:
 
             var_end = line.find("}", var_start + 2)
             if var_end < 0:
-                ctx["colnr"] = len(line) - 1
+                ctx["colnr"] = len(line)
                 ctx["ref_colnr"] = var_start
                 raise PreprocessorError(f"unterminated variable", ctx)
 
@@ -338,6 +338,7 @@ class CP2KInputParser:
             exc.args[1]["filename"] = entry.fname
             exc.args[1]["linenr"] = entry.linenr
             exc.args[1]["line"] = entry.line
+            exc.args[1]["colnrs"] = entry.colnrs
             raise
 
         return self._tree

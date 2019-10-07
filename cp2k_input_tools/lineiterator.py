@@ -15,7 +15,7 @@ def continuation_lines(fhandle):
     colnrs = []  # number of stripped whitespace
     line = ""
 
-    for linenr, raw_line in enumerate(fhandle):
+    for linenr, raw_line in enumerate(fhandle, 1):  # line numbers are more intuitively when starting at 1
         lstripped = raw_line.lstrip()  # CP2K consequently strips all left whitespace
         colnrs += [len(raw_line) - len(lstripped)]  # remember where the original colnr started
 

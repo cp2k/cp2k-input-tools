@@ -38,6 +38,11 @@ def cp2klint():
                     count = ctx["ref_colnr"] - ctx["colnr"]
                     nchars = min(ctx["ref_colnr"], ctx["colnr"])  # correct if ref comes before
 
+                if ctx["colnrs"] is not None:
+                    # shift by the number of left-stripped ws
+                    # ctx["colnrs"] contains the left shift for each possibly continued line
+                    nchars += ctx["colnrs"][0]  # assume no line-continuation for now
+
                 # replace all non-ws chars with spaces:
                 # - assuming a monospace font
                 # - preserving other whitespace we don't know the width
