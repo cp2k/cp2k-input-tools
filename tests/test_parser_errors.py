@@ -1,9 +1,11 @@
+import io
+
 import pytest
 
 from . import TEST_DIR
 from cp2k_input_tools.parser import CP2KInputParser
 from cp2k_input_tools.cli import DEFAULT_CP2K_INPUT_XML
-from cp2k_input_tools.parser_errors import InvalidParameterError, PreprocessorError
+from cp2k_input_tools.parser_errors import InvalidParameterError, PreprocessorError, InvalidNameError
 from cp2k_input_tools.tokenizer import UnterminatedStringError
 
 
@@ -39,3 +41,21 @@ def test_undefined_preprocessor_var():
 
     assert "undefined variable 'HP'" in excinfo.value.args[0]
     assert excinfo.value.args[1]["linenr"] == 30
+
+
+def test_multiple_defined_non_repeating_section():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    fhandle = io.StringIO(
+        """
+        &GLOBAL
+        &END GLOBAL
+        &GLOBAL
+        &END GLOBAL
+        """
+    )
+
+    with pytest.raises(InvalidNameError) as excinfo:
+        cp2k_parser.parse(fhandle)
+
+    assert "the section '+global' can not be defined multiple times" in excinfo.value.args[0]
