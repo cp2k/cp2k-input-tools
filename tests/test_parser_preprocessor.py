@@ -15,8 +15,16 @@ def test_var_substition():
         tree = cp2k_parser.parse(fhandle)
 
     assert isinstance(tree, dict)
-    assert tree["+force_eval"][0]["+subsys"]["+cell"]["a"] == [0.0, 2.8595, 2.8595]
-    assert tree["+force_eval"][0]["+subsys"]["+cell"]["b"] == [2.8595, 0.0, 2.8595]
+    assert tree["+force_eval"][0]["+subsys"]["+cell"]["a"] == [5.64123539364476, 0.0, 0.0]
+    assert tree["+force_eval"][0]["+subsys"]["+cell"]["b"] == [0.0, 5.64123539364476, 0.0]
+    assert tree["+force_eval"][0]["+subsys"]["+cell"]["c"] == [0.0, 0.0, 5.64123539364476]
+
+    # make sure @IF DO_CELLOPT case evaluated to false:
+    assert tree["+global"]["run_type"] == "energy_force"
+    assert "+motion" not in tree
+
+    # make sure @IF $DO_KPOINTS evaluated to false
+    assert "+kpoints" in tree["+force_eval"][0]["+dft"]
 
 
 def test_undefined_var():
