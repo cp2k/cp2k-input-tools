@@ -9,6 +9,7 @@ Available commands (also available through an API, see below):
 * `cp2klint` .. a CP2K input file linter
 * `fromcp2k` .. create a JSON or YAML configuration file from a CP2K input file (includes validation)
 * `tocp2k` .. convert a JSON or YAML configuration back to CP2K's input file format (includes validation)
+* `cp2kgen` .. generate new input files based on a given input file and expressions to change parameters programmatically
 
 For a description of the JSON/YAML formats used, see below.
 
@@ -85,6 +86,27 @@ $ cp2klint tests/inputs/unterminated_var.inp
 Syntax error: unterminated variable, in tests/inputs/unterminated_var.inp:
 line   36: @IF ${HP
                ~~~~^
+```
+
+Generate input files for a `CUTOFF` convergence study (multiple expressions will be combined as a cartesian product): 
+
+```console
+$ cp2kgen tests/inputs/NaCl.inp "force_eval/dft/mgrid/cutoff=[800,900,1000]"
+Writing 'NaCl-cutoff_800.inp'...
+Writing 'NaCl-cutoff_900.inp'...
+Writing 'NaCl-cutoff_1000.inp'...
+$ diff -Naurb NaCl-cutoff_800.inp NaCl-cutoff_900.inp 
+--- NaCl-cutoff_800.inp	2019-10-21 18:52:09.994323474 +0200
++++ NaCl-cutoff_900.inp	2019-10-21 18:52:10.680996641 +0200
+@@ -69,7 +69,7 @@
+       POTENTIAL_FILE_NAME ALL_POTENTIALS
+       &MGRID
+          REL_CUTOFF 80.0
+-         CUTOFF 800
++         CUTOFF 900
+          NGRIDS 6
+       &END MGRID
+       &XC
 ```
 
 ## API
