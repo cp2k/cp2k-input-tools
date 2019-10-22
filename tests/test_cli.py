@@ -1,4 +1,6 @@
 import json
+from tempfile import TemporaryDirectory
+import pathlib
 import pytest
 
 from . import TEST_DIR
@@ -30,6 +32,28 @@ def test_fromcp2k_json_canonical(script_runner):
 
     assert isinstance(tree, dict)
     assert "+global" in tree
+
+
+def test_fromcp2k_json_trafo_lower(script_runner):
+    ret = script_runner.run("fromcp2k", "--trafo=lower", str(TEST_DIR.joinpath("inputs/test01.inp")))
+
+    assert ret.success
+    assert ret.stderr == ""
+
+    tree = json.loads(ret.stdout)
+
+    assert "a" in tree["force_eval"]["subsys"]["cell"]  # single letter keys would be capitalized in the "auto" trafo
+
+
+def test_fromcp2k_json_trafo_upper(script_runner):
+    ret = script_runner.run("fromcp2k", "--trafo=upper", str(TEST_DIR.joinpath("inputs/test01.inp")))
+
+    assert ret.success
+    assert ret.stderr == ""
+
+    tree = json.loads(ret.stdout)
+
+    assert "GLOBAL" in tree  # keys with more than 3 chars would be lowercase in the "auto" trafo
 
 
 def test_fromcp2k_yaml_simple(script_runner):
@@ -83,3 +107,58 @@ def test_cp2klint_error(script_runner):
     assert not ret.success
     assert "Syntax error" in ret.stdout
     assert "invalid values for keyword: A" in ret.stdout
+
+
+def test_cp2klint_error_context(script_runner):
+    ret = script_runner.run("cp2klint", str(TEST_DIR.joinpath("inputs/unterminated_var.inp")))
+
+    assert not ret.success
+    assert "Syntax error: unterminated variable" in ret.stdout
+    assert "line   36: @IF ${HP\n               ~~~~^" in ret.stdout
+
+
+def test_gencp2k_simplified(script_runner):
+    with TemporaryDirectory() as cwd:
+        ret = script_runner.run(
+            "cp2kgen", str(TEST_DIR / "inputs" / "NaCl.inp"), "force_eval/dft/mgrid/cutoff=[800,900,1000]", cwd=cwd
+        )
+
+        assert ret.stderr == ""
+        assert ret.success
+
+        cwd = pathlib.Path(cwd)
+        for cutoff in [800, 900, 1000]:
+            assert (cwd / f"NaCl-cutoff_{cutoff}.inp").exists()
+
+
+def test_gencp2k_canonical(script_runner):
+    with TemporaryDirectory() as cwd:
+        ret = script_runner.run(
+            "cp2kgen", "-c", str(TEST_DIR / "inputs" / "NaCl.inp"), "+force_eval/0/+dft/+mgrid/cutoff=[800,900,1000]", cwd=cwd
+        )
+
+        assert ret.stderr == ""
+        assert ret.success
+
+        cwd = pathlib.Path(cwd)
+        for cutoff in [800, 900, 1000]:
+            assert (cwd / f"NaCl-cutoff_{cutoff}.inp").exists()
+
+
+def test_gencp2k_simplified_indexed_single_value(script_runner):
+    with TemporaryDirectory() as cwd:
+        ret = script_runner.run("cp2kgen", str(TEST_DIR / "inputs" / "NaCl.inp"), "force_eval/subsys/cell/a/0=10.0", cwd=cwd)
+
+        assert ret.stderr == ""
+        assert ret.success
+
+        cwd = pathlib.Path(cwd)
+        assert (cwd / f"NaCl-0_10.0.inp").exists()
+
+
+def test_gencp2k_invalid_expression(script_runner):
+    with TemporaryDirectory() as cwd:
+        ret = script_runner.run("cp2kgen", str(TEST_DIR / "inputs" / "NaCl.inp"), "force_eval/subsys/cell/a/0 -> test", cwd=cwd)
+
+        assert "an expression must be of the form" in ret.stderr
+        assert not ret.success

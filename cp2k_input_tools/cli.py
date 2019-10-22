@@ -1,6 +1,9 @@
 import argparse
 import sys
 import re
+import itertools
+from copy import deepcopy
+import pathlib
 
 from . import DEFAULT_CP2K_INPUT_XML
 from .parser import CP2KInputParser, CP2KInputParserSimplified
@@ -37,6 +40,11 @@ def cp2klint():
                 if ctx["ref_colnr"] is not None:
                     count = ctx["ref_colnr"] - ctx["colnr"]
                     nchars = min(ctx["ref_colnr"], ctx["colnr"])  # correct if ref comes before
+
+                if ctx["colnrs"] is not None:
+                    # shift by the number of left-stripped ws
+                    # ctx["colnrs"] contains the left shift for each possibly continued line
+                    nchars += ctx["colnrs"][0]  # assume no line-continuation for now
 
                 # replace all non-ws chars with spaces:
                 # - assuming a monospace font
@@ -132,3 +140,72 @@ def tocp2k():
 
     for line in cp2k_generator.line_iter(tree):
         print(line)
+
+
+def cp2kgen():
+    parser = argparse.ArgumentParser(description="Generates variations of the given CP2K input file")
+    parser.add_argument("file", metavar="<file>", type=str, help="CP2K input file")
+    parser.add_argument("expressions", metavar="<expression>", type=str, nargs="+", help="Generator expressions")
+    parser.add_argument("-b", "--base-dir", type=str, default=".", help="search path used for relative @include's")
+    parser.add_argument("-c", "--canonical", action="store_true", help="use the canonical output format")
+    # parser.add_argument("-o", "--output-pattern", metavar="<output-file-pattern>",
+    #                     type=str, help="Pattern to use for generated output files")
+    args = parser.parse_args()
+
+    if args.canonical:
+        cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML, base_dir=args.base_dir, key_trafo=str.lower)
+    else:
+        cp2k_parser = CP2KInputParserSimplified(DEFAULT_CP2K_INPUT_XML, base_dir=args.base_dir, key_trafo=str.lower)
+
+    with open(args.file, "r") as fhandle:
+        tree = cp2k_parser.parse(fhandle)
+
+    # list of substitutions/transformations to apply
+    substitutions = []
+
+    for expression in args.expressions:
+        try:
+            kpath, value = expression.split("=", maxsplit=1)
+        except ValueError:
+            raise ValueError("an expression must be of the form 'path/to/key=...'") from None
+
+        if re.match(r"^\[.+\]$", value):
+            values = [v.strip() for v in value.strip("[]").split(",")]
+            substitutions += [(kpath, values)]
+        else:
+            substitutions += [(kpath, [value])]
+
+    ifile = pathlib.Path(args.file)
+    onameprefix = ifile.stem
+    onamesuffix = ifile.suffix
+
+    # first generate a list of list of tuples [ [(key/a, 10), (key/a, 20), ...], [(key/b, 100), ...], ...]
+    for substtuple in itertools.product(*[[(k, v) for v in values] for k, values in substitutions]):
+        # ... then iterate over the cartesian product
+        curr_tree = deepcopy(tree)  # create a full copy of the initial tree
+        onameparts = []  # output name parts
+        for kpath, value in substtuple:
+            ref = curr_tree
+
+            sections = kpath.split("/")
+            for section in sections[:-1]:
+                if isinstance(ref, list):
+                    section = int(section)  # if we encounter a list, convert the respective path element
+                ref = ref[section]  # exploit Python using references into dicts/lists
+
+            attr = sections[-1]
+            if isinstance(ref, list):
+                attr = int(attr)
+
+            ref[attr] = value
+
+            # take only the attribute name
+            onameparts += [f"{attr}_{value}"]
+
+        opath = pathlib.Path(f"{onameprefix}-{'-'.join(onameparts)}{onamesuffix}")
+        print(f"Writing '{opath}'...")
+
+        with opath.open("w") as fhandle:
+            cp2k_generator = CP2KInputGenerator(DEFAULT_CP2K_INPUT_XML)
+            for line in cp2k_generator.line_iter(curr_tree):
+                fhandle.write(f"{line}\n")

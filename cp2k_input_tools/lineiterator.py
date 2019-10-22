@@ -1,7 +1,7 @@
 import collections
 
 
-def LineContinuationError(Exception):
+class LineContinuationError(Exception):
     pass
 
 
@@ -15,7 +15,9 @@ def continuation_lines(fhandle):
     colnrs = []  # number of stripped whitespace
     line = ""
 
-    for linenr, raw_line in enumerate(fhandle):
+    fname = getattr(fhandle, "name", "<NONAME>")
+
+    for linenr, raw_line in enumerate(fhandle, 1):  # line numbers are more intuitively when starting at 1
         lstripped = raw_line.lstrip()  # CP2K consequently strips all left whitespace
         colnrs += [len(raw_line) - len(lstripped)]  # remember where the original colnr started
 
@@ -27,15 +29,13 @@ def continuation_lines(fhandle):
             starts += [len(line)]
             continue
 
-        yield LineEntry(
-            line, linenr, starts, colnrs, fhandle.name
-        )  # the linenr here is the nr of the last line without continuation
+        yield LineEntry(line, linenr, starts, colnrs, fname)  # the linenr here is the nr of the last line without continuation
         starts = [0]
         colnrs = []
         line = ""
 
-    if line:
-        raise LineContinuationError("stray line continuation at end of file", fhandle.name)
+    if colnrs:
+        raise LineContinuationError("stray line continuation at end of file", fname)
 
 
 _FileIterPair = collections.namedtuple("FileIterPair", ["fhandle", "iter"])
