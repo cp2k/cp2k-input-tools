@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.3.0] - 2019-10-22
+
+* initial release with the cp2kgen tool
+* added more tests and some bugfixes
+* improved documentation
+
 ## [0.2.5] - 2019-10-07
 
 * fix parsing comments starting with # instead of ! (thanks to stanos4)
