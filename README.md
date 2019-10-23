@@ -10,6 +10,7 @@ Available commands (also available through an API, see below):
 * `fromcp2k` .. create a JSON or YAML configuration file from a CP2K input file (includes validation)
 * `tocp2k` .. convert a JSON or YAML configuration back to CP2K's input file format (includes validation)
 * `cp2kgen` .. generate new input files based on a given input file and expressions to change parameters programmatically
+* `cp2kget` .. get values from a CP2K input file (most likely a restart file) given a path of sections and attribute
 
 For a description of the JSON/YAML formats used, see below.
 
@@ -107,6 +108,13 @@ $ diff -Naurb NaCl-cutoff_800.inp NaCl-cutoff_900.inp
           NGRIDS 6
        &END MGRID
        &XC
+```
+
+Get a value from a CP2K input file, for example a `RESTART` file generated in a cell optimization:
+
+```console
+$ poetry run cp2kget tests/inputs/NaCl.inp "force_eval/subsys/cell/a/0"
+force_eval/subsys/cell/a/0: 5.64123539364476
 ```
 
 ## API

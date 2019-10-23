@@ -209,3 +209,30 @@ def cp2kgen():
             cp2k_generator = CP2KInputGenerator(DEFAULT_CP2K_INPUT_XML)
             for line in cp2k_generator.line_iter(curr_tree):
                 fhandle.write(f"{line}\n")
+
+
+def cp2kget():
+    parser = argparse.ArgumentParser(description="Get values by path from a CP2K input file")
+    parser.add_argument("file", metavar="<file>", type=str, help="CP2K input file")
+    parser.add_argument("paths", metavar="<path>", type=str, nargs="+", help="Path, ex.: 'force_eval/dft/mgrid/cutoff'")
+    parser.add_argument("-b", "--base-dir", type=str, default=".", help="search path used for relative @include's")
+    parser.add_argument("-c", "--canonical", action="store_true", help="use the canonical output format")
+    args = parser.parse_args()
+
+    if args.canonical:
+        cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML, base_dir=args.base_dir, key_trafo=str.lower)
+    else:
+        cp2k_parser = CP2KInputParserSimplified(DEFAULT_CP2K_INPUT_XML, base_dir=args.base_dir, key_trafo=str.lower)
+
+    with open(args.file, "r") as fhandle:
+        tree = cp2k_parser.parse(fhandle)
+
+    for path in args.paths:
+        sections = path.split("/")
+        ref = tree
+        for section in sections:
+            if isinstance(ref, list):
+                section = int(section)  # if we encounter a list, convert the respective path element
+            ref = ref[section]  # exploit Python using references into dicts/lists
+
+        print(f"{path}: {ref}")

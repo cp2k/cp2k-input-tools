@@ -117,7 +117,7 @@ def test_cp2klint_error_context(script_runner):
     assert "line   36: @IF ${HP\n               ~~~~^" in ret.stdout
 
 
-def test_gencp2k_simplified(script_runner):
+def test_cp2kgen_simplified(script_runner):
     with TemporaryDirectory() as cwd:
         ret = script_runner.run(
             "cp2kgen", str(TEST_DIR / "inputs" / "NaCl.inp"), "force_eval/dft/mgrid/cutoff=[800,900,1000]", cwd=cwd
@@ -131,7 +131,7 @@ def test_gencp2k_simplified(script_runner):
             assert (cwd / f"NaCl-cutoff_{cutoff}.inp").exists()
 
 
-def test_gencp2k_canonical(script_runner):
+def test_cp2kgen_canonical(script_runner):
     with TemporaryDirectory() as cwd:
         ret = script_runner.run(
             "cp2kgen", "-c", str(TEST_DIR / "inputs" / "NaCl.inp"), "+force_eval/0/+dft/+mgrid/cutoff=[800,900,1000]", cwd=cwd
@@ -145,7 +145,7 @@ def test_gencp2k_canonical(script_runner):
             assert (cwd / f"NaCl-cutoff_{cutoff}.inp").exists()
 
 
-def test_gencp2k_simplified_indexed_single_value(script_runner):
+def test_cp2kgen_simplified_indexed_single_value(script_runner):
     with TemporaryDirectory() as cwd:
         ret = script_runner.run("cp2kgen", str(TEST_DIR / "inputs" / "NaCl.inp"), "force_eval/subsys/cell/a/0=10.0", cwd=cwd)
 
@@ -156,9 +156,33 @@ def test_gencp2k_simplified_indexed_single_value(script_runner):
         assert (cwd / f"NaCl-0_10.0.inp").exists()
 
 
-def test_gencp2k_invalid_expression(script_runner):
+def test_cp2kgen_invalid_expression(script_runner):
     with TemporaryDirectory() as cwd:
         ret = script_runner.run("cp2kgen", str(TEST_DIR / "inputs" / "NaCl.inp"), "force_eval/subsys/cell/a/0 -> test", cwd=cwd)
 
         assert "an expression must be of the form" in ret.stderr
         assert not ret.success
+
+
+def test_cp2kget_simplified(script_runner):
+    ret = script_runner.run("cp2kget", str(TEST_DIR / "inputs" / "NaCl.inp"), "force_eval/dft/mgrid/cutoff")
+
+    assert ret.stderr == ""
+    assert ret.success
+    assert "force_eval/dft/mgrid/cutoff: 800.0" in ret.stdout
+
+
+def test_cp2kget_canonical(script_runner):
+    ret = script_runner.run("cp2kget", "-c", str(TEST_DIR / "inputs" / "NaCl.inp"), "+force_eval/0/+dft/+mgrid/cutoff")
+
+    assert ret.stderr == ""
+    assert ret.success
+    assert "+force_eval/0/+dft/+mgrid/cutoff: 800.0" in ret.stdout
+
+
+def test_cp2kget_simplified_indexed_single_value(script_runner):
+    ret = script_runner.run("cp2kget", str(TEST_DIR / "inputs" / "NaCl.inp"), "force_eval/subsys/cell/a/0")
+
+    assert ret.stderr == ""
+    assert ret.success
+    assert "force_eval/subsys/cell/a/0: 5.64123539364476" in ret.stdout
