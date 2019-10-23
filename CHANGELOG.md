@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.3.1] - 2019-10-23
+
+* initial release of the cp2kget tool to fetch values from a CP2K input (restart) file
+
 ## [0.3.0] - 2019-10-22
 
 * initial release with the cp2kgen tool
