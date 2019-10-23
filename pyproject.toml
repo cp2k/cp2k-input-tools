@@ -1,13 +1,12 @@
 [tool.poetry]
 name = "cp2k-input-tools"
-version = "0.3.0"
+version = "0.3.1"
 description = "Python tools to handle CP2K input files"
 authors = ["Tiziano Müller <tiziano.mueller@chem.uzh.ch>"]
 repository = "https://github.com/dev-zero/cp2k-input-tools"
 license = "MIT"
 classifiers = [
     "Development Status :: 4 - Beta",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Environment :: Console",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -36,6 +35,7 @@ cp2klint = 'cp2k_input_tools.cli:cp2klint'
 fromcp2k = 'cp2k_input_tools.cli:fromcp2k'
 tocp2k = 'cp2k_input_tools.cli:tocp2k'
 cp2kgen = 'cp2k_input_tools.cli:cp2kgen'
+cp2kget = 'cp2k_input_tools.cli:cp2kget'
 
 [tool.black]
 line-length = 132
