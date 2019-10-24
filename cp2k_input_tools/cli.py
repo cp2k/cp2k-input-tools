@@ -227,6 +227,12 @@ def cp2kget():
     with open(args.file, "r") as fhandle:
         tree = cp2k_parser.parse(fhandle)
 
+    def _(val):
+        if isinstance(val, list):
+            return ", ".join(str(v) for v in val)
+
+        return val
+
     for path in args.paths:
         sections = path.split("/")
         ref = tree
@@ -235,4 +241,4 @@ def cp2kget():
                 section = int(section)  # if we encounter a list, convert the respective path element
             ref = ref[section]  # exploit Python using references into dicts/lists
 
-        print(f"{path}: {ref}")
+        print(f"{path}: {_(ref)}")

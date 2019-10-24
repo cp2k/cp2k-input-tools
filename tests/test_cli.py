@@ -186,3 +186,12 @@ def test_cp2kget_simplified_indexed_single_value(script_runner):
     assert ret.stderr == ""
     assert ret.success
     assert "force_eval/subsys/cell/a/0: 5.64123539364476" in ret.stdout
+
+
+def test_cp2kget_simplified_list_value(script_runner):
+    """check that getting a list element gives human readable output"""
+    ret = script_runner.run("cp2kget", str(TEST_DIR / "inputs" / "NaCl.inp"), "force_eval/subsys/cell/a")
+
+    assert ret.stderr == ""
+    assert ret.success
+    assert "force_eval/subsys/cell/a: 5.64123539364476, 0.0, 0.0" in ret.stdout
