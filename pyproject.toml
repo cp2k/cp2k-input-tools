@@ -28,7 +28,7 @@ yaml = ["ruamel.yaml"]
 pytest = "^5.2"
 codecov = "^2.0.15"
 pytest-cov = "^2.7.1"
-pytest-console-scripts = "^0.1.10"
+pytest-console-scripts = "^0.2.0"
 
 [tool.poetry.scripts]
 cp2klint = 'cp2k_input_tools.cli:cp2klint'
