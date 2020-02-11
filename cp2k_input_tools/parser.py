@@ -39,6 +39,8 @@ _CONDITIONAL_MATCH = re.compile(r"\s*@(?P<stmt>IF|ENDIF)\s*(?P<cond>.*)", flags=
 _SET_MATCH = re.compile(r"\s*@SET\s+(?P<var>\w+)\s+(?P<value>.+)", flags=re.IGNORECASE)
 _INCLUDE_MATCH = re.compile(r"\s*(?P<complete>@INCLUDE\b\s*(?P<file>.*))", flags=re.IGNORECASE)
 
+_VALID_VAR_NAME_MATCH = re.compile(r"[a-z_]\w*", flags=re.IGNORECASE | re.ASCII)
+
 
 class CP2KInputParser:
     def __init__(self, xmlspec=DEFAULT_CP2K_INPUT_XML, base_dir=".", key_trafo=str.lower):
@@ -188,13 +190,26 @@ class CP2KInputParser:
                 ctx["ref_colnr"] = var_start
                 raise PreprocessorError(f"unterminated variable", ctx)
 
+            ctx["colnr"] = var_start
+            ctx["ref_colnr"] = var_end
+
             key = line[var_start + 2 : var_end]  # without ${ and }
+            value = None
+
+            try:
+                # see whether we got a default value and unpack
+                key, value = key.split("-", maxsplit=1)
+            except ValueError:
+                pass
+
+            if not _VALID_VAR_NAME_MATCH.match(key):
+                raise PreprocessorError(f"invalid variable name '{key}'", ctx) from None
+
             try:
                 value = self._varstack[key.upper()].value
             except KeyError:
-                ctx["colnr"] = var_start
-                ctx["ref_colnr"] = var_end
-                raise PreprocessorError(f"undefined variable '{key}'", ctx) from None
+                if value is None:
+                    raise PreprocessorError(f"undefined variable '{key}' (and no default given)", ctx) from None
 
             line = f"{line[:var_start]}{value}{line[var_end+1:]}"
 
@@ -211,12 +226,17 @@ class CP2KInputParser:
                 # -1 would be the last entry, but in a range it is without the specified entry
                 var_end = len(line.rstrip())
 
+            ctx["colnr"] = var_start
+            ctx["ref_colnr"] = var_end - 1
+
             key = line[var_start + 1 : var_end]
+
+            if not _VALID_VAR_NAME_MATCH.match(key):
+                raise PreprocessorError(f"invalid variable name '{key}'", ctx) from None
+
             try:
                 value = self._varstack[key.upper()].value
             except KeyError:
-                ctx["colnr"] = var_start
-                ctx["ref_colnr"] = var_end - 1
                 raise PreprocessorError(f"undefined variable '{key}'", ctx) from None
 
             line = f"{line[:var_start]}{value}{line[var_end:]}"
@@ -276,8 +296,13 @@ class CP2KInputParser:
         set_match = _SET_MATCH.match(line)
         if set_match:
             # resolve other variables in the definition first
+            key = set_match.group("var")
             value = self._resolve_variables(set_match.group("value"))
-            self._varstack[set_match.group("var").upper()] = _Variable(value, ctx)
+
+            if not _VALID_VAR_NAME_MATCH.match(key):
+                raise PreprocessorError(f"invalid variable name '{key}'", ctx) from None
+
+            self._varstack[key.upper()] = _Variable(value, ctx)
             return
 
         include_match = _INCLUDE_MATCH.match(line)
