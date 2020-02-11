@@ -11,7 +11,7 @@
          SYMMETRY .FALSE.
       &END KPOINTS
       &MGRID
-         CUTOFF [hartree] 500
+         CUTOFF [K_e] 157887512.40203592
          REL_CUTOFF 100
       &END MGRID
       &POISSON
