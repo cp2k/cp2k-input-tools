@@ -474,8 +474,8 @@ class CP2KInputParserSimplified(CP2KInputParser):
                 ]
 
                 if isinstance(value, dict):  # found a single section (already simplified according to rule #2)
-
-                    if "_" in value and not str(value["_"]).upper() in valid_keys:  # and one with a default parameter, transform it
+                    # and one with a default parameter, transform it, but only if the type is a string (never use ints or bools as keys)
+                    if "_" in value and isinstance(value["_"], str) and not value["_"].upper() in valid_keys:
                         tree[key] = {value["_"]: {k: v for k, v in value.items() if k != "_"}}
                         treerefs += [
                             tree[key][value["_"]]  # tree[key][value["_"]] is at this point not a valid section name anymore
