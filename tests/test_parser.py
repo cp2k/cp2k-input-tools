@@ -26,13 +26,18 @@ def test_simple_canonical():
 
 
 def test_simple_simplified_unitconv():
+    """
+    Testing the unit conversion from CP2K supported units (also custom defined ones) using pint
+    to CP2K's default units (which is what will be used to store them in the tree representation.
+    """
     cp2k_parser = CP2KInputParserSimplified(DEFAULT_CP2K_INPUT_XML)
 
     with open(TEST_DIR.joinpath("inputs/test01_units.inp"), "r") as fhandle:
         tree = cp2k_parser.parse(fhandle)
 
-    # this value is given in Bohr while the default is Angstrom, make sure the conversion was correct
     assert tree["force_eval"]["subsys"]["cell"]["a"][0] == pytest.approx(4.07419, 1e-3)
+    assert tree["force_eval"]["dft"]["mgrid"]["cutoff"] == pytest.approx(1000, 1e-3)
+    assert tree["force_eval"]["dft"]["scf"]["smear"]["electronic_temperature"] == pytest.approx(300, 1e-3)
 
 
 def test_simple_simplified_inclusion():

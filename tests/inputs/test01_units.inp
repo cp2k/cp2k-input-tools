@@ -11,7 +11,7 @@
          SYMMETRY .FALSE.
       &END KPOINTS
       &MGRID
-         CUTOFF 1000
+         CUTOFF [hartree] 500
          REL_CUTOFF 100
       &END MGRID
       &POISSON
@@ -39,7 +39,7 @@
          #    METHOD BROYDEN_MIXING
          # &END MIXING
          &SMEAR True
-            ELECTRONIC_TEMPERATURE [K] 300
+            ELECTRONIC_TEMPERATURE [au_temp] 0.0009500434690366672
             METHOD FERMI_DIRAC
          &END SMEAR
       &END SCF
