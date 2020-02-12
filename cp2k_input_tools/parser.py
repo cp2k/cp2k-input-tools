@@ -346,11 +346,15 @@ class CP2KInputParser:
 
         raise PreprocessorError(f"unknown preprocessor directive found", ctx)
 
-    def parse(self, fhandle):
+    def parse(self, fhandle, initial_variable_values=None):
         """Parse a CP2K input file
         :param fhandle: An open file handle. Included files will be opened/closed transparently.
+        :param initial_variable_values: optional dictionary with preprocessor variable names and their initial values
         :return: A nested dictionary, the parsed option "tree"
         """
+
+        if initial_variable_values:
+            self._varstack.update({k.upper(): _Variable(v, Context()) for k, v in initial_variable_values.items()})
 
         self._lineiter.add_file(fhandle)
 
@@ -447,8 +451,8 @@ class CP2KInputParserSimplified(CP2KInputParser):
         else:
             raise InvalidNameError(f"the section '{section_key}' can not be defined multiple times")
 
-    def parse(self, fhandle):
-        super().parse(fhandle)
+    def parse(self, fhandle, initial_variable_values=None):
+        super().parse(fhandle, initial_variable_values)
 
         # implement Rule #3 of the simplified format, as a post-process step
 
