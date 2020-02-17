@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.3.2] - 2020-02-17
+
+* support setting preprocessor variables and default values for them (introduced in CP2K 8.0)
+* update dependencies and add more tests of unit conversions
+* don't simplify sections under bool- or int-valued keys
+
 ## [0.3.1] - 2019-10-23
 
 * initial release of the cp2kget tool to fetch values from a CP2K input (restart) file
