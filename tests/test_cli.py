@@ -74,6 +74,32 @@ def test_fromcp2k_yaml_simple(script_runner):
         assert yaml.load(fhandle) == tree
 
 
+def test_fromcp2k_with_external_var(script_runner):
+    ret = script_runner.run("fromcp2k", "-E", "HP=1", str(TEST_DIR.joinpath("inputs/invalid_without_set_var.inp")))
+
+    assert ret.success
+    assert ret.stderr == ""
+
+    tree = json.loads(ret.stdout)
+
+    assert isinstance(tree, dict)
+    assert "force_eval" in tree
+    assert "DFT" in tree["force_eval"]
+    assert "kpoints" in tree["force_eval"]["DFT"]
+
+    ret = script_runner.run("fromcp2k", "-E", "HP=0", str(TEST_DIR.joinpath("inputs/invalid_without_set_var.inp")))
+
+    assert ret.success
+    assert ret.stderr == ""
+
+    tree = json.loads(ret.stdout)
+
+    assert isinstance(tree, dict)
+    assert "force_eval" in tree
+    assert "DFT" in tree["force_eval"]
+    assert "kpoints" not in tree["force_eval"]["DFT"]
+
+
 def test_tocp2k_json(script_runner):
     ret = script_runner.run("tocp2k", str(TEST_DIR.joinpath("inputs/test01.json")))
 
@@ -115,6 +141,26 @@ def test_cp2klint_error_context(script_runner):
     assert not ret.success
     assert "Syntax error: unterminated variable" in ret.stdout
     assert "line   36: @IF ${HP\n               ~~~~^" in ret.stdout
+
+
+def test_cp2klint_invalid_set_arg(script_runner):
+    ret = script_runner.run("cp2klint", "--set", "missing-equal-sign", str(TEST_DIR.joinpath("inputs/test01.inp")))
+
+    assert not ret.success
+    assert "error: argument -E/--set" in ret.stderr
+
+
+def test_cp2klint_invalid_without_set_var(script_runner):
+    ret = script_runner.run("cp2klint", str(TEST_DIR.joinpath("inputs/invalid_without_set_var.inp")))
+
+    assert not ret.success
+    assert "Syntax error: undefined variable 'HP'" in ret.stdout
+
+
+def test_cp2klint_invalid_without_set_var_defined(script_runner):
+    ret = script_runner.run("cp2klint", "--set", "HP=1", str(TEST_DIR.joinpath("inputs/invalid_without_set_var.inp")))
+
+    assert ret.success
 
 
 def test_cp2kgen_simplified(script_runner):
@@ -186,3 +232,12 @@ def test_cp2kget_simplified_indexed_single_value(script_runner):
     assert ret.stderr == ""
     assert ret.success
     assert "force_eval/subsys/cell/a/0: 5.64123539364476" in ret.stdout
+
+
+def test_cp2kget_simplified_list_value(script_runner):
+    """check that getting a list element gives human readable output"""
+    ret = script_runner.run("cp2kget", str(TEST_DIR / "inputs" / "NaCl.inp"), "force_eval/subsys/cell/a")
+
+    assert ret.stderr == ""
+    assert ret.success
+    assert "force_eval/subsys/cell/a: 5.64123539364476, 0.0, 0.0" in ret.stdout

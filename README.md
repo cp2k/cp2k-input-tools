@@ -113,7 +113,7 @@ $ diff -Naurb NaCl-cutoff_800.inp NaCl-cutoff_900.inp
 Get a value from a CP2K input file, for example a `RESTART` file generated in a cell optimization:
 
 ```console
-$ poetry run cp2kget tests/inputs/NaCl.inp "force_eval/subsys/cell/a/0"
+$ cp2kget tests/inputs/NaCl.inp "force_eval/subsys/cell/a/0"
 force_eval/subsys/cell/a/0: 5.64123539364476
 ```
 

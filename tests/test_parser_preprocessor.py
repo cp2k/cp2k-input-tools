@@ -135,3 +135,26 @@ def test_include_undefined_var():
         cp2k_parser.parse(fhandle)
 
     assert "undefined variable" in excinfo.value.args[0]
+
+
+def test_var_default_val():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    with open(TEST_DIR.joinpath("inputs/default_var_val.inp"), "r") as fhandle:
+        tree = cp2k_parser.parse(fhandle)
+
+    assert "+kpoints" in tree["+force_eval"][0]["+dft"]
+
+
+def test_invalid_var_name():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    fhandle = io.StringIO("@SET 1bar 1")
+    with pytest.raises(PreprocessorError) as excinfo:
+        cp2k_parser.parse(fhandle)
+    assert "invalid variable name" in excinfo.value.args[0]
+
+    fhandle = io.StringIO("${1foo-bar}")
+    with pytest.raises(PreprocessorError) as excinfo:
+        cp2k_parser.parse(fhandle)
+    assert "invalid variable name" in excinfo.value.args[0]

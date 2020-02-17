@@ -40,10 +40,9 @@
         "eps_scf": 1e-08,
         "max_scf": 50,
         "smear": {
-          "true": {
-            "electronic_temperature": 300.0,
-            "method": "fermi_dirac"
-          }
+          "_": true,
+          "electronic_temperature": 300.0,
+          "method": "fermi_dirac"
         }
       },
       "XC": {

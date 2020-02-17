@@ -1,33 +1,21 @@
-
-# Constants
-rydberg_constant = 1.0973731568160e7 * m^-1 = R_∞ = R_inf # pint > 0.9
-fine_structure_constant = (2 * h * R_inf / (m_e * c)) ** 0.5 = α = alpha # pint > 0.9
-
-# Wavenumber
-reciprocal_centimeter = 1 / cm = cm_1 = kayser = wavenumber # pint > 0.9 AND custom definition of wavenumber
-
 # Energy
-rydberg = h * c * R_inf = Ry # pint > 0.9
-wavenumber_e = h * c * wavenumber  # custom definition, ṽ (nu-tilde) as energy
-kcalmol = 1e3 * calorie / mole # custom definition
-kjmol = 1e3 * joule / mole # custom definition
-K_e = kelvin * boltzmann_constant # custom definition
-
-# Length
-bohr = hbar / (alpha * m_e * c) = a_0 = a0 = bohr_radius = atomic_unit_of_length = a_u_length # pint > 0.9
+wavenumber_e = h * c * wavenumber  # ṽ (nu-tilde) as energy
+kcalmol = 1e3 * calorie / mole
+kjmol = 1e3 * joule / mole
+K_e = kelvin * boltzmann_constant
 
 # Temperature
-atomic_unit_of_temperature = E_h / k = a_u_temp = au_temp # pint 0.9 AND custom definition of au_temp
+au_temp = atomic_unit_of_temperature
 
 # Pressure
-au_p = E_h / bohr**3 # custom definition
+au_p = E_h / bohr**3
 
 # Time
-atomic_unit_of_time = hbar / E_h = a_u_time = au_t # pint > 0.9 AND custom definition of au_t
+au_t = atomic_unit_of_time
 # wavenumber_t = 
 
 # Potential
-au_pot = E_h / e # custom definition
+au_pot = E_h / e
 
 # Force
-atomic_unit_of_force = E_h / a_0 = a_u_force = au_f # pint > 0.9 AND custom definition of au_f
+au_f = atomic_unit_of_force

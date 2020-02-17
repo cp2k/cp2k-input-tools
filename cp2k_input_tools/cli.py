@@ -12,16 +12,34 @@ from .tokenizer import TokenizerError
 from .generator import CP2KInputGenerator
 
 
+def _argparse_str2kv(arg):
+    try:
+        key, value = arg.split("=", maxsplit=1)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"Invalid value '{arg}', must be of the form 'key=value'")
+
+    return key, value
+
+
 def cp2klint():
     parser = argparse.ArgumentParser(description="Check the passed CP2K file for syntax errors")
     parser.add_argument("file", metavar="<file>", type=str, help="CP2K input file")
+    parser.add_argument(
+        "-E",
+        "--set",
+        dest="var_values",
+        metavar="key=value",
+        default=[],
+        type=_argparse_str2kv,
+        action="append",
+        help="preset the value for a CP2K preprocessor variable",
+    )
     args = parser.parse_args()
 
     cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
-
     with open(args.file, "r") as fhandle:
         try:
-            cp2k_parser.parse(fhandle)
+            cp2k_parser.parse(fhandle, dict(args.var_values))
         except (PreprocessorError, TokenizerError, InvalidParameterError) as exc:
             ctx = exc.args[1]
             line = ctx["line"].rstrip()
@@ -96,6 +114,16 @@ def fromcp2k():
         default="auto",
         help="transformation applied to key and section names (auto, upper, lower)",
     )
+    parser.add_argument(
+        "-E",
+        "--set",
+        dest="var_values",
+        metavar="key=value",
+        default=[],
+        type=_argparse_str2kv,
+        action="append",
+        help="preset the value for a CP2K preprocessor variable",
+    )
     args = parser.parse_args()
 
     if args.canonical:
@@ -104,7 +132,7 @@ def fromcp2k():
         cp2k_parser = CP2KInputParserSimplified(DEFAULT_CP2K_INPUT_XML, base_dir=args.base_dir, key_trafo=args.trafo)
 
     with open(args.file, "r") as fhandle:
-        tree = cp2k_parser.parse(fhandle)
+        tree = cp2k_parser.parse(fhandle, dict(args.var_values))
 
     if args.yaml:
         from ruamel.yaml import YAML
@@ -148,6 +176,16 @@ def cp2kgen():
     parser.add_argument("expressions", metavar="<expression>", type=str, nargs="+", help="Generator expressions")
     parser.add_argument("-b", "--base-dir", type=str, default=".", help="search path used for relative @include's")
     parser.add_argument("-c", "--canonical", action="store_true", help="use the canonical output format")
+    parser.add_argument(
+        "-E",
+        "--set",
+        dest="var_values",
+        metavar="key=value",
+        default=[],
+        type=_argparse_str2kv,
+        action="append",
+        help="preset the value for a CP2K preprocessor variable",
+    )
     # parser.add_argument("-o", "--output-pattern", metavar="<output-file-pattern>",
     #                     type=str, help="Pattern to use for generated output files")
     args = parser.parse_args()
@@ -158,7 +196,7 @@ def cp2kgen():
         cp2k_parser = CP2KInputParserSimplified(DEFAULT_CP2K_INPUT_XML, base_dir=args.base_dir, key_trafo=str.lower)
 
     with open(args.file, "r") as fhandle:
-        tree = cp2k_parser.parse(fhandle)
+        tree = cp2k_parser.parse(fhandle, dict(args.var_values))
 
     # list of substitutions/transformations to apply
     substitutions = []
@@ -217,6 +255,16 @@ def cp2kget():
     parser.add_argument("paths", metavar="<path>", type=str, nargs="+", help="Path, ex.: 'force_eval/dft/mgrid/cutoff'")
     parser.add_argument("-b", "--base-dir", type=str, default=".", help="search path used for relative @include's")
     parser.add_argument("-c", "--canonical", action="store_true", help="use the canonical output format")
+    parser.add_argument(
+        "-E",
+        "--set",
+        dest="var_values",
+        metavar="key=value",
+        default=[],
+        type=_argparse_str2kv,
+        action="append",
+        help="preset the value for a CP2K preprocessor variable",
+    )
     args = parser.parse_args()
 
     if args.canonical:
@@ -225,7 +273,13 @@ def cp2kget():
         cp2k_parser = CP2KInputParserSimplified(DEFAULT_CP2K_INPUT_XML, base_dir=args.base_dir, key_trafo=str.lower)
 
     with open(args.file, "r") as fhandle:
-        tree = cp2k_parser.parse(fhandle)
+        tree = cp2k_parser.parse(fhandle, dict(args.var_values))
+
+    def _(val):
+        if isinstance(val, list):
+            return ", ".join(str(v) for v in val)
+
+        return val
 
     for path in args.paths:
         sections = path.split("/")
@@ -235,4 +289,4 @@ def cp2kget():
                 section = int(section)  # if we encounter a list, convert the respective path element
             ref = ref[section]  # exploit Python using references into dicts/lists
 
-        print(f"{path}: {ref}")
+        print(f"{path}: {_(ref)}")
