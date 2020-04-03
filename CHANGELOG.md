@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.3.3] - 2020-04-03
+
+* updated URLs after the move to cp2k
+* updated version for `transition` dependency
+
 ## [0.3.2] - 2020-02-17
 
 * support setting preprocessor variables and default values for them (introduced in CP2K 8.0)
