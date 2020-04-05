@@ -11,6 +11,7 @@ Available commands (also available through an API, see below):
 * `tocp2k` .. convert a JSON or YAML configuration back to CP2K's input file format (includes validation)
 * `cp2kgen` .. generate new input files based on a given input file and expressions to change parameters programmatically
 * `cp2kget` .. get values from a CP2K input file (most likely a restart file) given a path of sections and attribute
+* `cp2k-language-server` .. a [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) implementation for the CP2K input file format
 
 For a description of the JSON/YAML formats used, see below.
 
