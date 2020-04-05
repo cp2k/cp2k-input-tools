@@ -20,9 +20,11 @@ python = "^3.6"
 transitions = ">=0.7,<0.9"
 pint = ">=0.10,<0.12"
 "ruamel.yaml" = {version = "^0.16.5", optional = true}
+pygls = {version = "^0.8.1", optional = true}
 
 [tool.poetry.extras]
 yaml = ["ruamel.yaml"]
+ls = ["pygls"]
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
@@ -36,6 +38,7 @@ fromcp2k = 'cp2k_input_tools.cli:fromcp2k'
 tocp2k = 'cp2k_input_tools.cli:tocp2k'
 cp2kgen = 'cp2k_input_tools.cli:cp2kgen'
 cp2kget = 'cp2k_input_tools.cli:cp2kget'
+cp2k-language-server = 'cp2k_input_tools.cli:cp2k_language_server'
 
 [tool.black]
 line-length = 132

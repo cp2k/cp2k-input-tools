@@ -4,6 +4,7 @@ import re
 import itertools
 from copy import deepcopy
 import pathlib
+import logging
 
 from . import DEFAULT_CP2K_INPUT_XML
 from .parser import CP2KInputParser, CP2KInputParserSimplified
@@ -290,3 +291,22 @@ def cp2kget():
             ref = ref[section]  # exploit Python using references into dicts/lists
 
         print(f"{path}: {_(ref)}")
+
+
+def cp2k_language_server():
+    parser = argparse.ArgumentParser(description="Language Server Protocol (LSP) implementation for CP2K input files")
+    parser.add_argument("--tcp", action="store_true", help="use TCP server instead of stdio")
+    parser.add_argument("--host", default="127.0.0.1", help="bind to this address")
+    parser.add_argument("--port", type=int, default=2087, help="bind to this port")
+    parser.add_argument("--debug", help="write a cp2kls.log file", action="store_true")
+    args = parser.parse_args()
+
+    if args.debug:
+        logging.basicConfig(filename="cp2kls.log", level=logging.DEBUG, filemode="w")
+
+    from .ls import cp2k_inp_server
+
+    if args.tcp:
+        cp2k_inp_server.start_tcp(args.host, args.port)
+    else:
+        cp2k_inp_server.start_io()
