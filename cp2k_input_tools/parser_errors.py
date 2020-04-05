@@ -10,6 +10,10 @@ class SectionMismatchError(ParserError):
     pass
 
 
+class InvalidSectionError(ParserError):
+    pass
+
+
 class InvalidParameterError(ParserError):
     pass
 

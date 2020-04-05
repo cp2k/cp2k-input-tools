@@ -10,9 +10,9 @@ from .lineiterator import MultiFileLineIterator
 from .keyword_helpers import parse_keyword
 from .parser_errors import (
     InvalidNameError,
+    InvalidSectionError,
     NameRepetitionError,
     SectionMismatchError,
-    ParserError,
     PreprocessorError,
     InvalidParameterError,
 )
@@ -104,7 +104,7 @@ class CP2KInputParser:
             section_param = section_param.rstrip()
 
             if section_param and section_param.upper() not in [e.text for e in self._nodes[-1].iterfind("./NAME")]:
-                raise SectionMismatchError("could not match open section with name:", section_param)
+                raise SectionMismatchError("could not match open section with name: {section_param}", Context())
 
             # if the END param was a match or none was specified, go a level up
             self._nodes.pop()
@@ -115,7 +115,7 @@ class CP2KInputParser:
         section_node = _find_node_by_name(self._nodes[-1], "SECTION", section_name)
 
         if not section_node:
-            raise ParserError(f"invalid section '{section_name}'")
+            raise InvalidSectionError(f"invalid section '{section_name}'", Context())
 
         self._nodes += [section_node]  # add the current XML section node to the stack of nodes
         repeats = True if section_node.get("repeats") == "yes" else False
@@ -129,7 +129,9 @@ class CP2KInputParser:
                 # there is no way we get a second section parameter, assign directly
                 self._treerefs[-1]["_"] = parse_keyword(param_node, section_param).values
             else:
-                raise ParserError("section parameters given for non-parametrized section")
+                raise InvalidParameterError(
+                    f"section parameters given for non-parametrized section '{section_name}': {section_param}", Context()
+                )
 
     def _add_tree_keyword(self, kw):
         if kw.name not in self._treerefs[-1]:
@@ -385,7 +387,7 @@ class CP2KInputParser:
                     f"conditional block not closed at end of file", Context(ref_line=self._conditional_block.ctx["line"])
                 )
 
-        except (PreprocessorError, TokenizerError, InvalidParameterError) as exc:
+        except (PreprocessorError, TokenizerError, InvalidParameterError, InvalidSectionError) as exc:
             exc.args[1]["filename"] = entry.fname
             exc.args[1]["linenr"] = entry.linenr
             exc.args[1]["line"] = entry.line

@@ -7,7 +7,7 @@ import pathlib
 
 from . import DEFAULT_CP2K_INPUT_XML
 from .parser import CP2KInputParser, CP2KInputParserSimplified
-from .parser_errors import PreprocessorError, InvalidParameterError
+from .parser_errors import ParserError
 from .tokenizer import TokenizerError
 from .generator import CP2KInputGenerator
 
@@ -40,7 +40,7 @@ def cp2klint():
     with open(args.file, "r") as fhandle:
         try:
             cp2k_parser.parse(fhandle, dict(args.var_values))
-        except (PreprocessorError, TokenizerError, InvalidParameterError) as exc:
+        except (TokenizerError, ParserError) as exc:
             ctx = exc.args[1]
             line = ctx["line"].rstrip()
 
