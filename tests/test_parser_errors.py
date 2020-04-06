@@ -130,3 +130,22 @@ def test_section_parameter_error():
         cp2k_parser.parse(fhandle)
 
     assert "section parameters given for non-parametrized section" in excinfo.value.args[0]
+
+
+def test_invalid_keyword():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    fhandle = io.StringIO(
+        """
+        &FORCE_EVAL
+           &SUBSYS
+              BASIS_SET TZVPd-MOLOPT-SR-GTH
+           &END SUBSYS
+        &END FORCE_EVAL
+        """
+    )
+
+    with pytest.raises(InvalidNameError) as excinfo:
+        cp2k_parser.parse(fhandle)
+
+    assert "invalid keyword" in excinfo.value.args[0]

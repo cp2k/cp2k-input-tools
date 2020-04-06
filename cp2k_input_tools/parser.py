@@ -91,7 +91,7 @@ class CP2KInputParser:
 
         else:
             # TODO: the user possibly specified an alias, but here we only return the matching key
-            raise InvalidNameError(f"the section '{section_key}' can not be defined multiple times")
+            raise InvalidNameError(f"the section '{section_key}' can not be defined multiple times", Context())
 
     def _parse_as_section(self, entry):
         match = _SECTION_MATCH.match(entry.line)
@@ -163,7 +163,7 @@ class CP2KInputParser:
                 kw_value = entry.line
 
         if not kw_node:
-            raise InvalidNameError("invalid keyword specified and no default keyword for this section")
+            raise InvalidNameError(f"invalid keyword '{kw_name}' specified and no default keyword for this section", Context())
 
         try:
             kw = parse_keyword(kw_node, kw_value, self._key_trafo)
@@ -387,7 +387,7 @@ class CP2KInputParser:
                     f"conditional block not closed at end of file", Context(ref_line=self._conditional_block.ctx["line"])
                 )
 
-        except (PreprocessorError, TokenizerError, InvalidParameterError, InvalidSectionError) as exc:
+        except (PreprocessorError, TokenizerError, InvalidParameterError, InvalidSectionError, InvalidNameError) as exc:
             exc.args[1]["filename"] = entry.fname
             exc.args[1]["linenr"] = entry.linenr
             exc.args[1]["line"] = entry.line
@@ -451,7 +451,7 @@ class CP2KInputParserSimplified(CP2KInputParser):
             self._treerefs += [self._treerefs[-1][section_key][-1]]
 
         else:
-            raise InvalidNameError(f"the section '{section_key}' can not be defined multiple times")
+            raise InvalidNameError(f"the section '{section_key}' can not be defined multiple times", Context())
 
     def parse(self, fhandle, initial_variable_values=None):
         super().parse(fhandle, initial_variable_values)
