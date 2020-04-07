@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.4.0] - 2020-04-07
+
+* misc bug fixes
+* more testing for error cases
+* initial release with the language server
+
 ## [0.3.3] - 2020-04-03
 
 * updated URLs after the move to cp2k
