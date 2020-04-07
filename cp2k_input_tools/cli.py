@@ -304,7 +304,17 @@ def cp2k_language_server():
     if args.debug:
         logging.basicConfig(filename="cp2kls.log", level=logging.DEBUG, filemode="w")
 
-    from .ls import cp2k_inp_server
+    try:
+        from .ls import cp2k_inp_server
+    except ImportError:
+        print(
+            f"""Import error while loading the language-server-protocol extension!
+You have to install the cp2k-input-tools with the 'lsp' extra:
+
+    pip install cp2k-input-tools[lsp]
+        """
+        )
+        sys.exit(1)
 
     if args.tcp:
         cp2k_inp_server.start_tcp(args.host, args.port)
