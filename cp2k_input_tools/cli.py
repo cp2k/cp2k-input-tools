@@ -4,10 +4,11 @@ import re
 import itertools
 from copy import deepcopy
 import pathlib
+import logging
 
 from . import DEFAULT_CP2K_INPUT_XML
 from .parser import CP2KInputParser, CP2KInputParserSimplified
-from .parser_errors import PreprocessorError, InvalidParameterError
+from .parser_errors import ParserError
 from .tokenizer import TokenizerError
 from .generator import CP2KInputGenerator
 
@@ -40,7 +41,7 @@ def cp2klint():
     with open(args.file, "r") as fhandle:
         try:
             cp2k_parser.parse(fhandle, dict(args.var_values))
-        except (PreprocessorError, TokenizerError, InvalidParameterError) as exc:
+        except (TokenizerError, ParserError) as exc:
             ctx = exc.args[1]
             line = ctx["line"].rstrip()
 
@@ -290,3 +291,32 @@ def cp2kget():
             ref = ref[section]  # exploit Python using references into dicts/lists
 
         print(f"{path}: {_(ref)}")
+
+
+def cp2k_language_server():
+    parser = argparse.ArgumentParser(description="Language Server Protocol (LSP) implementation for CP2K input files")
+    parser.add_argument("--tcp", action="store_true", help="use TCP server instead of stdio")
+    parser.add_argument("--host", default="127.0.0.1", help="bind to this address")
+    parser.add_argument("--port", type=int, default=2087, help="bind to this port")
+    parser.add_argument("--debug", help="write a cp2kls.log file", action="store_true")
+    args = parser.parse_args()
+
+    if args.debug:
+        logging.basicConfig(filename="cp2kls.log", level=logging.DEBUG, filemode="w")
+
+    try:
+        from .ls import cp2k_inp_server
+    except ImportError:
+        print(
+            f"""Import error while loading the language-server-protocol extension!
+You have to install the cp2k-input-tools with the 'lsp' extra:
+
+    pip install cp2k-input-tools[lsp]
+        """
+        )
+        sys.exit(1)
+
+    if args.tcp:
+        cp2k_inp_server.start_tcp(args.host, args.port)
+    else:
+        cp2k_inp_server.start_io()

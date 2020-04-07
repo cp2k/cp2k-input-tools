@@ -5,7 +5,13 @@ import pytest
 from . import TEST_DIR
 from cp2k_input_tools.parser import CP2KInputParser
 from cp2k_input_tools.cli import DEFAULT_CP2K_INPUT_XML
-from cp2k_input_tools.parser_errors import InvalidParameterError, PreprocessorError, InvalidNameError
+from cp2k_input_tools.parser_errors import (
+    InvalidParameterError,
+    PreprocessorError,
+    InvalidNameError,
+    InvalidSectionError,
+    SectionMismatchError,
+)
 from cp2k_input_tools.tokenizer import UnterminatedStringError
 
 
@@ -59,3 +65,87 @@ def test_multiple_defined_non_repeating_section():
         cp2k_parser.parse(fhandle)
 
     assert "the section '+global' can not be defined multiple times" in excinfo.value.args[0]
+
+
+def test_missing_section_end():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    fhandle = io.StringIO(
+        """
+        &GLOBAL
+        ! &END GLOBAL
+        &FORCE_EVAL
+        &END FORCE_EVAL
+        """
+    )
+
+    with pytest.raises(InvalidSectionError) as excinfo:
+        cp2k_parser.parse(fhandle)
+
+    assert "invalid section" in excinfo.value.args[0]
+
+    fhandle = io.StringIO(
+        """
+        &GLOBAL
+        &END GLOBAL
+        &FORCE_EVAL
+        """
+    )
+
+    with pytest.raises(InvalidSectionError) as excinfo:
+        cp2k_parser.parse(fhandle)
+
+    assert "invalid section" in excinfo.value.args[0]
+
+
+def test_section_end_mismatch():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    fhandle = io.StringIO(
+        """
+        &GLOBAL
+        &END GLOBI
+        &FORCE_EVAL
+        &END FORCE_EVAL
+        """
+    )
+
+    with pytest.raises(SectionMismatchError) as excinfo:
+        cp2k_parser.parse(fhandle)
+
+    assert "could not match open section" in excinfo.value.args[0]
+
+
+def test_section_parameter_error():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    fhandle = io.StringIO(
+        """
+        &GLOBAL invalidparam
+        &END GLOBAL
+        """
+    )
+
+    with pytest.raises(InvalidParameterError) as excinfo:
+        cp2k_parser.parse(fhandle)
+
+    assert "section parameters given for non-parametrized section" in excinfo.value.args[0]
+
+
+def test_invalid_keyword():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    fhandle = io.StringIO(
+        """
+        &FORCE_EVAL
+           &SUBSYS
+              BASIS_SET TZVPd-MOLOPT-SR-GTH
+           &END SUBSYS
+        &END FORCE_EVAL
+        """
+    )
+
+    with pytest.raises(InvalidNameError) as excinfo:
+        cp2k_parser.parse(fhandle)
+
+    assert "invalid keyword" in excinfo.value.args[0]

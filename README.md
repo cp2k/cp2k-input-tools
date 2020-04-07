@@ -11,6 +11,7 @@ Available commands (also available through an API, see below):
 * `tocp2k` .. convert a JSON or YAML configuration back to CP2K's input file format (includes validation)
 * `cp2kgen` .. generate new input files based on a given input file and expressions to change parameters programmatically
 * `cp2kget` .. get values from a CP2K input file (most likely a restart file) given a path of sections and attribute
+* `cp2k-language-server` .. a [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) implementation for the CP2K input file format
 
 For a description of the JSON/YAML formats used, see below.
 
@@ -39,6 +40,26 @@ For development: https://poetry.eustace.io/ https://pytest.org/
 * parser: maybe generate AST using an emitting (`yield`) parser for more flexibility, would allow for YAML generator preserving the comments
 
 # Usage
+
+## Installation
+
+You will get most tools using simply:
+
+```console
+$ pip install cp2k-input-tools
+```
+
+For YAML support you should use 
+
+```console
+$ pip install cp2k-input-tools[yaml]
+```
+
+and for the Language Server:
+
+```console
+$ pip install cp2k-input-tools[lsp]
+```
 
 ## Command Line Interface
 
@@ -148,6 +169,32 @@ with open("project.inp", "w") as fhandle:
     for line in generator.line_iter(tree):
         fhandle.write(f"{line}\n")
 ```
+
+## Language Server Protocol
+
+The executable providing the language server is: `cp2k-language-server`
+
+For `vim` you need a plugin to be able to use language servers. One such plugin is [ALE](https://github.com/dense-analysis/ale) for which you can create in its directory the file `ale_linters/cp2k/language_server.vim` with the content
+
+```vim
+call ale#Set('cp2k_lsp_executable', 'cp2k-language-server')
+
+function! ale_linters#cp2k#language_server#GetProjectRoot(buffer) abort
+    let l:git_path = ale#path#FindNearestDirectory(a:buffer, '.git')
+
+    return !empty(l:git_path) ? fnamemodify(l:git_path, ':h:h') : ''
+endfunction
+
+call ale#linter#Define('cp2k', {
+\   'name': 'language_server',
+\   'lsp': 'stdio',
+\   'executable': {b -> ale#Var(b, 'cp2k_lsp_executable')},
+\   'project_root': function('ale_linters#cp2k#language_server#GetProjectRoot'),
+\   'command': '%e',
+\})
+```
+Afterwards you must set the filetype when editing a CP2K input file to `cp2k` to get it running. This can be done explicitly using `:set filetype=cp2k`.
+
 
 # The CP2K JSON and YAML formats
 
