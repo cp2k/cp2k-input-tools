@@ -18,8 +18,6 @@ from .tokenizer import TokenizerError
 
 class CP2KLanguageServer(LanguageServer):
     def __init__(self):
-        self.parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
-
         super().__init__()
 
 
@@ -32,10 +30,11 @@ def _validate(ls, params):
     diagnostics = []
 
     text_doc = ls.workspace.get_document(params.textDocument.uri)
+    parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
 
     with open(text_doc.path, "r") as fhandle:
         try:
-            cp2k_inp_server.parser.parse(fhandle)
+            parser.parse(fhandle)
         except (TokenizerError, ParserError) as exc:
             ctx = exc.args[1]
             line = ctx["line"].rstrip()
@@ -45,7 +44,7 @@ def _validate(ls, params):
             if exc.__cause__:
                 msg += f"({exc.__cause__})"
 
-            linenr = ctx["linenr"]
+            linenr = ctx["linenr"] - 1
             colnr = ctx["colnr"]
 
             if colnr is not None:
