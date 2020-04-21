@@ -20,7 +20,7 @@ python = "^3.6"
 transitions = ">=0.7,<0.9"
 pint = ">=0.10,<0.12"
 "ruamel.yaml" = {version = "^0.16.5", optional = true}
-pygls = {version = ">=0.8.1,<0.10.0", optional = true}
+pygls = {version = "^0.8", optional = true}
 
 [tool.poetry.extras]
 yaml = ["ruamel.yaml"]
