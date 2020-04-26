@@ -52,7 +52,7 @@ class MultiFileLineIterator:
     def add_file(self, fhandle):
         self._fileiterpairs += [_FileIterPair(fhandle, continuation_lines(fhandle))]
 
-    def lines(self):
+    def __iter__(self):
         while self._fileiterpairs:
             try:
                 # yield the next (possibly continued) line from the file on top of the stack
