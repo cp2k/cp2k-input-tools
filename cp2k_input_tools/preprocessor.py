@@ -1,5 +1,6 @@
 import re
-import collections
+from typing import NamedTuple
+from collections.abc import Iterator
 from pathlib import Path
 
 
@@ -8,8 +9,14 @@ from .tokenizer import Context, TokenizerError, COMMENT_CHARS, tokenize
 from .parser_errors import PreprocessorError
 
 
-_Variable = collections.namedtuple("Variable", ["value", "ctx"])
-_ConditionalBlock = collections.namedtuple("ConditionalBlock", ["condition", "ctx"])
+class _Variable(NamedTuple):
+    value: str
+    ctx: Context
+
+
+class _ConditionalBlock(NamedTuple):
+    condition: str
+    ctx: Context
 
 
 _VALID_VAR_NAME_MATCH = re.compile(r"[a-z_]\w*", flags=re.IGNORECASE | re.ASCII)
@@ -18,7 +25,7 @@ _SET_MATCH = re.compile(r"\s*@SET\s+(?P<var>\w+)\s+(?P<value>.+)", flags=re.IGNO
 _INCLUDE_MATCH = re.compile(r"\s*(?P<complete>@INCLUDE\b\s*(?P<file>.*))", flags=re.IGNORECASE)
 
 
-class CP2KPreprocessor:
+class CP2KPreprocessor(Iterator):
     def __init__(self, fhandle, base_dir, initial_variable_values=None):
         self._varstack = {}
         self._lineiter = MultiFileLineIterator()
@@ -207,33 +214,52 @@ class CP2KPreprocessor:
 
         raise PreprocessorError(f"unknown preprocessor directive found", ctx)
 
-    def __iter__(self):
-        for entry in self._lineiter:
+    def __next__(self):
+        for line in self._lineiter:
             try:
                 # ignore empty lines and comments:
-                if not entry.line or entry.line.startswith(COMMENT_CHARS):
+                if not line or line.startswith(COMMENT_CHARS):
                     continue
 
-                if entry.line.startswith("@"):
-                    self._parse_preprocessor_instruction(entry.line)
+                if line.startswith("@"):
+                    self._parse_preprocessor_instruction(line)
                     continue
 
                 # ignore everything in a disable @IF/@ENDIF block
                 if self._conditional_block and not self._conditional_block.condition:
                     continue
 
-                entry = entry._replace(line=self._resolve_variables(entry.line))
-
-                yield entry
+                return self._resolve_variables(line)
 
             except (PreprocessorError, TokenizerError) as exc:
-                exc.args[1]["filename"] = entry.fname
-                exc.args[1]["linenr"] = entry.linenr
-                exc.args[1]["line"] = entry.line
-                exc.args[1]["colnrs"] = entry.colnrs
+                exc.args[1]["filename"] = self._lineiter.fname
+                exc.args[1]["linenr"] = self._lineiter.line_range[1]
+                exc.args[1]["colnrs"] = self._lineiter.colnrs
+                exc.args[1]["line"] = line
                 raise
 
         if self._conditional_block is not None:
             raise PreprocessorError(
                 f"conditional block not closed at end of file", Context(ref_line=self._conditional_block.ctx["line"])
             )
+
+        raise StopIteration
+
+    @property
+    def line_range(self):
+        """Original line numbers (start and end) of the last (possibly combined) line"""
+        return self._lineiter.line_range
+
+    @property
+    def colnrs(self):
+        """Original column numbers where non-whitespace content started for most recent emitted line"""
+        return self._lineiter.colnrs
+
+    @property
+    def starts(self):
+        """Index in the most recent emitted line where content from a new line in file starts"""
+        return self._lineiter.starts
+
+    @property
+    def fname(self):
+        return self._lineiter.fname

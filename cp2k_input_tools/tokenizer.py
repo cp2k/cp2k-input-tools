@@ -1,4 +1,5 @@
 import collections
+from typing import NamedTuple
 
 import transitions
 
@@ -22,7 +23,9 @@ def Context(**kwargs):
     return collections.defaultdict(lambda: None, **kwargs)
 
 
-Token = collections.namedtuple("Token", ["string", "ctx"])
+class Token(NamedTuple):
+    string: str
+    ctx: Context
 
 
 class CP2KInputTokenizer(transitions.Machine):

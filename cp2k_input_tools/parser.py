@@ -68,8 +68,8 @@ class CP2KInputParser:
             # TODO: the user possibly specified an alias, but here we only return the matching key
             raise InvalidNameError(f"the section '{section_key}' can not be defined multiple times", Context())
 
-    def _parse_as_section(self, entry):
-        match = _SECTION_MATCH.match(entry.line)
+    def _parse_as_section(self, line):
+        match = _SECTION_MATCH.match(line)
 
         section_name = match.group("name").upper()
         section_key = self._key_trafo(section_name)
@@ -123,8 +123,8 @@ class CP2KInputParser:
             # TODO: improve error message
             raise NameRepetitionError(f"the keyword '{kw.name}' can only be mentioned once")
 
-    def _parse_as_keyword(self, entry):
-        match = _KEYWORD_MATCH.match(entry.line)
+    def _parse_as_keyword(self, line):
+        match = _KEYWORD_MATCH.match(line)
 
         kw_name = match.group("name").upper()
         kw_value = match.group("value")
@@ -135,7 +135,7 @@ class CP2KInputParser:
         if not kw_node:
             kw_node = _find_node_by_name(self._nodes[-1], "DEFAULT_KEYWORD", "DEFAULT_KEYWORD")
             if kw_node:  # for default keywords, the whole line is the value
-                kw_value = entry.line
+                kw_value = line
 
         if not kw_node:
             raise InvalidNameError(f"invalid keyword '{kw_name}' specified and no default keyword for this section", Context())
@@ -156,19 +156,19 @@ class CP2KInputParser:
 
         preprocessor = CP2KPreprocessor(fhandle, self._base_inc_dir, initial_variable_values)
 
-        for entry in preprocessor:
+        for line in preprocessor:
             try:
-                if entry.line.startswith("&"):
-                    self._parse_as_section(entry)
+                if line.startswith("&"):
+                    self._parse_as_section(line)
                     continue
 
-                self._parse_as_keyword(entry)
+                self._parse_as_keyword(line)
 
             except (TokenizerError, InvalidParameterError, InvalidSectionError, InvalidNameError) as exc:
-                exc.args[1]["filename"] = entry.fname
-                exc.args[1]["linenr"] = entry.linenr
-                exc.args[1]["line"] = entry.line
-                exc.args[1]["colnrs"] = entry.colnrs
+                exc.args[1]["filename"] = preprocessor.fname
+                exc.args[1]["linenr"] = preprocessor.line_range[1]
+                exc.args[1]["colnrs"] = preprocessor.colnrs
+                exc.args[1]["line"] = line
                 raise
 
         return self._tree
