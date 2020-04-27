@@ -8,7 +8,7 @@ class LineContinuationError(Exception):
 
 class ContinuationLineIterator(Iterator):
     def __init__(self, fhandle):
-        self._fhandle = fhandle
+        self._fiter = enumerate(fhandle, start=1)
         self._linenr = 0
         self._colnrs = []  # number of stripped whitespace (from current line, continued line, 2nd continued line, ...)
         self._starts = [0]  # list of newline starts (in case of line continuations)
@@ -35,8 +35,7 @@ class ContinuationLineIterator(Iterator):
         self._colnrs = []
         line = ""
 
-        for raw_line in self._fhandle:
-            self._linenr += 1  # line numbers are more intuitively when starting at 1
+        for self._linenr, raw_line in self._fiter:
             lstripped = raw_line.lstrip()  # CP2K consequently strips all left whitespace
             self._colnrs += [len(raw_line) - len(lstripped)]  # remember where the original colnr started
 
