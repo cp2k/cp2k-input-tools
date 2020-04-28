@@ -64,19 +64,18 @@ class CP2KInputParser:
 
         self._base_inc_dir = base_dir
 
-    def _add_tree_section(self, section_key, repeats, node):
-        if not repeats and any(s.name == section_key for s in self._treerefs[-1].subsections):
+    def _add_tree_section(self, section_name, repeats, node):
+        if not repeats and any(s.name == section_name for s in self._treerefs[-1].subsections):
             # TODO: the user possibly specified an alias, but here we only return the matching key
-            raise InvalidNameError(f"the section '{section_key}' can not be defined multiple times", Context())
+            raise InvalidNameError(f"the section '{section_name}' can not be defined multiple times", Context())
 
-        self._treerefs[-1].subsections += [Section(section_key, repeats=repeats, node=node)]
+        self._treerefs[-1].subsections += [Section(section_name, repeats=repeats, node=node)]
         self._treerefs += [self._treerefs[-1].subsections[-1]]
 
     def _parse_as_section(self, line):
         match = _SECTION_MATCH.match(line)
 
         section_name = match.group("name").upper()
-        section_key = self._key_trafo(section_name)
         section_param = match.group("param")
 
         if section_name == "END":
@@ -99,7 +98,7 @@ class CP2KInputParser:
         self._nodes += [section_node]  # add the current XML section node to the stack of nodes
         repeats = True if section_node.get("repeats") == "yes" else False
 
-        self._add_tree_section(section_key, repeats, section_node)
+        self._add_tree_section(section_name, repeats, section_node)
 
         # check whether we got a parameter for the section and validate it
         if section_param and not section_param.startswith(COMMENT_CHARS):
@@ -137,45 +136,52 @@ class CP2KInputParser:
             raise InvalidNameError(f"invalid keyword '{kw_name}' specified and no default keyword for this section", Context())
 
         try:
-            kw = parse_keyword(kw_node, kw_value, self._key_trafo)
+            kw = parse_keyword(kw_node, kw_value, self._key_trafo)  # the key_trafo is needed to mangle keywords
         except InvalidParameterError as exc:
             raise InvalidParameterError(f"invalid values for keyword: {match.group('name')}", Context()) from exc
 
         self._add_tree_keyword(kw)
 
     @property
-    def nested_dict(self):
+    def nested_dict(self, key_trafo=None):
         stack = [self._tree]
         tree = {}
         treerefs = [tree]
+
+        if key_trafo is None:
+            key_trafo = self._key_trafo
 
         while stack:
             currsec = stack.pop(-1)
             treeref = treerefs.pop(-1)
 
             for section in currsec.subsections:
+                section_name = f"+{key_trafo(section.name)}"
+
                 if section.repeats:
                     try:
-                        treeref[f"+{section.name}"] += [{}]
+                        treeref[section_name] += [{}]
                     except KeyError:
-                        treeref[f"+{section.name}"] = [{}]
+                        treeref[section_name] = [{}]
 
-                    treerefs += [treeref[f"+{section.name}"][-1]]
+                    treerefs += [treeref[section_name][-1]]
 
                 else:
-                    treeref[f"+{section.name}"] = {}
-                    treerefs += [treeref[f"+{section.name}"]]
+                    treeref[section_name] = {}
+                    treerefs += [treeref[section_name]]
 
                 stack += [section]
 
             for keyword in currsec.keywords:
+                keyword_name = key_trafo(keyword.name)
+
                 if keyword.repeats:
                     try:
-                        treeref[keyword.name] += [keyword.values]
+                        treeref[keyword_name] += [keyword.values]
                     except KeyError:
-                        treeref[keyword.name] = [keyword.values]
+                        treeref[keyword_name] = [keyword.values]
                 else:
-                    treeref[keyword.name] = keyword.values
+                    treeref[keyword_name] = keyword.values
 
             if currsec.param is not None:
                 treeref["_"] = currsec.param
@@ -213,21 +219,26 @@ class CP2KInputParserSimplified(CP2KInputParser):
     """Implement structured output simplification."""
 
     @property
-    def nested_dict(self):
+    def nested_dict(self, key_trafo=None):
         tree = {}
 
         stack = [self._tree]
         treerefs = [tree]
+
+        if key_trafo is None:
+            key_trafo = self._key_trafo
 
         while stack:
             currsec = stack.pop(-1)
             treeref = treerefs.pop(-1)
 
             for section in currsec.subsections:
+                section_name = key_trafo(section.name)
+
                 # if the section can be repeated and has a string parameter, we can possible simplify the structure
                 if section.repeats:
                     # if the section is not already there, check whether to add as list or as dict with the param as subkey
-                    if section.name not in treeref:
+                    if section_name not in treeref:
                         param_counts = Counter(s.param for s in currsec.subsections if s.name == section.name)
                         valid_keys = [
                             kw.text
@@ -237,53 +248,55 @@ class CP2KInputParserSimplified(CP2KInputParser):
                         ]
                         # check that the parameters are unique, strings and do not match any keywords or sections valid in that section
                         if all(c == 1 and isinstance(p, str) and p.upper() not in valid_keys for p, c in param_counts.items()):
-                            treeref[section.name] = {}
+                            treeref[section_name] = {}
                         else:
-                            treeref[section.name] = []
+                            treeref[section_name] = []
 
-                    if isinstance(treeref[section.name], dict):
+                    if isinstance(treeref[section_name], dict):
                         # if the already present section type is a section, we're using section params as keys
-                        treeref[section.name][section.param] = {}
-                        treerefs += [treeref[section.name][section.param]]
+                        treeref[section_name][section.param] = {}
+                        treerefs += [treeref[section_name][section.param]]
                     elif not any(s.name == section.name for s in currsec.subsections if s is not section):
                         # if the section would become a list of sections, but this is the only section with that name in
                         # the current level of the parsed tree, remove one level of the list as well
-                        treeref[section.name] = {}
-                        treerefs += [treeref[section.name]]
+                        treeref[section_name] = {}
+                        treerefs += [treeref[section_name]]
                     else:
                         if section.param is not None:
-                            treeref[section.name] += [{"_": section.param}]
+                            treeref[section_name] += [{"_": section.param}]
                         else:
-                            treeref[section.name] += [{}]
-                        treerefs += [treeref[section.name][-1]]
+                            treeref[section_name] += [{}]
+                        treerefs += [treeref[section_name][-1]]
 
                 else:
                     if section.param is not None:
-                        treeref[section.name] = {"_": section.param}
+                        treeref[section_name] = {"_": section.param}
                     else:
-                        treeref[section.name] = {}
-                    treerefs += [treeref[section.name]]
+                        treeref[section_name] = {}
+                    treerefs += [treeref[section_name]]
 
                 stack += [section]
 
             for keyword in currsec.keywords:
+                keyword_name = key_trafo(keyword.name)
+
                 # if the keyword already exists as a section:
-                if (keyword.name in treeref) and (
-                    isinstance(treeref[keyword.name], dict)
-                    or (isinstance(treeref[keyword.name], list) and isinstance(treeref[keyword.name][0], dict))
+                if (keyword_name in treeref) and (
+                    isinstance(treeref[keyword_name], dict)
+                    or (isinstance(treeref[keyword_name], list) and isinstance(treeref[keyword_name][0], dict))
                 ):
                     # prefix that sections key with a '+'
-                    treeref[f"+{keyword.name}"] = treeref.pop(keyword.name)
+                    treeref[f"+{keyword_name}"] = treeref.pop(keyword_name)
 
-                if keyword.name in treeref:
+                if keyword_name in treeref:
                     # NOTE: we don't have to check for mistakenly repeated keywords, that was already done while parsing
                     #       we are therefore not risking to append to a keyword with multiple values
-                    if not isinstance(treeref[keyword.name], list):
+                    if not isinstance(treeref[keyword_name], list):
                         # if the value is not yet a list, make it one
-                        treeref[keyword.name] = [keyword.values]
+                        treeref[keyword_name] = [keyword.values]
 
-                    treeref[keyword.name] += [keyword.values]
+                    treeref[keyword_name] += [keyword.values]
                 else:
-                    treeref[keyword.name] = keyword.values
+                    treeref[keyword_name] = keyword.values
 
         return tree

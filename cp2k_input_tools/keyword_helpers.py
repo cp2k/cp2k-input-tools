@@ -160,4 +160,4 @@ def parse_keyword(kw_node, vstring, key_trafo=str):
     if key_name == "DEFAULT_KEYWORD":
         key_name = "*"
 
-    return Keyword(key_trafo(key_name), True if kw_node.get("repeats") == "yes" else False, values)
+    return Keyword(key_name, True if kw_node.get("repeats") == "yes" else False, values)
