@@ -1,13 +1,13 @@
 import re
 import xml.etree.ElementTree as ET
 import itertools
-from typing import List, Union, Any
+from typing import List, Union
 from dataclasses import dataclass, field
 from collections import Counter
 
 from . import DEFAULT_CP2K_INPUT_XML
 from .tokenizer import Context, TokenizerError, COMMENT_CHARS
-from .keyword_helpers import parse_keyword
+from .keyword_helpers import Keyword
 from .preprocessor import CP2KPreprocessor
 from .parser_errors import InvalidNameError, InvalidSectionError, NameRepetitionError, SectionMismatchError, InvalidParameterError
 
@@ -24,13 +24,6 @@ def _find_node_by_name(parent, tag, name):
 
 _SECTION_MATCH = re.compile(r"&(?P<name>[\w\-_]+)\s*(?P<param>.*)")
 _KEYWORD_MATCH = re.compile(r"(?P<name>[\w\-_]+)\s*(?P<value>.*)")
-
-
-@dataclass
-class Keyword:
-    name: str
-    values: Any
-    repeats: bool = False
 
 
 @dataclass
@@ -105,7 +98,7 @@ class CP2KInputParser:
             param_node = section_node.find("./SECTION_PARAMETERS")
             if param_node:  # validate the section parameter like a kw datatype
                 # there is no way we get a second section parameter, assign directly
-                self._treerefs[-1].param = parse_keyword(param_node, section_param).values
+                self._treerefs[-1].param = Keyword.from_string(param_node, section_param).values
             else:
                 raise InvalidParameterError(
                     f"section parameters given for non-parametrized section '{section_name}': {section_param}", Context()
@@ -116,7 +109,7 @@ class CP2KInputParser:
             # TODO: the user possibly specified an alias, but here we only return the matching key
             raise NameRepetitionError(f"the keyword '{kw.name}' can only be mentioned once")
 
-        self._treerefs[-1].keywords += [Keyword(kw.name, kw.values, repeats=kw.repeats)]
+        self._treerefs[-1].keywords += [kw]
 
     def _parse_as_keyword(self, line):
         match = _KEYWORD_MATCH.match(line)
@@ -136,7 +129,7 @@ class CP2KInputParser:
             raise InvalidNameError(f"invalid keyword '{kw_name}' specified and no default keyword for this section", Context())
 
         try:
-            kw = parse_keyword(kw_node, kw_value, self._key_trafo)  # the key_trafo is needed to mangle keywords
+            kw = Keyword.from_string(kw_node, kw_value, self._key_trafo)  # the key_trafo is needed to mangle keywords
         except InvalidParameterError as exc:
             raise InvalidParameterError(f"invalid values for keyword: {match.group('name')}", Context()) from exc
 
@@ -212,6 +205,7 @@ class CP2KInputParser:
                 exc.args[1]["line"] = line
                 raise
 
+        # returning the nested dictionary representation for convenience
         return self.nested_dict
 
 
