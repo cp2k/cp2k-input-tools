@@ -136,20 +136,17 @@ class CP2KInputParser:
         self._add_tree_keyword(kw)
 
     @property
-    def nested_dict(self, key_trafo=None):
+    def nested_dict(self):
         stack = [self._tree]
         tree = {}
         treerefs = [tree]
-
-        if key_trafo is None:
-            key_trafo = self._key_trafo
 
         while stack:
             currsec = stack.pop(-1)
             treeref = treerefs.pop(-1)
 
             for section in currsec.subsections:
-                section_name = f"+{key_trafo(section.name)}"
+                section_name = f"+{self._key_trafo(section.name)}"
 
                 if section.repeats:
                     try:
@@ -166,7 +163,7 @@ class CP2KInputParser:
                 stack += [section]
 
             for keyword in currsec.keywords:
-                keyword_name = key_trafo(keyword.name)
+                keyword_name = self._key_trafo(keyword.name)
 
                 if keyword.repeats:
                     try:
@@ -213,21 +210,18 @@ class CP2KInputParserSimplified(CP2KInputParser):
     """Implement structured output simplification."""
 
     @property
-    def nested_dict(self, key_trafo=None):
+    def nested_dict(self):
         tree = {}
 
         stack = [self._tree]
         treerefs = [tree]
-
-        if key_trafo is None:
-            key_trafo = self._key_trafo
 
         while stack:
             currsec = stack.pop(-1)
             treeref = treerefs.pop(-1)
 
             for section in currsec.subsections:
-                section_name = key_trafo(section.name)
+                section_name = self._key_trafo(section.name)
 
                 # if the section can be repeated and has a string parameter, we can possible simplify the structure
                 if section.repeats:
@@ -272,7 +266,7 @@ class CP2KInputParserSimplified(CP2KInputParser):
                 stack += [section]
 
             for keyword in currsec.keywords:
-                keyword_name = key_trafo(keyword.name)
+                keyword_name = self._key_trafo(keyword.name)
 
                 # if the keyword already exists as a section:
                 if (keyword_name in treeref) and (
