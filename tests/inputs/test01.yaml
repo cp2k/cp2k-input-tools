@@ -19,9 +19,9 @@ force_eval:
       periodic: XYZ
     print:
       overlap_condition:
-        ON:
-          1-norm: true
-          diagonalization: true
+        _: ON
+        1-norm: true
+        diagonalization: true
     QS:
       eps_default: 1e-16
       extrapolation: use_guess
