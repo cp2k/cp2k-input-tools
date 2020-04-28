@@ -12,16 +12,6 @@ from .preprocessor import CP2KPreprocessor
 from .parser_errors import InvalidNameError, InvalidSectionError, NameRepetitionError, SectionMismatchError, InvalidParameterError
 
 
-def _find_node_by_name(parent, tag, name):
-    """check all specified nodes for matching names or aliases in the NAME tag"""
-
-    for node in parent.iterfind(f"./{tag}"):
-        if name.upper() in [e.text for e in node.iterfind("./NAME")]:
-            return node
-
-    return None
-
-
 _SECTION_MATCH = re.compile(r"&(?P<name>[\w\-_]+)\s*(?P<param>.*)")
 _KEYWORD_MATCH = re.compile(r"(?P<name>[\w\-_]+)\s*(?P<value>.*)")
 
@@ -34,6 +24,25 @@ class Section:
     keywords: List[Keyword] = field(default_factory=list)
     param: Union[int, float, str, bool, None] = None
     repeats: bool = False
+
+    @property
+    def keyword_names(self):
+        yield from (n.text for n in self.node.iterfind("./KEYWORD/NAME"))
+
+    @property
+    def section_names(self):
+        yield from (n.text for n in self.node.iterfind("./SECTION/NAME"))
+
+    def find_node_by_name(self, tag, name):
+        """return the node matching the given name or None"""
+        for node in self.node.iterfind(f"./{tag}"):
+            # ElementTree does not have a parent relationship,
+            # hence the double loop
+            for sub in node.iterfind("./NAME"):
+                if sub.text == name.upper():
+                    return node
+
+        return None
 
 
 class CP2KInputParser:
@@ -48,10 +57,9 @@ class CP2KInputParser:
 
         # schema:
         self._parse_tree = ET.parse(xmlspec)
-        self._nodes = [self._parse_tree.getroot()]
 
         # datatree being generated:
-        self._tree = Section("/", node=self._nodes[0])
+        self._tree = Section("/", node=self._parse_tree.getroot())
         self._treerefs = [self._tree]
         self._key_trafo = key_trafo
 
@@ -74,21 +82,18 @@ class CP2KInputParser:
         if section_name == "END":
             section_param = section_param.rstrip()
 
-            if section_param and section_param.upper() not in [e.text for e in self._nodes[-1].iterfind("./NAME")]:
+            if section_param and section_param.upper() not in [e.text for e in self._treerefs[-1].node.iterfind("./NAME")]:
                 raise SectionMismatchError("could not match open section with name: {section_param}", Context())
 
             # if the END param was a match or none was specified, go a level up
-            self._nodes.pop()
             self._treerefs.pop()
             return
 
         # check all section nodes for matching names or aliases
-        section_node = _find_node_by_name(self._nodes[-1], "SECTION", section_name)
-
-        if not section_node:
+        section_node = self._treerefs[-1].find_node_by_name("SECTION", section_name)
+        if section_node is None:
             raise InvalidSectionError(f"invalid section '{section_name}'", Context())
 
-        self._nodes += [section_node]  # add the current XML section node to the stack of nodes
         repeats = True if section_node.get("repeats") == "yes" else False
 
         self._add_tree_section(section_name, repeats, section_node)
@@ -117,15 +122,15 @@ class CP2KInputParser:
         kw_name = match.group("name").upper()
         kw_value = match.group("value")
 
-        kw_node = _find_node_by_name(self._nodes[-1], "KEYWORD", kw_name)
+        kw_node = self._treerefs[-1].find_node_by_name("KEYWORD", kw_name)
 
         # if no keyword with the given name has been found, check for a default keyword for this section
-        if not kw_node:
-            kw_node = _find_node_by_name(self._nodes[-1], "DEFAULT_KEYWORD", "DEFAULT_KEYWORD")
-            if kw_node:  # for default keywords, the whole line is the value
+        if kw_node is None:
+            kw_node = self._treerefs[-1].find_node_by_name("DEFAULT_KEYWORD", "DEFAULT_KEYWORD")
+            if kw_node is not None:  # for default keywords, the whole line is the value
                 kw_value = line
 
-        if not kw_node:
+        if kw_node is None:
             raise InvalidNameError(f"invalid keyword '{kw_name}' specified and no default keyword for this section", Context())
 
         try:
@@ -228,12 +233,7 @@ class CP2KInputParserSimplified(CP2KInputParser):
                     # if the section is not already there, check whether to add as list or as dict with the param as subkey
                     if section_name not in treeref:
                         param_counts = Counter(s.param for s in currsec.subsections if s.name == section.name)
-                        valid_keys = [
-                            kw.text
-                            for kw in itertools.chain(
-                                section.node.iterfind("./KEYWORD/NAME"), section.node.iterfind("./SECTION/NAME")
-                            )
-                        ]
+                        valid_keys = [n for n in itertools.chain(section.keyword_names, section.section_names)]
                         # check that the parameters are unique, strings and do not match any keywords or sections valid in that section
                         if all(c == 1 and isinstance(p, str) and p.upper() not in valid_keys for p, c in param_counts.items()):
                             treeref[section_name] = {}
