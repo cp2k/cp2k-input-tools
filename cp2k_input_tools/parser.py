@@ -56,13 +56,13 @@ class CP2KInputParser:
         """
 
         # schema:
-        self._parse_tree = ET.parse(xmlspec)
+        self._spec = ET.parse(xmlspec)
 
         # datatree being generated:
-        self._tree = Section("/", node=self._parse_tree.getroot())
-        self._treerefs = [self._tree]
-        self._key_trafo = key_trafo
+        self._tree = None
+        self._treerefs = []  # initializing to empty will make nested_dict return {} if nothing was parsed yet
 
+        self._key_trafo = key_trafo
         self._base_inc_dir = base_dir
 
     def _add_tree_section(self, section_name, repeats, node):
@@ -142,7 +142,7 @@ class CP2KInputParser:
 
     @property
     def nested_dict(self):
-        stack = [self._tree]
+        stack = self._treerefs.copy()
         tree = {}
         treerefs = [tree]
 
@@ -191,6 +191,8 @@ class CP2KInputParser:
         """
 
         preprocessor = CP2KPreprocessor(fhandle, self._base_inc_dir, initial_variable_values)
+        self._tree = Section("/", node=self._spec.getroot())
+        self._treerefs = [self._tree]
 
         for line in preprocessor:
             try:
@@ -207,6 +209,9 @@ class CP2KInputParser:
                 exc.args[1]["line"] = line
                 raise
 
+        if len(self._treerefs) > 1:
+            raise SectionMismatchError(f"section '{self._treerefs[-1].name}' not closed", Context())
+
         # returning the nested dictionary representation for convenience
         return self.nested_dict
 
@@ -216,9 +221,8 @@ class CP2KInputParserSimplified(CP2KInputParser):
 
     @property
     def nested_dict(self):
+        stack = self._treerefs.copy()
         tree = {}
-
-        stack = [self._tree]
         treerefs = [tree]
 
         while stack:

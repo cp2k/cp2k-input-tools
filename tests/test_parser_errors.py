@@ -92,10 +92,10 @@ def test_missing_section_end():
         """
     )
 
-    with pytest.raises(InvalidSectionError) as excinfo:
+    with pytest.raises(SectionMismatchError) as excinfo:
         cp2k_parser.parse(fhandle)
 
-    assert "invalid section" in excinfo.value.args[0]
+    assert "not closed" in excinfo.value.args[0]
 
 
 def test_section_end_mismatch():
