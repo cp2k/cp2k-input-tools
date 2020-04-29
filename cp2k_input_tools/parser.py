@@ -4,10 +4,11 @@ import itertools
 from typing import List, Union
 from dataclasses import dataclass, field
 from collections import Counter
+from fractions import Fraction
 
 from . import DEFAULT_CP2K_INPUT_XML
 from .tokenizer import Context, TokenizerError, COMMENT_CHARS
-from .keyword_helpers import Keyword
+from .keyword_helpers import Keyword, UREG
 from .preprocessor import CP2KPreprocessor
 from .parser_errors import InvalidNameError, InvalidSectionError, NameRepetitionError, SectionMismatchError, InvalidParameterError
 
@@ -24,6 +25,12 @@ class Section:
     keywords: List[Keyword] = field(default_factory=list)
     param: Union[int, float, str, bool, None] = None
     repeats: bool = False
+
+    def subsections_by_name(self, name):
+        yield from (s for s in self.subsections if s.name == name)
+
+    def keywords_by_name(self, name):
+        yield from (k for k in self.keywords if k.name == name)
 
     @property
     def keyword_names(self):
@@ -214,6 +221,40 @@ class CP2KInputParser:
 
         # returning the nested dictionary representation for convenience
         return self.nested_dict
+
+    def coords(self, force_eval=0):
+        """
+        Return an iterator to coordinates given in a FORCE_EVAL/SUBSYS/COORD section
+        where the coordinates are proper float values and converted to Angstrom if specified in
+        a different unit
+        """
+
+        try:
+            coord = next(
+                next(
+                    next(
+                        itertools.islice(self._tree.subsections_by_name("FORCE_EVAL"), force_eval, None), None
+                    ).subsections_by_name("SUBSYS")
+                ).subsections_by_name("COORD")
+            )
+        except AttributeError:
+            return
+
+        scaled = next(coord.keywords_by_name("SCALED"), False)
+        current_unit = UREG.parse_expression(next(coord.keywords_by_name("UNIT"), "ANGSTROM").lower())
+
+        for coordline in coord.keywords_by_name("*"):
+            # coordinates are a series of strings according to the CP2K schema
+            fields = coordline.values.split()
+
+            name = fields[0]
+            position = (float(Fraction(f)) for f in fields[1:4])  # positions can be fractions
+            molname = fields[4] if len(fields) > 4 else None
+
+            if not scaled and current_unit != UREG.angstrom:
+                position = ((p * current_unit).to(UREG.angstrom) for p in position)
+
+            yield (name, tuple(position), molname)
 
 
 class CP2KInputParserSimplified(CP2KInputParser):
