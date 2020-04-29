@@ -158,3 +158,21 @@ def test_invalid_var_name():
     with pytest.raises(PreprocessorError) as excinfo:
         cp2k_parser.parse(fhandle)
     assert "invalid variable name" in excinfo.value.args[0]
+
+
+def test_xctype():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML, base_dir=[TEST_DIR.joinpath("inputs/")])
+
+    with open(TEST_DIR.joinpath("inputs/He_PBE.inp"), "r") as fhandle:
+        tree = cp2k_parser.parse(fhandle)
+
+    assert tree
+    assert tree["+force_eval"][0]["+dft"]["+xc"]["+xc_functional"]["_"] == "PBE"
+
+
+def test_xctype_not_found():
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    with open(TEST_DIR.joinpath("inputs/He_PBE.inp"), "r") as fhandle:
+        with pytest.raises(PreprocessorError) as _:
+            cp2k_parser.parse(fhandle)

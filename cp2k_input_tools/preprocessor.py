@@ -1,5 +1,5 @@
 import re
-from typing import NamedTuple
+from typing import NamedTuple, Sequence
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -22,7 +22,7 @@ class _ConditionalBlock(NamedTuple):
 _VALID_VAR_NAME_MATCH = re.compile(r"[a-z_]\w*", flags=re.IGNORECASE | re.ASCII)
 _CONDITIONAL_MATCH = re.compile(r"\s*@(?P<stmt>IF|ENDIF)\s*(?P<cond>.*)", flags=re.IGNORECASE)
 _SET_MATCH = re.compile(r"\s*@SET\s+(?P<var>\w+)\s+(?P<value>.+)", flags=re.IGNORECASE)
-_INCLUDE_MATCH = re.compile(r"\s*(?P<complete>@INCLUDE\b\s*(?P<file>.*))", flags=re.IGNORECASE)
+_INCLUDE_MATCH = re.compile(r"\s*(?P<complete>@(?P<type>INCLUDE|XCTYPE)\b\s*(?P<file>.*))", flags=re.IGNORECASE)
 
 
 class CP2KPreprocessor(Iterator):
@@ -30,8 +30,14 @@ class CP2KPreprocessor(Iterator):
         self._varstack = {}
         self._lineiter = MultiFileLineIterator()
         self._conditional_block = None
-        self._base_inc_dir = Path(base_dir)
         self._current_line_entry = None
+
+        if isinstance(base_dir, (str, Path)):
+            self._inc_dirs = [Path(base_dir)]
+        elif isinstance(base_dir, Sequence):
+            self._inc_dirs = [Path(b) for b in base_dir]
+        else:
+            raise TypeError("invalid type passed for base_dir")
 
         if initial_variable_values:
             self._varstack.update({k.upper(): _Variable(v, None) for k, v in initial_variable_values.items()})
@@ -175,6 +181,8 @@ class CP2KPreprocessor(Iterator):
 
         include_match = _INCLUDE_MATCH.match(line)
         if include_match:
+            inctype = include_match["type"]
+
             # resolve variables first
             try:
                 filename = self._resolve_variables(include_match.group("file"))
@@ -201,14 +209,28 @@ class CP2KPreprocessor(Iterator):
 
             if not filename:
                 raise PreprocessorError(
-                    "@INCLUDE requires exactly one argument",
+                    f"@{inctype} requires exactly one argument",
                     Context(colnr=include_match.start("complete"), ref_colnr=include_match.end("complete")),
                 )
 
-            # if the filename is an absolute path, joinpath uses that one
-            fhandle = open(self._base_inc_dir.joinpath(filename.strip("'\"")), "r")
-            # the _lineiter takes over the handle and closes it at EOF
-            self._lineiter.add_file(fhandle)
+            filename = filename.strip("'\"")
+
+            if inctype.upper() == "XCTYPE":
+                filename = f"xc_section/{filename}.sec"
+
+            for inc_dir in self._inc_dirs:
+                try:
+                    # if the filename is an absolute path, joinpath uses that one and will ignore the dir
+                    fhandle = inc_dir.joinpath(filename).open("r")
+
+                    # the _lineiter takes over the handle and closes it at EOF
+                    self._lineiter.add_file(fhandle)
+
+                    break
+                except OSError:
+                    continue
+            else:
+                raise PreprocessorError(f"specified INCLUDE/XCTYPE {filename} could not be opened", ctx)
 
             return
 
