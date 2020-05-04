@@ -1,5 +1,19 @@
 # Change Log
 
+## [0.5.0] - 2020-05-04
+
+* implement support for XCTYPE
+* implement support for multiple include directories
+* `.parse()` is now fully idempotent (but not re-entry safe)
+* the parser object has now a well-defined state after parsing
+  (requirement for using it as a completion engine)
+* internal representation change to a tree with dataclasses,
+  and nested dicts (canonical and simplified) are now "views" of that
+* adding method to obtain parsed (and unit converted) `COORD` section
+* preprocessor is now a proper iterator (returning pre-processed lines)
+  with access to its internal state (requirement for improved error messages)
+* more tests
+
 ## [0.4.0] - 2020-04-07
 
 * misc bug fixes

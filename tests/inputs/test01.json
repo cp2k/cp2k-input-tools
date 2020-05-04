@@ -24,10 +24,9 @@
       },
       "print": {
         "overlap_condition": {
-          "ON": {
-            "1-norm": true,
-            "diagonalization": true
-          }
+          "_": "ON",
+          "1-norm": true,
+          "diagonalization": true
         }
       },
       "QS": {

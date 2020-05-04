@@ -100,6 +100,20 @@ def test_repeated_kinds_simplified():
     }
 
 
+def test_repeated_kinds_simplified_clash():
+    cp2k_parser = CP2KInputParserSimplified(DEFAULT_CP2K_INPUT_XML)
+
+    with open(TEST_DIR.joinpath("inputs/keyword_parameter_clash_simplified.inp"), "r") as fhandle:
+        tree = cp2k_parser.parse(fhandle)
+
+    # the BS parameter clashes with the BS (broken symmetry) keyword of the KIND section
+    assert tree["force_eval"]["subsys"]["kind"] == [
+        {"_": "BS", "element": "O", "potential": "GTH-PBE-q6", "basis_set": ["ORB", "TZVP-MOLOPT-SR-GTH"]},
+        {"_": "C", "element": "C", "potential": "GTH-PBE-q4", "basis_set": ["ORB", "TZVP-MOLOPT-SR-GTH"]},
+        {"_": "Ti", "element": "Ti", "potential": "GTH-PBE-q12", "basis_set": ["ORB", "TZVP-MOLOPT-SR-GTH"]},
+    ]
+
+
 def test_repeated_kinds_canonical():
     cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
 
