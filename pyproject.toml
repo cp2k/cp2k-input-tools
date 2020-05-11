@@ -44,6 +44,7 @@ cp2k-language-server = 'cp2k_input_tools.cli:cp2k_language_server'
 [tool.black]
 line-length = 132
 target_version = ['py36']
+
 [build-system]
-requires = ["poetry>=1.0.0b1"]
+requires = ["poetry>=1"]
 build-backend = "poetry.masonry.api"
