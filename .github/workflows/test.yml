@@ -21,7 +21,7 @@ jobs:
       uses: dschep/install-poetry-action@v1.3
 
     - name: Install Dependencies
-      run: poetry install -E yaml
+      run: poetry install -E yaml -E lsp
 
     - name: Run pytest
       run: poetry run pytest --cov-report xml --cov-report term-missing --cov-append --cov cp2k_input_tools tests/
