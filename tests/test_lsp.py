@@ -1,8 +1,11 @@
 from pathlib import Path
 from time import sleep
 import io
+import sys
 
 import pytest
+
+from . import TEST_DIR
 
 try:
     from pygls.features import INITIALIZE, TEXT_DOCUMENT_DID_OPEN
@@ -10,8 +13,9 @@ try:
 except ImportError:
     pytest.skip("pygls unavailable", allow_module_level=True)
 
-
-from . import TEST_DIR
+if hasattr(sys, "pypy_version_info"):
+    # the LSP implementation seems to behave completely different on pypy
+    pytest.skip("pypy is currently not supported", allow_module_level=True)
 
 
 CALL_TIMEOUT = 2
