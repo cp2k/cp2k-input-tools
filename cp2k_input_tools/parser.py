@@ -252,7 +252,7 @@ class CP2KInputParser:
             molname = fields[4] if len(fields) > 4 else None
 
             if not scaled and current_unit != UREG.angstrom:
-                position = ((p * current_unit).to(UREG.angstrom) for p in position)
+                position = ((p * current_unit).to(UREG.angstrom).magnitude for p in position)
 
             yield (name, tuple(position), molname)
 
