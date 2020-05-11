@@ -257,8 +257,27 @@ class CP2KInputParser:
             yield (name, tuple(position), molname)
 
 
+def _flattened_keyword_parameter(keyword):
+    if isinstance(keyword.values, (list, tuple)):
+        return " ".join(str(v) for v in keyword.values)
+    return keyword.values
+
+
 class CP2KInputParserSimplified(CP2KInputParser):
     """Implement structured output simplification."""
+
+    def __init__(self, multi_value_unpack=True, repeated_section_unpack=True, level_reduction_blacklist=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if multi_value_unpack:
+            self._get_value = lambda x: x.values
+        else:
+            # this is the mode as currently employed by the aiida-cp2k plugin:
+            # keywords with multiple arguments are treated as simple strings
+            self._get_value = _flattened_keyword_parameter
+
+        self._repeated_section_unpack = repeated_section_unpack
+        self._no_lvl_reduction = level_reduction_blacklist if (level_reduction_blacklist is not None) else []
 
     @property
     def nested_dict(self):
@@ -280,7 +299,9 @@ class CP2KInputParserSimplified(CP2KInputParser):
                         param_counts = Counter(s.param for s in currsec.subsections if s.name == section.name)
                         valid_keys = [n for n in itertools.chain(section.keyword_names, section.section_names)]
                         # check that the parameters are unique, strings and do not match any keywords or sections valid in that section
-                        if all(c == 1 and isinstance(p, str) and p.upper() not in valid_keys for p, c in param_counts.items()):
+                        if self._repeated_section_unpack and all(
+                            c == 1 and isinstance(p, str) and p.upper() not in valid_keys for p, c in param_counts.items()
+                        ):
                             treeref[section_name] = {}
                         else:
                             treeref[section_name] = []
@@ -289,23 +310,19 @@ class CP2KInputParserSimplified(CP2KInputParser):
                         # if the already present section type is a section, we're using section params as keys
                         treeref[section_name][section.param] = {}
                         treerefs += [treeref[section_name][section.param]]
-                    elif not any(s.name == section.name for s in currsec.subsections if s is not section):
+                    elif not any(s.name == section.name for s in currsec.subsections if s is not section) and (
+                        section.name not in self._no_lvl_reduction
+                    ):
                         # if the section would become a list of sections, but this is the only section with that name in
                         # the current level of the parsed tree, remove one level of the list as well
-                        treeref[section_name] = {}
+                        treeref[section_name] = {"_": section.param} if section.param is not None else {}
                         treerefs += [treeref[section_name]]
                     else:
-                        if section.param is not None:
-                            treeref[section_name] += [{"_": section.param}]
-                        else:
-                            treeref[section_name] += [{}]
+                        treeref[section_name] += [{"_": section.param}] if section.param is not None else [{}]
                         treerefs += [treeref[section_name][-1]]
 
                 else:
-                    if section.param is not None:
-                        treeref[section_name] = {"_": section.param}
-                    else:
-                        treeref[section_name] = {}
+                    treeref[section_name] = {"_": section.param} if section.param is not None else {}
                     treerefs += [treeref[section_name]]
 
                 stack += [section]
@@ -326,10 +343,10 @@ class CP2KInputParserSimplified(CP2KInputParser):
                     #       we are therefore not risking to append to a keyword with multiple values
                     if not isinstance(treeref[keyword_name], list):
                         # if the value is not yet a list, make it one
-                        treeref[keyword_name] = [keyword.values]
+                        treeref[keyword_name] = [self._get_value(keyword)]
 
-                    treeref[keyword_name] += [keyword.values]
+                    treeref[keyword_name] += [self._get_value(keyword)]
                 else:
-                    treeref[keyword_name] = keyword.values
+                    treeref[keyword_name] = self._get_value(keyword)
 
         return tree
