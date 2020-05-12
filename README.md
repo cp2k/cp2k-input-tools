@@ -38,7 +38,7 @@ For development: https://poetry.eustace.io/ https://pytest.org/
 * parser: improve error reporting with context
 * preprocessor: don't lose original context when interpolating variables
 * parser: parsing the XML is slow (easily 70% of the time), pickle or generate Python code directly instead and keep XML parsing as fallback
-* parser: maybe generate AST using an emitting (`yield`) parser for more flexibility, would allow for YAML generator preserving the comments
+* parser: preserve comments when going to/from YAML
 
 # Usage
 
