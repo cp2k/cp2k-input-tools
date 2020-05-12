@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.5.1] - 2020-05-12
+
+* simplified parser: add tuning knobs to adjust tree output for aiida-cp2k
+* give proper message for invalid preprocessor variables
+* add tests for the language-server
+* more tests
+
 ## [0.5.0] - 2020-05-04
 
 * implement support for XCTYPE
