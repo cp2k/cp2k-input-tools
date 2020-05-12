@@ -58,6 +58,7 @@ class ContinuationLineIterator(Iterator):
 class _FileIterPair(NamedTuple):
     fhandle: TextIO
     iter: ContinuationLineIterator
+    managed: bool = True  # whether the iterator should close it at EOF
 
 
 class MultiFileLineIterator(Iterator):
@@ -68,8 +69,8 @@ class MultiFileLineIterator(Iterator):
         while self._fileiterpairs:
             self._fileiterpairs.pop().fhandle.close()
 
-    def add_file(self, fhandle):
-        self._fileiterpairs += [_FileIterPair(fhandle, ContinuationLineIterator(fhandle))]
+    def add_file(self, fhandle, managed=True):
+        self._fileiterpairs += [_FileIterPair(fhandle, ContinuationLineIterator(fhandle), managed)]
 
     def __next__(self) -> str:
         while self._fileiterpairs:
@@ -78,7 +79,9 @@ class MultiFileLineIterator(Iterator):
                 return next(self._fileiterpairs[-1].iter)
             except StopIteration:
                 # end of current file, remove the file from the stack and close it
-                self._fileiterpairs.pop().fhandle.close()
+                fhandle, _, managed = self._fileiterpairs.pop()
+                if managed:
+                    fhandle.close()
 
         raise StopIteration
 

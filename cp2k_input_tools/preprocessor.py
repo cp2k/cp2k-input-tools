@@ -42,7 +42,7 @@ class CP2KPreprocessor(Iterator):
         if initial_variable_values:
             self._varstack.update({k.upper(): _Variable(v, None) for k, v in initial_variable_values.items()})
 
-        self._lineiter.add_file(fhandle)
+        self._lineiter.add_file(fhandle, managed=False)
 
     def _resolve_variables(self, line):
         var_start = 0
