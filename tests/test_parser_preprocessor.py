@@ -162,6 +162,11 @@ def test_invalid_var_name():
         cp2k_parser.parse(fhandle)
     assert "invalid variable name" in excinfo.value.args[0]
 
+    fhandle = io.StringIO("@SET CP2K-DATA ./cp2k-data")
+    with pytest.raises(PreprocessorError) as excinfo:
+        cp2k_parser.parse(fhandle)
+    assert "invalid variable name" in excinfo.value.args[0]
+
 
 def test_xctype():
     cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML, base_dir=[TEST_DIR.joinpath("inputs/")])
