@@ -16,14 +16,6 @@ from .parser_errors import ParserError
 from .tokenizer import TokenizerError
 
 
-class CP2KLanguageServer(LanguageServer):
-    def __init__(self):
-        super().__init__()
-
-
-cp2k_inp_server = CP2KLanguageServer()
-
-
 def _validate(ls, params):
     ls.show_message_log("Validating CP2K input...")
 
@@ -73,20 +65,23 @@ def _validate(ls, params):
     ls.publish_diagnostics(text_doc.uri, diagnostics)
 
 
-@cp2k_inp_server.feature(TEXT_DOCUMENT_DID_CHANGE)
-def did_change(ls, params: DidChangeTextDocumentParams):
-    """Text document did change notification."""
-    _validate(ls, params)
+def setup_ls(server):
+    @server.feature(TEXT_DOCUMENT_DID_CHANGE)
+    def did_change(ls, params: DidChangeTextDocumentParams):
+        """Text document did change notification."""
+        _validate(ls, params)
+
+    @server.feature(TEXT_DOCUMENT_DID_CLOSE)
+    def did_close(server: LanguageServer, params: DidCloseTextDocumentParams):
+        """Text document did close notification."""
+        server.show_message("Text Document Did Close")
+
+    @server.feature(TEXT_DOCUMENT_DID_OPEN)
+    async def did_open(ls, params: DidOpenTextDocumentParams):
+        """Text document did open notification."""
+        ls.show_message("Text Document Did Open")
+        _validate(ls, params)
 
 
-@cp2k_inp_server.feature(TEXT_DOCUMENT_DID_CLOSE)
-def did_close(server: CP2KLanguageServer, params: DidCloseTextDocumentParams):
-    """Text document did close notification."""
-    server.show_message("Text Document Did Close")
-
-
-@cp2k_inp_server.feature(TEXT_DOCUMENT_DID_OPEN)
-async def did_open(ls, params: DidOpenTextDocumentParams):
-    """Text document did open notification."""
-    ls.show_message("Text Document Did Open")
-    _validate(ls, params)
+cp2k_inp_server = LanguageServer()
+setup_ls(cp2k_inp_server)

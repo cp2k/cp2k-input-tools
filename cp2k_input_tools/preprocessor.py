@@ -19,9 +19,9 @@ class _ConditionalBlock(NamedTuple):
     ctx: Context
 
 
-_VALID_VAR_NAME_MATCH = re.compile(r"[a-z_]\w*", flags=re.IGNORECASE | re.ASCII)
+_VALID_VAR_NAME_MATCH = re.compile(r"^[a-z_]\w*$", flags=re.IGNORECASE | re.ASCII)
 _CONDITIONAL_MATCH = re.compile(r"\s*@(?P<stmt>IF|ENDIF)\s*(?P<cond>.*)", flags=re.IGNORECASE)
-_SET_MATCH = re.compile(r"\s*@SET\s+(?P<var>\w+)\s+(?P<value>.+)", flags=re.IGNORECASE)
+_SET_MATCH = re.compile(r"\s*@SET\s+(?P<var>\S+)\s+(?P<value>.+)", flags=re.IGNORECASE)
 _INCLUDE_MATCH = re.compile(r"\s*(?P<complete>@(?P<type>INCLUDE|XCTYPE)\b\s*(?P<file>.*))", flags=re.IGNORECASE)
 
 
@@ -42,7 +42,7 @@ class CP2KPreprocessor(Iterator):
         if initial_variable_values:
             self._varstack.update({k.upper(): _Variable(v, None) for k, v in initial_variable_values.items()})
 
-        self._lineiter.add_file(fhandle)
+        self._lineiter.add_file(fhandle, managed=False)
 
     def _resolve_variables(self, line):
         var_start = 0
