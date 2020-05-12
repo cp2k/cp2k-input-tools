@@ -141,9 +141,12 @@ def test_var_default_val():
     cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
 
     with open(TEST_DIR.joinpath("inputs/default_var_val.inp"), "r") as fhandle:
-        tree = cp2k_parser.parse(fhandle)
+        tree_with = cp2k_parser.parse(fhandle)
+        fhandle.seek(0)
+        tree_without = cp2k_parser.parse(fhandle, initial_variable_values={"HP": 0})
 
-    assert "+kpoints" in tree["+force_eval"][0]["+dft"]
+    assert "+kpoints" in tree_with["+force_eval"][0]["+dft"]
+    assert "+kpoints" not in tree_without["+force_eval"][0]["+dft"]
 
 
 def test_invalid_var_name():
