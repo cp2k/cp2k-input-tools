@@ -21,6 +21,7 @@ For a description of the JSON/YAML formats used, see below.
 * https://pypi.org/project/transitions/
 * https://pypi.org/project/pint/
 * optional: https://pypi.org/project/ruamel.yaml/ for YAML support
+* optional: https://github.com/openlawlibrary/pygls for the cp2k-language-server
 
 For development: https://poetry.eustace.io/ https://pytest.org/
 
