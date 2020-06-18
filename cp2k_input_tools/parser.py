@@ -214,10 +214,14 @@ class CP2KInputParser:
                 exc.args[1]["linenr"] = preprocessor.line_range[1]
                 exc.args[1]["colnrs"] = preprocessor.colnrs
                 exc.args[1]["line"] = line
+                exc.args[1]["section"] = self._treerefs[-1]
                 raise
 
         if len(self._treerefs) > 1:
-            raise SectionMismatchError(f"section '{self._treerefs[-1].name}' not closed", Context())
+            raise SectionMismatchError(
+                f"section '{self._treerefs[-1].name}' not closed",
+                Context(line=line, section=self._treerefs[-1]),  # preprocessor is not valid anymore at this point
+            )
 
         # returning the nested dictionary representation for convenience
         return self.nested_dict

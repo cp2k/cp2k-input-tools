@@ -1,0 +1,48 @@
+@SET LATTICE 5.6412353936447603
+
+! whether to do kpoints or not
+! without kpoints it will be significantly faster,
+! but some crossings in the band structure will be missing
+@SET WITH_KP yes
+
+! set the following to yes to do a cell optimization instead of energy/force calculation
+! do NOT enable this when using this input file as template for phonopy!
+@SET DO_CELLOPT no
+
+&GLOBAL
+@IF $DO_CELLOPT == yes
+   PROJECT NaCl-cellopt
+   RUN_TYPE CELL_OPT
+@ENDIF
+@IF $DO_CELLOPT == no
+   PROJECT NaCl
+   RUN_TYPE ENERGY_FORCE
+@ENDIF
+   PRINT_LEVEL MEDIUM
+&END GLOBAL
+
+&FORCE_EVAL
+   METHOD Quickstep
+   &DFT
+      BASIS_SET_FILE_NAME BASIS_pob  ! this is shipped with CP2K 7.0+
+      POTENTIAL_FILE_NAME ALL_POTENTIALS
+
+      &QS
+         EPS_DEFAULT 1e-12
+
+         ! We are using GAPW instead of the default GPW to prevent numerical
+         ! noise due to the finite grid size in the integration schemes in CP2K
+         ! together with the small displacements used to determine the forces.
+         ! Alternatively one could increase the CUTOFF to >5000 (depends on basis set)
+         ! to ensure that the higher exponents in the basis sets are well represented on the grid.
+         METHOD GAPW
+      &END QS
+
+      &POISSON
+         PERIODIC XYZ
+      &END POISSON
+
+      &SCF
+         EPS_SCF 1e-07
+         MAX_SCF 80
+         SCF_GUE
