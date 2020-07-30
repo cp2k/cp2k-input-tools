@@ -28,7 +28,7 @@ yaml = ["ruamel.yaml"]
 lsp = ["pygls"]
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
+pytest = "^6.0"
 codecov = "^2.0.15"
 pytest-cov = "^2.7.1"
 pytest-console-scripts = "^0.2.0"
