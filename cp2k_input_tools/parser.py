@@ -245,7 +245,7 @@ class CP2KInputParser:
             return
 
         scaled = next(coord.keywords_by_name("SCALED"), False)
-        current_unit = UREG.parse_expression(next(coord.keywords_by_name("UNIT"), "ANGSTROM").lower())
+        current_unit = UREG.parse_expression(next(coord.keywords_by_name("UNIT"), "ANGSTROM"), case_sensitive=False)
 
         for coordline in coord.keywords_by_name("*"):
             # coordinates are a series of strings according to the CP2K schema
