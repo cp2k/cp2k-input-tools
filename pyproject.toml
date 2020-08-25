@@ -17,7 +17,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.6"
-transitions = "^0.7"
+transitions = ">=0.7,<0.9"
 pint = "^0.15"
 "ruamel.yaml" = {version = "^0.16.5", optional = true}
 pygls = {version = "^0.8", optional = true}
