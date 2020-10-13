@@ -17,12 +17,14 @@
 
 # -- Project information -----------------------------------------------------
 
+import cp2k_input_tools
+
 project = "cp2k-input-tools"
 copyright = "2020, Tiziano Müller"
 author = "Tiziano Müller"
 
 # The full version, including alpha/beta/rc tags
-release = "0.5.1"
+release = cp2k_input_tools.__version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -40,6 +42,8 @@ templates_path = ["_templates"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
+# The master toctree document.
+master_doc = "index"
 
 # -- Options for HTML output -------------------------------------------------
 
