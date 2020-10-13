@@ -32,6 +32,9 @@ pytest = "^6.0"
 codecov = "^2.0.15"
 pytest-cov = "^2.7.1"
 pytest-console-scripts = "^1.0.0"
+sphinx = "^3.2.1"
+sphinx-rtd-theme = "^0.5.0"
+taskipy = "^1.4.0"
 
 [tool.poetry.scripts]
 cp2klint = 'cp2k_input_tools.cli:cp2klint'
@@ -44,6 +47,10 @@ cp2k-language-server = 'cp2k_input_tools.cli:cp2k_language_server'
 [tool.black]
 line-length = 132
 target_version = ['py36']
+
+[tool.taskipy.tasks]
+test = "pytest"
+html_docs = "make html -C docs"
 
 [build-system]
 requires = ["poetry>=1"]
