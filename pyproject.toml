@@ -21,7 +21,7 @@ transitions = "^0.7"
 pint = ">=0.15,<0.17"
 "ruamel.yaml" = {version = "^0.16.5", optional = true}
 pygls = {version = "^0.8", optional = true}
-dataclasses = {version = "^0.7", python = "~3.6"}
+dataclasses = {version = ">=0.7,<0.9", python = "~3.6"}
 
 [tool.poetry.extras]
 yaml = ["ruamel.yaml"]
