@@ -5,9 +5,10 @@ import itertools
 from copy import deepcopy
 import pathlib
 import logging
+from typing import MutableSequence, Mapping
 
 from . import DEFAULT_CP2K_INPUT_XML
-from .parser import CP2KInputParser, CP2KInputParserSimplified
+from .parser import CP2KInputParser, CP2KInputParserSimplified, CP2KInputParserAiiDA
 from .parser_errors import ParserError
 from .tokenizer import TokenizerError
 from .generator import CP2KInputGenerator
@@ -320,3 +321,33 @@ You have to install the cp2k-input-tools with the 'lsp' extra:
         cp2k_inp_server.start_tcp(args.host, args.port)
     else:
         cp2k_inp_server.start_io()
+
+
+def cp2k2aiida():
+    from jinja2 import Environment, PackageLoader
+
+    parser = argparse.ArgumentParser(description="Convert CP2K input to an aiida-cp2k script")
+    parser.add_argument("file", metavar="<file>", type=str, help="CP2K input file")
+    parser.add_argument("-b", "--base-dir", type=str, default=".", help="search path used for relative @include's")
+    parser.add_argument(
+        "-E",
+        "--set",
+        dest="var_values",
+        metavar="key=value",
+        default=[],
+        type=_argparse_str2kv,
+        action="append",
+        help="preset the value for a CP2K preprocessor variable",
+    )
+    args = parser.parse_args()
+
+    cp2k_parser = CP2KInputParserAiiDA(base_dir=args.base_dir)
+
+    with open(args.file, "r") as fhandle:
+        tree = cp2k_parser.parse(fhandle, dict(args.var_values))
+
+    env = Environment(loader=PackageLoader("cp2k_input_tools", "templates"))
+    env.globals.update({"isinstance": isinstance, "Mapping": Mapping, "MutableSequence": MutableSequence})
+    env.filters["quoted"] = lambda item: f'"{item}"' if isinstance(item, str) else item
+    template = env.get_template("aiida_cp2k_calc.py.j2")
+    print(template.render(tree=tree))
