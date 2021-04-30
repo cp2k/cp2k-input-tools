@@ -7,7 +7,7 @@ default_language_version:
 
 repos:
 - repo: https://github.com/ambv/black
-  rev: stable
+  rev: 21.4b2
   hooks:
   - id: black
 - repo: https://gitlab.com/pycqa/flake8
