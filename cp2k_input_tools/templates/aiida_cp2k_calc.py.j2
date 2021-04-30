@@ -1,0 +1,48 @@
+
+from aiida.engine import run
+from aiida.orm import (load_code, Dict, StructureData)
+
+cp2k_code = load_code('...')
+
+# Structure
+structure = StructureData(...)
+
+# Parameters
+parameters = Dict(
+    dict={
+   {%- for key, value in tree.items() recursive %}
+       {%- set outer = loop -%}
+       {%- if isinstance(value, Mapping) %}
+           {{ '    ' * outer.depth0 -}} "{{ key }}": {
+               {{- outer(value.items()) }}
+           {{ '    ' * outer.depth0 -}} },
+       {%- elif isinstance(value, MutableSequence) %}
+           {{ '    ' * outer.depth0 -}} "{{ key }}": [
+           {%- for item in value %}
+               {%- if isinstance(item, Mapping) %}
+               {{ '    ' * outer.depth0 -}} {
+                   {{- outer(item.items()) }}
+               {{ '    ' * outer.depth0 -}} },
+               {%- else %}
+               {{ '    ' * outer.depth0 -}} "{{ item }}",
+               {%- endif %}
+           {%- endfor %}
+           {{ '    ' * outer.depth0 -}} ],
+       {%- else  %}
+           {{ '    ' * outer.depth0 -}} "{{ key }}": {{ value | quoted }},
+       {%- endif %}
+   {%- endfor %}
+    })
+
+# Construct process builder.
+builder = cp2k_code.get_builder()
+builder.structure = structure
+builder.parameters = parameters
+builder.code = cp2k_code
+builder.metadata.options.resources = {
+    "num_machines": 1,
+    "num_mpiprocs_per_machine": 1,
+}
+builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
+
+run(builder)

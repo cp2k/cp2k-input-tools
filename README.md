@@ -50,7 +50,7 @@ You will get most tools using simply:
 $ pip install cp2k-input-tools
 ```
 
-For YAML support you should use 
+For YAML support you should use
 
 ```console
 $ pip install cp2k-input-tools[yaml]
@@ -64,7 +64,7 @@ $ pip install cp2k-input-tools[lsp]
 
 ## Command Line Interface
 
-Generate JSON or YAML from a CP2K input file:
+Generate JSON, YAML or aiida-cp2k run script from a CP2K input file:
 
 ```console
 $ fromcp2k --help
@@ -85,6 +85,118 @@ optional arguments:
                         transformation applied to key and section names (auto,
                         upper, lower)
 ```
+
+Generate an [aiida-cp2k](https://github.com/aiidateam/aiida-cp2k) template run script:
+
+```console
+$ fromcp2k --format aiida-cp2k-calc tests/inputs/test01.inp
+Any key transformation function other than 'auto' is ignored when generating an aiida-cp2k run script template
+
+from aiida.engine import run
+from aiida.orm import (load_code, Dict, StructureData)
+
+cp2k_code = load_code('...')
+
+# Structure
+structure = StructureData(...)
+
+# Parameters
+parameters = Dict(
+    dict={
+           "FORCE_EVAL": {
+               "DFT": {
+                   "KPOINTS": {
+                       "FULL_GRID": False,
+                       "PARALLEL_GROUP_SIZE": -1,
+                       "SCHEME": "MONKHORST-PACK 3 3 3",
+                       "SYMMETRY": False,
+                   },
+                   "MGRID": {
+                       "CUTOFF": 1000.0,
+                       "REL_CUTOFF": 100.0,
+                   },
+                   "POISSON": {
+                       "PERIODIC": "XYZ",
+                   },
+                   "PRINT": {
+                       "OVERLAP_CONDITION": {
+                           "_": "ON",
+                           "1-NORM": True,
+                           "DIAGONALIZATION": True,
+                       },
+                   },
+                   "QS": {
+                       "EPS_DEFAULT": 1e-16,
+                       "EXTRAPOLATION": "USE_GUESS",
+                       "METHOD": "GAPW",
+                   },
+                   "SCF": {
+                       "SMEAR": {
+                           "_": True,
+                           "ELECTRONIC_TEMPERATURE": 300.0,
+                           "METHOD": "FERMI_DIRAC",
+                       },
+                       "ADDED_MOS": 40,
+                       "EPS_SCF": 1e-08,
+                       "MAX_SCF": 50,
+                   },
+                   "XC": {
+                       "XC_FUNCTIONAL": {
+                           "_": "PBE",
+                       },
+                   },
+                   "BASIS_SET_FILE_NAME": "./BASIS_SETS",
+                   "POTENTIAL_FILE_NAME": "./POTENTIALS",
+               },
+               "SUBSYS": {
+                   "CELL": {
+                       "CELL_REF": {
+                           "A": "4.32947291598 0.0 0.0",
+                           "B": "2.16473645799 3.7494335304 0.0",
+                           "C": "2.16473645799 1.24981118034 3.53499983838",
+                           "PERIODIC": "XYZ",
+                       },
+                       "A": "4.07419 0.0 0.0",
+                       "B": "2.037095 3.52835204 0.0",
+                       "C": "2.037095 1.17611735 3.32656221",
+                       "PERIODIC": "XYZ",
+                   },
+                   "KIND": [
+                       {
+                       "_": "Ge",
+                       "ELEMENT": "Ge",
+                       "POTENTIAL": "ALL-q32",
+                       "BASIS_SET": "ORB pob-TZVP",
+                       },
+                   ],
+                   "TOPOLOGY": {
+                       "COORD_FILE_NAME": "./struct.xyz",
+                       "COORD_FILE_FORMAT": "XYZ",
+                   },
+               },
+               "METHOD": "QUICKSTEP",
+           },
+           "GLOBAL": {
+               "PRINT_LEVEL": "MEDIUM",
+               "PROJECT_NAME": "fatman.calc",
+               "RUN_TYPE": "ENERGY",
+           },
+    })
+
+# Construct process builder.
+builder = cp2k_code.get_builder()
+builder.structure = structure
+builder.parameters = parameters
+builder.code = cp2k_code
+builder.metadata.options.resources = {
+    "num_machines": 1,
+    "num_mpiprocs_per_machine": 1,
+}
+builder.metadata.options.max_wallclock_seconds = 1 * 3 * 60
+
+run(builder)
+```
+
 
 Generate a CP2K input file from a JSON or YAML:
 
@@ -111,14 +223,14 @@ line   36: @IF ${HP
                ~~~~^
 ```
 
-Generate input files for a `CUTOFF` convergence study (multiple expressions will be combined as a cartesian product): 
+Generate input files for a `CUTOFF` convergence study (multiple expressions will be combined as a cartesian product):
 
 ```console
 $ cp2kgen tests/inputs/NaCl.inp "force_eval/dft/mgrid/cutoff=[800,900,1000]"
 Writing 'NaCl-cutoff_800.inp'...
 Writing 'NaCl-cutoff_900.inp'...
 Writing 'NaCl-cutoff_1000.inp'...
-$ diff -Naurb NaCl-cutoff_800.inp NaCl-cutoff_900.inp 
+$ diff -Naurb NaCl-cutoff_800.inp NaCl-cutoff_900.inp
 --- NaCl-cutoff_800.inp	2019-10-21 18:52:09.994323474 +0200
 +++ NaCl-cutoff_900.inp	2019-10-21 18:52:10.680996641 +0200
 @@ -69,7 +69,7 @@

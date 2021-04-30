@@ -5,9 +5,10 @@ import itertools
 from copy import deepcopy
 import pathlib
 import logging
+from typing import MutableSequence, Mapping
 
 from . import DEFAULT_CP2K_INPUT_XML
-from .parser import CP2KInputParser, CP2KInputParserSimplified
+from .parser import CP2KInputParser, CP2KInputParserSimplified, CP2KInputParserAiiDA
 from .parser_errors import ParserError
 from .tokenizer import TokenizerError
 from .generator import CP2KInputGenerator
@@ -103,9 +104,11 @@ def _fromcp2k_trafo_arg(value):
 
 
 def fromcp2k():
-    parser = argparse.ArgumentParser(description="Convert CP2K input to JSON (default) or YAML")
+    parser = argparse.ArgumentParser(description="Convert CP2K input to JSON (default), YAML or an aiida-cp2k run script template")
     parser.add_argument("file", metavar="<file>", type=str, help="CP2K input file")
-    parser.add_argument("-y", "--yaml", action="store_true", help="output yaml instead of json")
+    parser.add_argument(
+        "-f", "--format", type=str, default="json", choices=("json", "yaml", "aiida-cp2k-calc"), help="output format"
+    )
     parser.add_argument("-c", "--canonical", action="store_true", help="use the canonical output format")
     parser.add_argument("-b", "--base-dir", type=str, default=".", help="search path used for relative @include's")
     parser.add_argument(
@@ -127,7 +130,16 @@ def fromcp2k():
     )
     args = parser.parse_args()
 
-    if args.canonical:
+    if args.format == "aiida-cp2k-calc":
+        if args.canonical:
+            print("The --canonical argument is ignored when generating an aiida-cp2k run script template", file=sys.stderr)
+        if args.trafo != _key_trafo:
+            print(
+                "Any key transformation function other than 'auto' is ignored when generating an aiida-cp2k run script template",
+                file=sys.stderr,
+            )
+        cp2k_parser = CP2KInputParserAiiDA(xmlspec=DEFAULT_CP2K_INPUT_XML, base_dir=args.base_dir)
+    elif args.canonical:
         cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML, base_dir=args.base_dir, key_trafo=args.trafo)
     else:
         cp2k_parser = CP2KInputParserSimplified(DEFAULT_CP2K_INPUT_XML, base_dir=args.base_dir, key_trafo=args.trafo)
@@ -135,16 +147,23 @@ def fromcp2k():
     with open(args.file, "r") as fhandle:
         tree = cp2k_parser.parse(fhandle, dict(args.var_values))
 
-    if args.yaml:
-        from ruamel.yaml import YAML
-
-        yaml = YAML()
-
-        yaml.dump(tree, sys.stdout)
-    else:
+    if args.format == "json":
         import json
 
         print(json.dumps(tree, indent=2))
+    elif args.format == "yaml":
+        from ruamel.yaml import YAML
+
+        yaml = YAML()
+        yaml.dump(tree, sys.stdout)
+    elif args.format == "aiida-cp2k-calc":
+        from jinja2 import Environment, PackageLoader
+
+        env = Environment(loader=PackageLoader("cp2k_input_tools", "templates"))
+        env.globals.update({"isinstance": isinstance, "Mapping": Mapping, "MutableSequence": MutableSequence})
+        env.filters["quoted"] = lambda item: f'"{item}"' if isinstance(item, str) else item
+        template = env.get_template("aiida_cp2k_calc.py.j2")
+        print(template.render(tree=tree))
 
 
 def tocp2k():
