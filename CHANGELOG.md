@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.6.0] - 2021-05-03
+
+* `fromcp2k` now has a `-f/--format` to select the format
+* `fromcp2k` can now emit an aiida-cp2k calculation run script template
+* the API now has a `CP2KParserAiiDA` which sets the required options
+  to generate an aiida-cp2k compatible parameter dictionary, as a convenience
+  function instead of the user having to tune `CP2KParserSimplified`
+* unit parsing is now case insensitive
+* the exception thrown by the parser now includes more context by
+  referencing the current Section
+* more documentation
+
 ## [0.5.1] - 2020-05-12
 
 * simplified parser: add tuning knobs to adjust tree output for aiida-cp2k
