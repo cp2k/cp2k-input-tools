@@ -135,7 +135,7 @@ class Keyword:
             if token.startswith("["):
                 if not default_unit:
                     raise InvalidParameterError("unit specified for value in keyword, but no default unit available")
-                current_unit = UREG.parse_expression(token.strip("[]"))
+                current_unit = UREG.parse_expression(token.strip("[]"), case_sensitive=False)
                 continue
 
             if token.startswith(COMMENT_CHARS):

@@ -19,7 +19,7 @@ def parser():
 # the following is adapted from https://github.com/openlawlibrary/pygls/blob/master/tests/conftest.py
 @pytest.fixture
 def client_server():
-    """ A fixture to setup a LSP client/server """
+    """A fixture to setup a LSP client/server"""
     from cp2k_input_tools.ls import setup_ls
     from pygls.server import LanguageServer
     from pygls import features

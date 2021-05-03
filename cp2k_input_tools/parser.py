@@ -214,10 +214,14 @@ class CP2KInputParser:
                 exc.args[1]["linenr"] = preprocessor.line_range[1]
                 exc.args[1]["colnrs"] = preprocessor.colnrs
                 exc.args[1]["line"] = line
+                exc.args[1]["section"] = self._treerefs[-1]
                 raise
 
         if len(self._treerefs) > 1:
-            raise SectionMismatchError(f"section '{self._treerefs[-1].name}' not closed", Context())
+            raise SectionMismatchError(
+                f"section '{self._treerefs[-1].name}' not closed",
+                Context(line=line, section=self._treerefs[-1]),  # preprocessor is not valid anymore at this point
+            )
 
         # returning the nested dictionary representation for convenience
         return self.nested_dict
@@ -241,7 +245,7 @@ class CP2KInputParser:
             return
 
         scaled = next(coord.keywords_by_name("SCALED"), False)
-        current_unit = UREG.parse_expression(next(coord.keywords_by_name("UNIT"), "ANGSTROM").lower())
+        current_unit = UREG.parse_expression(next(coord.keywords_by_name("UNIT"), "ANGSTROM"), case_sensitive=False)
 
         for coordline in coord.keywords_by_name("*"):
             # coordinates are a series of strings according to the CP2K schema
@@ -350,3 +354,27 @@ class CP2KInputParserSimplified(CP2KInputParser):
                     treeref[keyword_name] = self._get_value(keyword)
 
         return tree
+
+
+class CP2KInputParserAiiDA(CP2KInputParserSimplified):
+    """Implement structured output simplification as expected by aiida-cp2k as input parameter"""
+
+    def __init__(self, *args, **kwargs):
+        # aiida-cp2k uses a limited dict-based representation of the CP2K input,
+        # and the simplified parser needs to be tweaked:
+        # * avoid that something like "BASIS_SET ORB DZVP-MOLOPT-GTH" is unpacked
+        #   into {"BASIS_SET": ("ORB", "DZVP-MOLOPT-GTH")}
+        # * prevents the unpacking of repeated sections (removing the list)
+        # * prevents that "KIND H" is turned into {"KIND": {"H": {"BASIS_SET": ...}}}
+        #   but kept as {"KIND": {"_": "H", "BASIS_SET": ...}}} and with the option above
+        #   makes it compatible with aiida-cp2k's way of CP2K input representation
+        # NOTE: some CP2K input files can not be represented in this form
+
+        super().__init__(
+            key_trafo=str.upper,
+            multi_value_unpack=False,
+            repeated_section_unpack=False,
+            level_reduction_blacklist=["KIND"],
+            *args,
+            **kwargs,
+        )

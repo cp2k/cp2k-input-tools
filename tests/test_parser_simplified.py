@@ -1,5 +1,5 @@
 from . import TEST_DIR
-from cp2k_input_tools.parser import CP2KInputParserSimplified
+from cp2k_input_tools.parser import CP2KInputParserSimplified, CP2KInputParserAiiDA
 
 
 def test_simplified_no_unpack():
@@ -18,9 +18,7 @@ def test_simplified_no_unpack():
 
 
 def test_simplified_aiida():
-    cp2k_parser = CP2KInputParserSimplified(
-        key_trafo=str.upper, multi_value_unpack=False, repeated_section_unpack=False, level_reduction_blacklist=["KIND"]
-    )
+    cp2k_parser = CP2KInputParserAiiDA()
 
     with (TEST_DIR / "inputs" / "deltatest_C_0.98.inp").open("r") as fhandle:
         tree = cp2k_parser.parse(fhandle)
