@@ -268,10 +268,16 @@ def cp2kgen():
                 ref = ref[section]  # exploit Python using references into dicts/lists
 
             attr = sections[-1]
-            if isinstance(ref, list):
+            if isinstance(ref, (list, tuple)):
                 attr = int(attr)
 
-            ref[attr] = value
+            if isinstance(ref, tuple):
+                # we only get tuples for keywords which can take multiple words, hence this should be safe
+                lref = list(ref)
+                lref[attr] = value
+                ref = tuple(lref)
+            else:
+                ref[attr] = value
 
             # take only the attribute name
             onameparts += [f"{attr}_{value}"]
@@ -321,7 +327,7 @@ def cp2kget():
         sections = path.split("/")
         ref = tree
         for section in sections:
-            if isinstance(ref, list):
+            if isinstance(ref, (list, tuple)):
                 section = int(section)  # if we encounter a list, convert the respective path element
             ref = ref[section]  # exploit Python using references into dicts/lists
 

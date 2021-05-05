@@ -122,11 +122,11 @@ class CP2KInputGenerator:
             "word": word_renderer,
         }
 
-        if isinstance(value, list):
+        if isinstance(value, (list, tuple)):
             if not repeats and n_var == 1:
                 raise InvalidKeywordDataError("got multiple values for non-repeating single-valued keyword")
 
-            nested_list = any(isinstance(v, list) for v in value)
+            nested_list = any(isinstance(v, (list, tuple)) for v in value)
 
             if repeats and n_var == 1 and nested_list:
                 raise InvalidKeywordDataError("got multiple values for repeating single-valued keyword")
@@ -134,7 +134,7 @@ class CP2KInputGenerator:
             # if any of the values is a list itself we know the outer list to be for the repetion and the inner for the values
             # and we only have to ensure that those entries where the inner list is not a list but a single word are also a list
             if nested_list:
-                value = [v if isinstance(v, list) else [v] for v in value]
+                value = [v if isinstance(v, (list, tuple)) else [v] for v in value]
 
             elif n_var == 1:
                 value = [[v] for v in value]

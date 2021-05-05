@@ -275,4 +275,4 @@ def test_cp2kget_simplified_list_value(script_runner):
 
     assert ret.stderr == ""
     assert ret.success
-    assert "force_eval/subsys/cell/a: 5.64123539364476, 0.0, 0.0" in ret.stdout
+    assert "force_eval/subsys/cell/a: (5.64123539364476, 0.0, 0.0)" in ret.stdout

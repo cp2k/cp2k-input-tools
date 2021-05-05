@@ -25,7 +25,17 @@ def test_repeated_keywords():
         tree = cp2k_parser.parse(fhandle)
 
     assert tree["force_eval"]["dft"]["basis_set_file_name"] == ["BASIS_MOLOPT", "BASIS_MOLOPT_UCL"]
-    assert tree["force_eval"]["subsys"]["kind"]["H"]["basis_set"] == ["TZV2P-MOLOPT-GTH", ["AUX_FIT", "pFIT3"]]
+    assert tree["force_eval"]["subsys"]["kind"]["H"]["basis_set"] == ["TZV2P-MOLOPT-GTH", ("AUX_FIT", "pFIT3")]
+
+
+def test_repeated_keywords_tuples():
+    """Verify bug https://github.com/cp2k/cp2k-input-tools/issues/32 for repeated BASIS_SET is fixed"""
+    cp2k_parser = CP2KInputParserSimplified(key_trafo=str.lower)
+
+    with (TEST_DIR / "inputs" / "repeated_keywords_tuples.inp").open("r") as fhandle:
+        tree = cp2k_parser.parse(fhandle)
+
+    assert tree["force_eval"]["subsys"]["kind"]["H"]["basis_set"] == [("AUX_FIT", "pFIT3"), "TZV2P-MOLOPT-GTH"]
 
 
 def test_simplified_aiida():

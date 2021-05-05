@@ -261,27 +261,24 @@ class CP2KInputParser:
             yield (name, tuple(position), molname)
 
 
-def _flattened_keyword_parameter(keyword):
-    if isinstance(keyword.values, (list, tuple)):
-        return " ".join(str(v) for v in keyword.values)
-    return keyword.values
-
-
 class CP2KInputParserSimplified(CP2KInputParser):
     """Implement structured output simplification."""
 
     def __init__(self, multi_value_unpack=True, repeated_section_unpack=True, level_reduction_blacklist=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if multi_value_unpack:
-            self._get_value = lambda x: x.values
-        else:
-            # this is the mode as currently employed by the aiida-cp2k plugin:
-            # keywords with multiple arguments are treated as simple strings
-            self._get_value = _flattened_keyword_parameter
-
+        self._multi_value_unpack = multi_value_unpack
         self._repeated_section_unpack = repeated_section_unpack
         self._no_lvl_reduction = level_reduction_blacklist if (level_reduction_blacklist is not None) else []
+
+    def _get_value(self, keyword):
+        """Conditionally unpack values"""
+        if isinstance(keyword.values, (list, tuple)) and not self._multi_value_unpack:
+            # this is the mode as currently employed by the aiida-cp2k plugin:
+            # keywords with multiple arguments are treated as simple strings
+            return " ".join(str(v) for v in keyword.values)
+
+        return keyword.values
 
     @property
     def nested_dict(self):
