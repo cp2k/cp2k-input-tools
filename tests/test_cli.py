@@ -113,8 +113,32 @@ def test_fromcp2k_aiida_calc(script_runner):
     assert "builder = cp2k_code.get_builder" in ret.stdout
 
 
+def test_fromcp2k_stdin(script_runner):
+
+    with (INPUTS_DIR / "test01.inp").open() as stdin:
+        ret = script_runner.run("fromcp2k", stdin=stdin)
+
+    assert ret.success
+    assert ret.stderr == ""
+    tree = json.loads(ret.stdout)
+
+    with (INPUTS_DIR / "test01.json").open() as fhandle:
+        # validate output against previously generated tree (to avoid regressions)
+        assert json.load(fhandle) == tree
+
+
 def test_tocp2k_json(script_runner):
     ret = script_runner.run("tocp2k", str(INPUTS_DIR / "test01.json"))
+
+    assert ret.success
+    assert ret.stderr == ""
+
+    assert "&GLOBAL" in ret.stdout
+
+
+def test_tocp2k_json_stdin(script_runner):
+    with (INPUTS_DIR / "test01.json").open() as stdin:
+        ret = script_runner.run("tocp2k", stdin=stdin)
 
     assert ret.success
     assert ret.stderr == ""

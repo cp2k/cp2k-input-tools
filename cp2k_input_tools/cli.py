@@ -5,6 +5,7 @@ import itertools
 from copy import deepcopy
 import pathlib
 import logging
+import contextlib
 from typing import MutableSequence, Mapping
 
 from . import DEFAULT_CP2K_INPUT_XML
@@ -12,6 +13,21 @@ from .parser import CP2KInputParser, CP2KInputParserSimplified, CP2KInputParserA
 from .parser_errors import ParserError
 from .tokenizer import TokenizerError
 from .generator import CP2KInputGenerator
+
+
+@contextlib.contextmanager
+def smart_open(filename=None):
+    """A context manager to automatically read from stdin, based on https://stackoverflow.com/a/17603000/1400465"""
+    if filename and filename != "-":
+        fhandle = open(filename, "r")
+    else:
+        fhandle = sys.stdin
+
+    try:
+        yield fhandle
+    finally:
+        if fhandle is not sys.stdin:
+            fhandle.close()
 
 
 def _argparse_str2kv(arg):
@@ -105,7 +121,7 @@ def _fromcp2k_trafo_arg(value):
 
 def fromcp2k():
     parser = argparse.ArgumentParser(description="Convert CP2K input to JSON (default), YAML or an aiida-cp2k run script template")
-    parser.add_argument("file", metavar="<file>", type=str, help="CP2K input file")
+    parser.add_argument("file", metavar="[<file>]", type=str, help="CP2K input file", nargs="?")
     parser.add_argument(
         "-f", "--format", type=str, default="json", choices=("json", "yaml", "aiida-cp2k-calc"), help="output format"
     )
@@ -144,7 +160,7 @@ def fromcp2k():
     else:
         cp2k_parser = CP2KInputParserSimplified(DEFAULT_CP2K_INPUT_XML, base_dir=args.base_dir, key_trafo=args.trafo)
 
-    with open(args.file, "r") as fhandle:
+    with smart_open(args.file) as fhandle:
         tree = cp2k_parser.parse(fhandle, dict(args.var_values))
 
     if args.format == "json":
@@ -168,11 +184,11 @@ def fromcp2k():
 
 def tocp2k():
     parser = argparse.ArgumentParser(description="Convert JSON or YAML input to CP2K")
-    parser.add_argument("file", metavar="<file>", type=str, help="JSON or YAML input file")
+    parser.add_argument("file", metavar="[<file>]", type=str, help="JSON or YAML input file", nargs="?")
     parser.add_argument("-y", "--yaml", action="store_true")
     args = parser.parse_args()
 
-    with open(args.file, "r") as fhandle:
+    with smart_open(args.file) as fhandle:
         if args.yaml:
             from ruamel.yaml import YAML
 
