@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.6.1] - 2021-05-05
+
+* fix bug in the simplified parser where repeated keywords were not emitted properly (#32)
+
 ## [0.6.0] - 2021-05-03
 
 * `fromcp2k` now has a `-f/--format` to select the format
