@@ -17,6 +17,17 @@ def test_simplified_no_unpack():
     }
 
 
+def test_repeated_keywords():
+    """Verify bug https://github.com/cp2k/cp2k-input-tools/issues/33 for repeated BASIS_SET_FILE_NAME is fixed"""
+    cp2k_parser = CP2KInputParserSimplified(key_trafo=str.lower)
+
+    with (TEST_DIR / "inputs" / "repeated_keywords.inp").open("r") as fhandle:
+        tree = cp2k_parser.parse(fhandle)
+
+    assert tree["force_eval"]["dft"]["basis_set_file_name"] == ["BASIS_MOLOPT", "BASIS_MOLOPT_UCL"]
+    assert tree["force_eval"]["subsys"]["kind"]["H"]["basis_set"] == ["TZV2P-MOLOPT-GTH", ["AUX_FIT", "pFIT3"]]
+
+
 def test_simplified_aiida():
     cp2k_parser = CP2KInputParserAiiDA()
 
