@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.6.2] - 2021-05-05
+
+* fix bug in the simplified parser where repeated keywords were not emitted properly,
+  again #32 but slightly different. This reintroduced the usage of tuples for
+  multi-word keywords as a way to do repeated keyword and multi-word merging.
+  Mostly visible internally since JSON and YAML do not emit tuples.
+* introduce switch to select the string to which a repeated default keyword is mapped to,
+  as it seems, aiida-cp2k chose `" "` (one space), as requested in #36
+
 ## [0.6.1] - 2021-05-05
 
 * fix bug in the simplified parser where repeated keywords were not emitted properly (#32)
