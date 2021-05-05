@@ -163,6 +163,8 @@ class Keyword:
         # simplify the value if only one is given/requested
         if len(values) == 1:
             values = values[0]
+        else:
+            values = tuple(values)
 
         key_name = kw_node.find("./NAME[@type='default']").text
         if key_name == "DEFAULT_KEYWORD":

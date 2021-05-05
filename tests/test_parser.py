@@ -94,9 +94,9 @@ def test_repeated_kinds_simplified():
         tree = cp2k_parser.parse(fhandle)
 
     assert tree["force_eval"]["subsys"]["kind"] == {
-        "O": {"element": "O", "potential": "GTH-PBE-q6", "basis_set": ["ORB", "TZVP-MOLOPT-SR-GTH"]},
-        "C": {"element": "C", "potential": "GTH-PBE-q4", "basis_set": ["ORB", "TZVP-MOLOPT-SR-GTH"]},
-        "Ti": {"element": "Ti", "potential": "GTH-PBE-q12", "basis_set": ["ORB", "TZVP-MOLOPT-SR-GTH"]},
+        "O": {"element": "O", "potential": "GTH-PBE-q6", "basis_set": ("ORB", "TZVP-MOLOPT-SR-GTH")},
+        "C": {"element": "C", "potential": "GTH-PBE-q4", "basis_set": ("ORB", "TZVP-MOLOPT-SR-GTH")},
+        "Ti": {"element": "Ti", "potential": "GTH-PBE-q12", "basis_set": ("ORB", "TZVP-MOLOPT-SR-GTH")},
     }
 
 
@@ -108,9 +108,9 @@ def test_repeated_kinds_simplified_clash():
 
     # the BS parameter clashes with the BS (broken symmetry) keyword of the KIND section
     assert tree["force_eval"]["subsys"]["kind"] == [
-        {"_": "BS", "element": "O", "potential": "GTH-PBE-q6", "basis_set": ["ORB", "TZVP-MOLOPT-SR-GTH"]},
-        {"_": "C", "element": "C", "potential": "GTH-PBE-q4", "basis_set": ["ORB", "TZVP-MOLOPT-SR-GTH"]},
-        {"_": "Ti", "element": "Ti", "potential": "GTH-PBE-q12", "basis_set": ["ORB", "TZVP-MOLOPT-SR-GTH"]},
+        {"_": "BS", "element": "O", "potential": "GTH-PBE-q6", "basis_set": ("ORB", "TZVP-MOLOPT-SR-GTH")},
+        {"_": "C", "element": "C", "potential": "GTH-PBE-q4", "basis_set": ("ORB", "TZVP-MOLOPT-SR-GTH")},
+        {"_": "Ti", "element": "Ti", "potential": "GTH-PBE-q12", "basis_set": ("ORB", "TZVP-MOLOPT-SR-GTH")},
     ]
 
 
@@ -121,9 +121,9 @@ def test_repeated_kinds_canonical():
         tree = cp2k_parser.parse(fhandle)
 
     assert tree["+force_eval"][0]["+subsys"]["+kind"] == [
-        {"_": "O", "element": "O", "potential": "GTH-PBE-q6", "basis_set": [["ORB", "TZVP-MOLOPT-SR-GTH"]]},
-        {"_": "C", "element": "C", "potential": "GTH-PBE-q4", "basis_set": [["ORB", "TZVP-MOLOPT-SR-GTH"]]},
-        {"_": "Ti", "element": "Ti", "potential": "GTH-PBE-q12", "basis_set": [["ORB", "TZVP-MOLOPT-SR-GTH"]]},
+        {"_": "O", "element": "O", "potential": "GTH-PBE-q6", "basis_set": [("ORB", "TZVP-MOLOPT-SR-GTH")]},
+        {"_": "C", "element": "C", "potential": "GTH-PBE-q4", "basis_set": [("ORB", "TZVP-MOLOPT-SR-GTH")]},
+        {"_": "Ti", "element": "Ti", "potential": "GTH-PBE-q12", "basis_set": [("ORB", "TZVP-MOLOPT-SR-GTH")]},
     ]
 
 
