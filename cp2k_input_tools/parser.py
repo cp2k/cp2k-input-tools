@@ -347,7 +347,7 @@ class CP2KInputParserSimplified(CP2KInputParser):
                     #       we are therefore not risking to append to a keyword with multiple values
                     if not isinstance(treeref[keyword_name], list):
                         # if the value is not yet a list, make it one
-                        treeref[keyword_name] = [self._get_value(keyword)]
+                        treeref[keyword_name] = [treeref[keyword_name]]
 
                     treeref[keyword_name] += [self._get_value(keyword)]
                 else:
