@@ -264,12 +264,21 @@ class CP2KInputParser:
 class CP2KInputParserSimplified(CP2KInputParser):
     """Implement structured output simplification."""
 
-    def __init__(self, multi_value_unpack=True, repeated_section_unpack=True, level_reduction_blacklist=None, *args, **kwargs):
+    def __init__(
+        self,
+        multi_value_unpack=True,
+        repeated_section_unpack=True,
+        level_reduction_blacklist=None,
+        default_keyword_symbol="*",
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
 
         self._multi_value_unpack = multi_value_unpack
         self._repeated_section_unpack = repeated_section_unpack
         self._no_lvl_reduction = level_reduction_blacklist if (level_reduction_blacklist is not None) else []
+        self._default_keyword_symbol = default_keyword_symbol
 
     def _get_value(self, keyword):
         """Conditionally unpack values"""
@@ -331,6 +340,9 @@ class CP2KInputParserSimplified(CP2KInputParser):
             for keyword in currsec.keywords:
                 keyword_name = self._key_trafo(keyword.name)
 
+                if keyword_name == "*":
+                    keyword_name = self._default_keyword_symbol
+
                 # if the keyword already exists as a section:
                 if (keyword_name in treeref) and (
                     isinstance(treeref[keyword_name], dict)
@@ -372,6 +384,7 @@ class CP2KInputParserAiiDA(CP2KInputParserSimplified):
             multi_value_unpack=False,
             repeated_section_unpack=False,
             level_reduction_blacklist=["KIND"],
+            default_keyword_symbol=" ",
             *args,
             **kwargs,
         )
