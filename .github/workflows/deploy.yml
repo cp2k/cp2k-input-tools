@@ -11,6 +11,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
-    - uses: snok/install-poetry@v1.1.2
+    - run: pip install poetry==1.1.6
     - run: poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
     - run: poetry publish --build
