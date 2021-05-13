@@ -1,6 +1,7 @@
-from pygls.features import TEXT_DOCUMENT_DID_CHANGE, TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN
-from pygls.server import LanguageServer
-from pygls.types import (
+from typing import Union
+
+from pygls.lsp.methods import TEXT_DOCUMENT_DID_CHANGE, TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN
+from pygls.lsp.types import (
     Diagnostic,
     DidChangeTextDocumentParams,
     DidCloseTextDocumentParams,
@@ -8,21 +9,21 @@ from pygls.types import (
     Position,
     Range,
 )
+from pygls.server import LanguageServer
 
 
-from . import DEFAULT_CP2K_INPUT_XML
 from .parser import CP2KInputParser
 from .parser_errors import ParserError
 from .tokenizer import TokenizerError
 
 
-def _validate(ls, params):
+def _validate(ls, params: Union[DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams]):
     ls.show_message_log("Validating CP2K input...")
 
     diagnostics = []
 
-    text_doc = ls.workspace.get_document(params.textDocument.uri)
-    parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+    text_doc = ls.workspace.get_document(params.text_document.uri)
+    parser = CP2KInputParser()
 
     with open(text_doc.path, "r") as fhandle:
         try:
@@ -31,10 +32,7 @@ def _validate(ls, params):
             ctx = exc.args[1]
             line = ctx["line"].rstrip()
 
-            msg = f"Syntax error: {exc.args[0]}"
-
-            if exc.__cause__:
-                msg += f"({exc.__cause__})"
+            msg = f"Syntax error: {exc.args[0]} ({exc.__cause__})"
 
             linenr = ctx["linenr"] - 1
             colnr = ctx["colnr"]
@@ -55,33 +53,34 @@ def _validate(ls, params):
                 # at least do one context
                 count = max(1, count)
 
-                erange = Range(Position(linenr, colnr + 1 - count), Position(linenr, colnr + 1))
+                erange = Range(
+                    start=Position(line=linenr, character=colnr + 1 - count), end=Position(line=linenr, character=colnr + 1)
+                )
 
             else:
-                erange = Range(Position(linenr, 1), Position(linenr, len(line)))
+                erange = Range(start=Position(line=linenr, character=1), end=Position(line=linenr, character=len(line)))
 
-            diagnostics += [Diagnostic(erange, msg, source=type(cp2k_inp_server).__name__, related_information=[])]
+            diagnostics += [Diagnostic(range=erange, message=msg, source=type(ls).__name__)]
 
     ls.publish_diagnostics(text_doc.uri, diagnostics)
 
 
-def setup_ls(server):
+def setup_cp2k_ls_server(server):
     @server.feature(TEXT_DOCUMENT_DID_CHANGE)
     def did_change(ls, params: DidChangeTextDocumentParams):
         """Text document did change notification."""
         _validate(ls, params)
 
     @server.feature(TEXT_DOCUMENT_DID_CLOSE)
-    def did_close(server: LanguageServer, params: DidCloseTextDocumentParams):
+    def did_close(ls: LanguageServer, params: DidCloseTextDocumentParams):
         """Text document did close notification."""
-        server.show_message("Text Document Did Close")
+        pass
 
     @server.feature(TEXT_DOCUMENT_DID_OPEN)
     async def did_open(ls, params: DidOpenTextDocumentParams):
         """Text document did open notification."""
-        ls.show_message("Text Document Did Open")
         _validate(ls, params)
 
 
-cp2k_inp_server = LanguageServer()
-setup_ls(cp2k_inp_server)
+cp2k_server = LanguageServer()
+setup_cp2k_ls_server(cp2k_server)
