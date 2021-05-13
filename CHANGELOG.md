@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.6.3] - 2021-05-13
+
+* fix the language-server-protocol implementation
+  various errors, introduced by pygls update, not detected by running tests due to bogus skip structure
+* update CP2K XML schema to get revised libxc sections (#42)
+* update jinja2 and sphinx dependencies
+
 ## [0.6.2] - 2021-05-05
 
 * fix bug in the simplified parser where repeated keywords were not emitted properly,
