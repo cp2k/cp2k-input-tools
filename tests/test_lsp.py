@@ -1,4 +1,3 @@
-from pathlib import Path
 from time import sleep
 import io
 import sys
@@ -7,69 +6,59 @@ import pytest
 
 from . import TEST_DIR
 
-try:
-    from pygls.features import INITIALIZE, TEXT_DOCUMENT_DID_OPEN
-    from pygls.types import DidOpenTextDocumentParams, TextDocumentItem, InitializeParams
-except ImportError:
-    pytest.skip("pygls unavailable", allow_module_level=True)
 
 if hasattr(sys, "pypy_version_info"):
     # the LSP implementation seems to behave completely different on pypy
     pytest.skip("pypy is currently not supported", allow_module_level=True)
 
 
-CALL_TIMEOUT = 2
+pygls = pytest.importorskip("pygls")
 
 
-def _initialize_server(server):
-    server.lsp.bf_initialize(InitializeParams(process_id=1234, root_uri=Path(__file__).parent.as_uri(), capabilities=None))
+from pygls.lsp.methods import TEXT_DOCUMENT_DID_OPEN  # noqa: E402
+from pygls.lsp.types import DidOpenTextDocumentParams, TextDocumentItem  # noqa: E402
 
 
-def test_initialize(client_server):
-    """Simple initialization of the LSP server and single request"""
-    client, server = client_server
-    root_uri = Path(__file__).parent.as_uri()
-    process_id = 1234
-
-    response = client.lsp.send_request(INITIALIZE, {"processId": process_id, "rootUri": root_uri, "capabilities": None}).result(
-        timeout=CALL_TIMEOUT
-    )
-
-    assert server.process_id == process_id
-    assert server.workspace.root_uri == root_uri
-    assert hasattr(response, "capabilities")
+CALL_TIMEOUT = 5
 
 
 def test_text_document_did_open(client_server):
     """Check that the server opens an input file"""
     client, server = client_server
-    _initialize_server(server)
 
     testpath = TEST_DIR / "inputs" / "test01.inp"
     with testpath.open("r") as fhandle:
         content = fhandle.read()
 
-    client.lsp.notify(TEXT_DOCUMENT_DID_OPEN, DidOpenTextDocumentParams(TextDocumentItem(str(testpath), "cp2k", 1, content)))
-    sleep(1)
+    client.lsp.notify(
+        TEXT_DOCUMENT_DID_OPEN,
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(testpath), language_id="cp2k", version=1, text=content)),
+    )
+    sleep(CALL_TIMEOUT)
 
     assert len(server.lsp.workspace.documents) == 1
-    assert "Validating CP2K input..." in client.msg
+    assert "Validating CP2K input..." in client.msgs[0].message
+    assert client.diagnostics is not None and not client.diagnostics, "Diagnostics is not empty as expected"
 
 
 def test_text_document_did_open_error(client_server):
     """Check that the server opens an input file with a syntax error"""
     client, server = client_server
-    _initialize_server(server)
 
     testpath = TEST_DIR / "inputs" / "unterminated_string.inp"
     with testpath.open("r") as fhandle:
         content = fhandle.read()
 
-    client.lsp.notify(TEXT_DOCUMENT_DID_OPEN, DidOpenTextDocumentParams(TextDocumentItem(str(testpath), "cp2k", 1, content)))
-    sleep(1)
+    client.lsp.notify(
+        TEXT_DOCUMENT_DID_OPEN,
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(testpath), language_id="cp2k", version=1, text=content)),
+    )
+    sleep(CALL_TIMEOUT)
 
-    assert len(server.lsp.workspace.documents) == 1
-    assert "Validating CP2K input..." in client.msg
+    assert (
+        len(server.lsp.workspace.documents) == 1
+    ), f"More than one document open: {', '.join(server.lsp.workspace.documents.keys())}"
+    assert "Validating CP2K input..." in client.msgs[0].message
     assert "Syntax error: unterminated string detected" in client.diagnostics[0].message
 
 
