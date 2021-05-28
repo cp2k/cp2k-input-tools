@@ -25,7 +25,7 @@ def Context(**kwargs):
 
 class Token(NamedTuple):
     string: str
-    ctx: Context
+    ctx: collections.defaultdict
 
 
 class CP2KInputTokenizer(transitions.Machine):

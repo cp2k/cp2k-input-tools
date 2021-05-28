@@ -1,6 +1,7 @@
 import re
 from typing import NamedTuple, Sequence
 from collections.abc import Iterator
+from collections import defaultdict
 from pathlib import Path
 
 
@@ -11,12 +12,12 @@ from .parser_errors import PreprocessorError
 
 class _Variable(NamedTuple):
     value: str
-    ctx: Context
+    ctx: defaultdict
 
 
 class _ConditionalBlock(NamedTuple):
     condition: str
-    ctx: Context
+    ctx: defaultdict
 
 
 _VALID_VAR_NAME_MATCH = re.compile(r"^[a-z_]\w*$", flags=re.IGNORECASE | re.ASCII)

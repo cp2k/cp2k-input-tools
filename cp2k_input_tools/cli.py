@@ -362,3 +362,28 @@ def cp2k_language_server():
         cp2k_server.start_tcp(args.host, args.port)
     else:
         cp2k_server.start_io()
+
+
+def cp2k_datafile_lint():
+    parser = argparse.ArgumentParser(description="Linter/Pretty-printer for other CP2K data formats")
+    parser.add_argument("format", metavar="<format>", type=str, choices=("basisset", "pseudo"), help="expected format")
+    parser.add_argument("file", metavar="[<file>]", type=str, nargs="?", help="the file to lint (otherwise stdin is used)")
+    args = parser.parse_args()
+
+    from .basissets import BasisSetData
+    from .pseudopotentials import PseudopotentialData
+
+    class_map = {"basisset": BasisSetData, "pseudo": PseudopotentialData}
+    has_preceeding_comments = False
+    with smart_open(args.file) as fhandle:
+        for entry in class_map[args.format].datafile_iter(fhandle, keep_going=False, emit_comments=True):
+            if isinstance(entry, str):
+                print(entry)
+                has_preceeding_comments = True
+            else:
+                if not has_preceeding_comments:
+                    print("#")
+                else:
+                    has_preceeding_comments = False
+                for line in entry.cp2k_format_line_iter():
+                    print(line)
