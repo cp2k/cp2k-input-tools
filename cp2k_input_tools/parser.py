@@ -1,17 +1,22 @@
+import itertools
 import re
 import xml.etree.ElementTree as ET
-import itertools
-from typing import List, Union
-from dataclasses import dataclass, field
 from collections import Counter
+from dataclasses import dataclass, field
 from fractions import Fraction
+from typing import List, Union
 
 from . import DEFAULT_CP2K_INPUT_XML
-from .tokenizer import Context, TokenizerError, COMMENT_CHARS
-from .keyword_helpers import Keyword, UREG
+from .keyword_helpers import UREG, Keyword
+from .parser_errors import (
+    InvalidNameError,
+    InvalidParameterError,
+    InvalidSectionError,
+    NameRepetitionError,
+    SectionMismatchError,
+)
 from .preprocessor import CP2KPreprocessor
-from .parser_errors import InvalidNameError, InvalidSectionError, NameRepetitionError, SectionMismatchError, InvalidParameterError
-
+from .tokenizer import COMMENT_CHARS, Context, TokenizerError
 
 _SECTION_MATCH = re.compile(r"&(?P<name>[\w\-_]+)\s*(?P<param>.*)")
 _KEYWORD_MATCH = re.compile(r"(?P<name>[\w\-_]+)\s*(?P<value>.*)")

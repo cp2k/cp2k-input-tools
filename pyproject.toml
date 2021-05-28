@@ -53,6 +53,10 @@ cp2k-datafile-lint = 'cp2k_input_tools.cli:cp2k_datafile_lint'
 line-length = 132
 target_version = ['py36']
 
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
 [tool.taskipy.tasks]
 test = "pytest"
 html_docs = "make html -C docs"

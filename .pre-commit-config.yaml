@@ -6,12 +6,23 @@ default_language_version:
   python: python3
 
 repos:
+- repo: https://github.com/pycqa/isort
+  rev: 5.8.0
+  hooks:
+  - id: isort
+    name: isort (python)
+  - id: isort
+    name: isort (cython)
+    types: [cython]
+  - id: isort
+    name: isort (pyi)
+    types: [pyi]
 - repo: https://github.com/ambv/black
-  rev: 21.4b2
+  rev: 21.5b1
   hooks:
   - id: black
-- repo: https://gitlab.com/pycqa/flake8
-  rev: 3.7.0
+- repo: https://github.com/pycqa/flake8
+  rev: 3.9.2
   hooks:
   - id: flake8
     additional_dependencies: ["flake8-bugbear"]

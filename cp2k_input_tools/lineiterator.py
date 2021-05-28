@@ -1,5 +1,5 @@
-from typing import NamedTuple, Tuple, List, TextIO
 from collections.abc import Iterator
+from typing import List, NamedTuple, TextIO, Tuple
 
 
 class LineContinuationError(Exception):

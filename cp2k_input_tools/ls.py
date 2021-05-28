@@ -1,6 +1,10 @@
 from typing import Union
 
-from pygls.lsp.methods import TEXT_DOCUMENT_DID_CHANGE, TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN
+from pygls.lsp.methods import (
+    TEXT_DOCUMENT_DID_CHANGE,
+    TEXT_DOCUMENT_DID_CLOSE,
+    TEXT_DOCUMENT_DID_OPEN,
+)
 from pygls.lsp.types import (
     Diagnostic,
     DidChangeTextDocumentParams,
@@ -10,7 +14,6 @@ from pygls.lsp.types import (
     Range,
 )
 from pygls.server import LanguageServer
-
 
 from .parser import CP2KInputParser
 from .parser_errors import ParserError

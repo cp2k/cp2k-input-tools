@@ -6,14 +6,13 @@ from typing import List
 
 import pytest
 
-
 CALL_TIMEOUT = 3
 
 
 @pytest.fixture
 def parser():
-    from cp2k_input_tools.parser import CP2KInputParser
     from cp2k_input_tools.cli import DEFAULT_CP2K_INPUT_XML
+    from cp2k_input_tools.parser import CP2KInputParser
 
     return CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
 
@@ -32,9 +31,13 @@ class ClientServer:
     _to_stop: List["ClientServer"] = []
 
     def __init__(self):
-        from pygls.server import LanguageServer
-        from pygls.lsp.methods import WINDOW_LOG_MESSAGE, TEXT_DOCUMENT_PUBLISH_DIAGNOSTICS
+        from pygls.lsp.methods import (
+            TEXT_DOCUMENT_PUBLISH_DIAGNOSTICS,
+            WINDOW_LOG_MESSAGE,
+        )
         from pygls.lsp.types import LogMessageParams, PublishDiagnosticsParams
+        from pygls.server import LanguageServer
+
         from cp2k_input_tools.ls import setup_cp2k_ls_server
 
         # Client to Server pipe
@@ -78,7 +81,7 @@ class ClientServer:
         ClientServer._to_stop.append(self)
 
     def _stop(self):
-        from pygls.lsp.methods import SHUTDOWN, EXIT
+        from pygls.lsp.methods import EXIT, SHUTDOWN
 
         shutdown_response = self.client.lsp.send_request(SHUTDOWN).result(timeout=CALL_TIMEOUT)
         assert shutdown_response is None

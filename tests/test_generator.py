@@ -1,9 +1,11 @@
 import json
+
 import pytest
 
-from . import TEST_DIR
-from cp2k_input_tools.generator import CP2KInputGenerator
 from cp2k_input_tools.cli import DEFAULT_CP2K_INPUT_XML
+from cp2k_input_tools.generator import CP2KInputGenerator
+
+from . import TEST_DIR
 
 
 def test_simple():
@@ -27,4 +29,4 @@ def test_simplified_input():
 
     lines = list(cp2k_generator.line_iter(tree))
     with open(TEST_DIR.joinpath("inputs/NaCl-BS.simplified.inp"), "r") as fhandle:
-        assert lines == [l.strip("\n") for l in fhandle.readlines()]
+        assert lines == [line.strip("\n") for line in fhandle.readlines()]

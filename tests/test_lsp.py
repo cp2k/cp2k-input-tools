@@ -1,11 +1,10 @@
-from time import sleep
 import io
 import sys
+from time import sleep
 
 import pytest
 
 from . import TEST_DIR
-
 
 if hasattr(sys, "pypy_version_info"):
     # the LSP implementation seems to behave completely different on pypy
@@ -17,7 +16,6 @@ pygls = pytest.importorskip("pygls")
 
 from pygls.lsp.methods import TEXT_DOCUMENT_DID_OPEN  # noqa: E402
 from pygls.lsp.types import DidOpenTextDocumentParams, TextDocumentItem  # noqa: E402
-
 
 CALL_TIMEOUT = 5
 

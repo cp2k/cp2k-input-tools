@@ -66,9 +66,9 @@ def run_apidoc(_):
 
     See also https://github.com/rtfd/readthedocs.org/issues/1139
     """
-    import sys
     import os
     import subprocess
+    import sys
 
     source_dir = os.path.abspath(os.path.dirname(__file__))
     apidoc_dir = os.path.join(source_dir, "apidoc")

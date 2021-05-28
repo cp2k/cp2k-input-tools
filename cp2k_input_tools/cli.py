@@ -1,18 +1,18 @@
 import argparse
-import sys
-import re
-import itertools
-from copy import deepcopy
-import pathlib
-import logging
 import contextlib
-from typing import MutableSequence, Mapping
+import itertools
+import logging
+import pathlib
+import re
+import sys
+from copy import deepcopy
+from typing import Mapping, MutableSequence
 
 from . import DEFAULT_CP2K_INPUT_XML
-from .parser import CP2KInputParser, CP2KInputParserSimplified, CP2KInputParserAiiDA
+from .generator import CP2KInputGenerator
+from .parser import CP2KInputParser, CP2KInputParserAiiDA, CP2KInputParserSimplified
 from .parser_errors import ParserError
 from .tokenizer import TokenizerError
-from .generator import CP2KInputGenerator
 
 
 @contextlib.contextmanager
@@ -349,7 +349,7 @@ def cp2k_language_server():
         import pygls  # noqa: F401
     except ImportError:
         print(
-            f"""Could not import the pygls package. You have to install the cp2k-input-tools with the 'lsp' extra:
+            """Could not import the pygls package. You have to install the cp2k-input-tools with the 'lsp' extra:
 
     pip install cp2k-input-tools[lsp]
         """

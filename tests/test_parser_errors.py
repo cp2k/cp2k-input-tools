@@ -2,17 +2,18 @@ import io
 
 import pytest
 
-from . import TEST_DIR
-from cp2k_input_tools.parser import CP2KInputParser
 from cp2k_input_tools.cli import DEFAULT_CP2K_INPUT_XML
+from cp2k_input_tools.parser import CP2KInputParser
 from cp2k_input_tools.parser_errors import (
-    InvalidParameterError,
-    PreprocessorError,
     InvalidNameError,
+    InvalidParameterError,
     InvalidSectionError,
+    PreprocessorError,
     SectionMismatchError,
 )
 from cp2k_input_tools.tokenizer import UnterminatedStringError
+
+from . import TEST_DIR
 
 
 def test_error_invalid_number_of_parameters():

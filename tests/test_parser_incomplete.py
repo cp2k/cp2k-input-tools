@@ -1,8 +1,8 @@
 import pytest
 
-from . import TEST_DIR
-
 from cp2k_input_tools.parser_errors import InvalidNameError
+
+from . import TEST_DIR
 
 
 def test_incomplete(parser):

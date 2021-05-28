@@ -1,8 +1,9 @@
 import pytest
 
-from . import TEST_DIR
-from cp2k_input_tools.parser import CP2KInputParser, CP2KInputParserSimplified
 from cp2k_input_tools.cli import DEFAULT_CP2K_INPUT_XML
+from cp2k_input_tools.parser import CP2KInputParser, CP2KInputParserSimplified
+
+from . import TEST_DIR
 
 
 def test_simple_simplified():

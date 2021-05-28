@@ -3,7 +3,6 @@ from typing import NamedTuple
 
 import transitions
 
-
 COMMENT_CHARS = ("!", "#")
 
 
@@ -47,10 +46,10 @@ class CP2KInputTokenizer(transitions.Machine):
         self._tokens += [(self._current_token_start, colnr + 1)]
 
     def unterminated_string(self, _, colnr):
-        raise UnterminatedStringError(f"unterminated string detected", Context(colnr=colnr, ref_colnr=self._current_token_start))
+        raise UnterminatedStringError("unterminated string detected", Context(colnr=colnr, ref_colnr=self._current_token_start))
 
     def invalid_token_char(self, content, colnr):
-        raise InvalidTokenCharError(f"invalid keyword character found", Context(colnr=colnr, ref_colnr=self._current_token_start))
+        raise InvalidTokenCharError("invalid keyword character found", Context(colnr=colnr, ref_colnr=self._current_token_start))
 
     def is_not_escaped(self, content, colnr):
         if colnr > 0:

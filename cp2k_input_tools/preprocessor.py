@@ -1,13 +1,12 @@
 import re
-from typing import NamedTuple, Sequence
-from collections.abc import Iterator
 from collections import defaultdict
+from collections.abc import Iterator
 from pathlib import Path
-
+from typing import NamedTuple, Sequence
 
 from .lineiterator import MultiFileLineIterator
-from .tokenizer import Context, TokenizerError, COMMENT_CHARS, tokenize
 from .parser_errors import PreprocessorError
+from .tokenizer import COMMENT_CHARS, Context, TokenizerError, tokenize
 
 
 class _Variable(NamedTuple):
@@ -63,7 +62,7 @@ class CP2KPreprocessor(Iterator):
             if var_end < 0:
                 ctx["colnr"] = len(line)
                 ctx["ref_colnr"] = var_start
-                raise PreprocessorError(f"unterminated variable", ctx)
+                raise PreprocessorError("unterminated variable", ctx)
 
             ctx["colnr"] = var_start
             ctx["ref_colnr"] = var_end
@@ -235,7 +234,7 @@ class CP2KPreprocessor(Iterator):
 
             return
 
-        raise PreprocessorError(f"unknown preprocessor directive found", ctx)
+        raise PreprocessorError("unknown preprocessor directive found", ctx)
 
     def __next__(self):
         for line in self._lineiter:
@@ -263,7 +262,7 @@ class CP2KPreprocessor(Iterator):
 
         if self._conditional_block is not None:
             raise PreprocessorError(
-                f"conditional block not closed at end of file", Context(ref_line=self._conditional_block.ctx["line"])
+                "conditional block not closed at end of file", Context(ref_line=self._conditional_block.ctx["line"])
             )
 
         raise StopIteration
