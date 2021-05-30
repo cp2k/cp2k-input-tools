@@ -5,19 +5,9 @@ import itertools
 import re
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import (
-    IO,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Protocol,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import IO, Any, Dict, Iterator, List, Sequence, Tuple, Type, TypeVar, Union
+
+from typing_extensions import Protocol
 
 SYM2NUM = {
     "H": 1,
@@ -168,7 +158,7 @@ class FromDictMixin:
         """Create a BasisSetData instance from a nested dictionary"""
         import dacite
 
-        return dacite.from_dict(data_class=cls, data=data, config=dacite.Config(cast=[Tuple, Decimal]))
+        return dacite.from_dict(data_class=cls, data=data, config=dacite.Config(cast=[Tuple, Decimal]))  # type: ignore
 
 
 @dataclass

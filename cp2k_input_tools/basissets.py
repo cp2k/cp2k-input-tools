@@ -75,8 +75,8 @@ class BasisSetData(DatafileIterMixin, FromDictMixin):
             blocks.append(
                 BasisSetCoefficients(
                     qn_n,
-                    ((lqn, nl) for lqn, nl in zip(range(qn_lmin, qn_lmax + 1), ncoeffs)),
-                    ((Decimal(c) for c in lines[nline + n].split()) for n in range(nexp)),
+                    [(lqn, nl) for lqn, nl in zip(range(qn_lmin, qn_lmax + 1), ncoeffs)],
+                    [[Decimal(c) for c in lines[nline + n].split()] for n in range(nexp)],
                 )
             )
 
