@@ -5,7 +5,19 @@ import itertools
 import re
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import IO, Any, Dict, Iterator, List, Protocol, Sequence, Tuple, Type, TypeVar, Union
+from typing import (
+    IO,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Protocol,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 SYM2NUM = {
     "H": 1,

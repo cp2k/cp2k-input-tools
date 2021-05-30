@@ -7,7 +7,7 @@ INPUTS_DIR = TEST_DIR / "inputs"
 
 def test_single_basisset_import():
     with (TEST_DIR / "inputs" / "BASIS_MOLOPT.H").open() as fhandle:
-        bset = BasisSetData.from_lines([l for l in fhandle])
+        bset = BasisSetData.from_lines([line for line in fhandle])
 
     assert bset.element == "H"
     assert bset.n_el == 1
@@ -15,7 +15,7 @@ def test_single_basisset_import():
 
 def test_single_basisset_roundtrip():
     with (TEST_DIR / "inputs" / "BASIS_MOLOPT.H").open() as fhandle:
-        lines = [l.rstrip() for l in fhandle]
+        lines = [line.rstrip() for line in fhandle]
         bset = BasisSetData.from_lines(lines)
         assert list(bset.cp2k_format_line_iter()) == lines
 

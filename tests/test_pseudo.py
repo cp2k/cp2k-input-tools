@@ -7,7 +7,7 @@ INPUTS_DIR = TEST_DIR / "inputs"
 
 def test_single_pseudo_import():
     with (TEST_DIR / "inputs" / "GTH_POTENTIALS.Cl").open() as fhandle:
-        pseudo = PseudopotentialData.from_lines([l for l in fhandle])
+        pseudo = PseudopotentialData.from_lines([line for line in fhandle])
 
     assert pseudo.element == "Cl"
     assert pseudo.n_el == [2, 5]
@@ -19,7 +19,7 @@ def test_single_pseudo_import():
 
 def test_single_pseudo_roundtrip():
     with (TEST_DIR / "inputs" / "GTH_POTENTIALS.Cl").open() as fhandle:
-        lines = [l.rstrip() for l in fhandle]
+        lines = [line.rstrip() for line in fhandle]
         pseudo = PseudopotentialData.from_lines(lines)
         assert list(pseudo.cp2k_format_line_iter()) == lines
 
