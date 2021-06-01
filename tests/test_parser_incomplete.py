@@ -11,6 +11,5 @@ def test_incomplete(parser):
             parser.parse(fhandle)
 
     ctx = excinfo.value.args[1]
-    section = ctx["section"]
-    assert section.name == "SCF"
-    assert next(n for n in section.keyword_names if n.startswith("SCF_GUE")) == "SCF_GUESS"
+    assert ctx.section.name == "SCF"
+    assert next(n for n in ctx.section.keyword_names if n.startswith("SCF_GUE")) == "SCF_GUESS"

@@ -60,41 +60,41 @@ def cp2klint():
             cp2k_parser.parse(fhandle, dict(args.var_values))
         except (TokenizerError, ParserError) as exc:
             ctx = exc.args[1]
-            line = ctx["line"].rstrip()
+            line = ctx.line.rstrip()
 
-            print(f"Syntax error: {exc.args[0]}, in {ctx['filename']}:")
+            print(f"Syntax error: {exc.args[0]}, in {ctx.filename}:")
 
             if exc.__cause__:
                 print(f"              {exc.__cause__}")
 
-            print(f"line {ctx['linenr']:>4}: {line}")
+            print(f"line {ctx.linenr:>4}: {line}")
 
-            if ctx["colnr"] is not None:
+            if ctx.colnr is not None:
                 count = 0  # number of underline chars after (positiv) or before (negative) the marker if ref_colnr given
-                nchars = ctx["colnr"]  # relevant line length
+                nchars = ctx.colnr  # relevant line length
 
-                if ctx["ref_colnr"] is not None:
-                    count = ctx["ref_colnr"] - ctx["colnr"]
-                    nchars = min(ctx["ref_colnr"], ctx["colnr"])  # correct if ref comes before
+                if ctx.ref_colnr is not None:
+                    count = ctx.ref_colnr - ctx.colnr
+                    nchars = min(ctx.ref_colnr, ctx.colnr)  # correct if ref comes before
 
-                if ctx["colnrs"] is not None:
+                if ctx.colnrs:
                     # shift by the number of left-stripped ws
-                    # ctx["colnrs"] contains the left shift for each possibly continued line
-                    nchars += ctx["colnrs"][0]  # assume no line-continuation for now
+                    # ctx.colnrs contains the left shift for each possibly continued line
+                    nchars += ctx.colnrs[0]  # assume no line-continuation for now
 
                 # replace all non-ws chars with spaces:
                 # - assuming a monospace font
                 # - preserving other whitespace we don't know the width
-                underline = re.sub(r"\S", " ", ctx["line"][:nchars])
+                underline = re.sub(r"\S", " ", ctx.line[:nchars])
 
                 if count >= 0:
                     print(f"{str():>9}  {underline}^{str():~>{count}}")
                 else:
                     print(f"{str():>9}  {underline}{str():~>{-count}}^")
 
-            if ctx["ref_line"] is not None:
+            if ctx.ref_line is not None:
                 print("previous definition:")
-                print(f"line {str():>4}: {ctx['ref_line'].rstrip()}")
+                print(f"line {str():>4}: {ctx.ref_line.rstrip()}")
 
             sys.exit(1)
 

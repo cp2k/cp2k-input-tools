@@ -60,12 +60,12 @@ class CP2KPreprocessor(Iterator):
 
             var_end = line.find("}", var_start + 2)
             if var_end < 0:
-                ctx["colnr"] = len(line)
-                ctx["ref_colnr"] = var_start
+                ctx.colnr = len(line)
+                ctx.ref_colnr = var_start
                 raise PreprocessorError("unterminated variable", ctx)
 
-            ctx["colnr"] = var_start
-            ctx["ref_colnr"] = var_end
+            ctx.colnr = var_start
+            ctx.ref_colnr = var_end
 
             key = line[var_start + 2 : var_end]  # without ${ and }
             value = None
@@ -100,8 +100,8 @@ class CP2KPreprocessor(Iterator):
                 # -1 would be the last entry, but in a range it is without the specified entry
                 var_end = len(line.rstrip())
 
-            ctx["colnr"] = var_start
-            ctx["ref_colnr"] = var_end - 1
+            ctx.colnr = var_start
+            ctx.ref_colnr = var_end - 1
 
             key = line[var_start + 1 : var_end]
 
@@ -132,22 +132,22 @@ class CP2KPreprocessor(Iterator):
 
                 # check for garbage which is not a comment, note: we're stricter than CP2K here
                 if condition and not condition.startswith(COMMENT_CHARS):
-                    ctx["colnr"] = conditional_match.start("cond")
-                    ctx["ref_colnr"] = conditional_match.end("cond")
+                    ctx.colnr = conditional_match.start("cond")
+                    ctx.ref_colnr = conditional_match.end("cond")
                     raise PreprocessorError("garbage found after @ENDIF", ctx)
 
                 self._conditional_block = None
             else:
                 if self._conditional_block is not None:
-                    ctx["ref_line"] = self._conditional_block.ctx["line"]
+                    ctx.ref_line = self._conditional_block.ctx.line
                     raise PreprocessorError("nested @IF are not allowed", ctx)
 
                 # resolve any variables inside the condition
                 try:
                     condition = self._resolve_variables(condition)
                 except PreprocessorError as exc:
-                    exc.args[1]["colnr"] += conditional_match.start("cond")
-                    exc.args[1]["ref_colnr"] += conditional_match.start("cond")
+                    exc.args[1].colnr += conditional_match.start("cond")
+                    exc.args[1].ref_colnr += conditional_match.start("cond")
                     raise
 
                 # prefix-whitespace are consumed in the regex, suffix with the strip() above
@@ -187,16 +187,16 @@ class CP2KPreprocessor(Iterator):
             try:
                 filename = self._resolve_variables(include_match.group("file"))
             except PreprocessorError as exc:
-                exc.args[1]["colnr"] += include_match.start("file")  # shift colnr
-                exc.args[1]["ref_colnr"] += include_match.start("file")
+                exc.args[1].colnr += include_match.start("file")  # shift colnr
+                exc.args[1].ref_colnr += include_match.start("file")
                 raise
 
             if filename.startswith(("'", '"')):
                 try:
                     tokens = tokenize(filename)  # use the tokenizer to detect unterminated quotes
                 except TokenizerError as exc:
-                    exc.args[1]["colnr"] += include_match.start("file")  # shift colnr
-                    exc.args[1]["ref_colnr"] += include_match.start("file")
+                    exc.args[1].colnr += include_match.start("file")  # shift colnr
+                    exc.args[1].ref_colnr += include_match.start("file")
                     raise
 
                 if len(tokens) != 1:
@@ -254,15 +254,15 @@ class CP2KPreprocessor(Iterator):
                 return self._resolve_variables(line)
 
             except (PreprocessorError, TokenizerError) as exc:
-                exc.args[1]["filename"] = self._lineiter.fname
-                exc.args[1]["linenr"] = self._lineiter.line_range[1]
-                exc.args[1]["colnrs"] = self._lineiter.colnrs
-                exc.args[1]["line"] = line
+                exc.args[1].filename = self._lineiter.fname
+                exc.args[1].linenr = self._lineiter.line_range[1]
+                exc.args[1].colnrs = self._lineiter.colnrs
+                exc.args[1].line = line
                 raise
 
         if self._conditional_block is not None:
             raise PreprocessorError(
-                "conditional block not closed at end of file", Context(ref_line=self._conditional_block.ctx["line"])
+                "conditional block not closed at end of file", Context(ref_line=self._conditional_block.ctx.line)
             )
 
         raise StopIteration
