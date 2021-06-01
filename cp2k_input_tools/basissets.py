@@ -8,7 +8,7 @@ from typing import Iterator, List, Optional, Sequence, Tuple
 
 from pydantic.dataclasses import dataclass
 
-from .utils import SYM2NUM, DatafileIterMixin, FromDictMixin
+from .utils import SYM2NUM, DatafileIterMixin, FromDictMixin, dformat
 
 N_VAL_EL_MATCH = re.compile(r"q(?P<nvalel>\d+)$")
 
@@ -94,12 +94,12 @@ class BasisSetData(DatafileIterMixin, FromDictMixin):
         max_exp = -min(c.as_tuple().exponent for b in self.blocks for r in b.coefficients for c in r)
         max_len = max(len(f"{c:.{max_exp}f}") for b in self.blocks for r in b.coefficients for c in r[1:])
         max_len_exp = max(9 + max_exp, *(len(str(r[0])) for b in self.blocks for r in b.coefficients))
-        e_fmt = f"{max_len_exp}.{max_exp}f"
-        c_fmt = f"{max_len}.{max_exp}f"
 
         for block in self.blocks:
             l_str = " ".join(f"{lqn[1]:2}" for lqn in block.l)
             yield f" {block.n:2} {block.l[0][0]:2} {block.l[-1][0]:2} {len(block.coefficients):2} {l_str}"
 
             for row in block.coefficients:
-                yield f" {row[0]:{e_fmt}} " + " ".join(f"{c:{c_fmt}}" for c in row[1:])
+                yield (
+                    f" {dformat(row[0], max_exp, max_len_exp)} " + " ".join(f"{dformat(c, max_exp, max_len)}" for c in row[1:])
+                ).rstrip()

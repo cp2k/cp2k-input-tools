@@ -155,7 +155,7 @@ class SupportsFromLines(Protocol):
 class FromDictMixin:
     @classmethod
     def from_dict(cls: Type[_T], data: Dict[str, Any]) -> _T:
-        """Create a BasisSetData instance from a nested dictionary"""
+        """Create a data instance from a nested dictionary"""
         import dacite
 
         return dacite.from_dict(data_class=cls, data=data, config=dacite.Config(cast=[Tuple, Decimal]))  # type: ignore
@@ -168,13 +168,13 @@ class DatafileIterMixin:
         cls: SupportsFromLines, content: Union[IO, str, Sequence[str]], keep_going=True, emit_comments=False
     ) -> Iterator[Union[SupportsFromLines, str]]:
         """
-        Generates a sequence of PseudoData, one for each pseudopotential found in the given file
+        Generates a sequence of data instances, one for each data entry found in the given file
 
-        :param fhandle: Open file handle (in text mode) to a pseudopotential file
+        :param fhandle: Open file handle (in text mode) to a data file
         :param keep_going: Whether to ignore invalid entries and keep going
         """
 
-        # find the beginning of a new pseudopotential entry, then
+        # find the beginning of a new data entry, then
         # continue until the next one, the iterator chain and Eof marker guarantee
         # that we find a last (empty) one which will not be parsed.
 
@@ -222,3 +222,13 @@ class DatafileIterMixin:
 
         if errors:
             raise MulitpleValueErrorsException(errors)
+
+
+def dformat(val, ndigits, slen):
+    """
+    Right-pads a decimal with spaces such that there are max_exp number of characters after the dot
+    and the complete string is max_len characters in width.
+    """
+
+    digits = ndigits + val.as_tuple().exponent if val.as_tuple().exponent < 0 else ndigits + 1
+    return f"{format(val, 'f') + ' '*(digits):>{slen}}"

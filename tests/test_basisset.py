@@ -20,6 +20,17 @@ def test_single_basisset_roundtrip():
         assert list(bset.cp2k_format_line_iter()) == lines
 
 
+def test_check_formatting():
+    """check that reformatting a formatted file leaves it as is"""
+    bsetfilein = INPUTS_DIR / "BASIS_SET.Au.unformatted"
+    bsetfileout = INPUTS_DIR / "BASIS_SET.Au.formatted"
+
+    with bsetfilein.open() as fhandlein, bsetfileout.open() as fhandleout:
+        assert [line for entry in BasisSetData.datafile_iter(fhandlein) for line in entry.cp2k_format_line_iter()] == [
+            line.rstrip() for line in fhandleout.readlines()
+        ]
+
+
 def test_datafile_lint(script_runner):
     """check that reformatting a formatted file leaves it as is"""
     bsetfile = INPUTS_DIR / "BASIS_SET.formatted"

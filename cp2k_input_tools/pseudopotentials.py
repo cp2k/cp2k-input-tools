@@ -8,7 +8,7 @@ from typing import Iterator, List, Sequence
 from pydantic import root_validator
 from pydantic.dataclasses import dataclass
 
-from .utils import DatafileIterMixin, FromDictMixin
+from .utils import DatafileIterMixin, FromDictMixin, dformat
 
 
 class _PseudopotentialDataConfig:
@@ -148,46 +148,50 @@ class PseudopotentialData(DatafileIterMixin, FromDictMixin):
 
         r_max_exp = -min(r.as_tuple().exponent for r in all_radii())
         r_max_len = max(6 + r_max_exp, *(len(f"{r:.{r_max_exp}f}") for r in all_radii()))
-        r_fmt = f"{r_max_len}.{r_max_exp}f"
 
         try:
             c_max_exp = -min(c.as_tuple().exponent for c in all_coeffs())
             c_max_len = max(6 + c_max_exp, *(len(f"{c:.{c_max_exp}f}") for c in all_coeffs()))
-            c_fmt = f"{c_max_len}.{c_max_exp}f"
         except (ValueError, TypeError):  # for all-electron pseudos all_coeffs is an empty sequence and min/max start to fail
-            c_fmt = "0.0f"
+            pass
 
         yield f"{self.element:2} {' '.join(n for n in self.identifiers)}"
         yield " " + " ".join(f"{i:{i_fmt}}" for i in self.n_el)
-        yield f" {self.local.r:{r_fmt}} {len(self.local.coefficients):{i_fmt}} " + " ".join(
-            f"{c:{c_fmt}}" for c in self.local.coefficients
-        )
+        yield (
+            f" {dformat(self.local.r, r_max_exp, r_max_len)} {len(self.local.coefficients):{i_fmt}} "
+            + " ".join(f"{dformat(c, c_max_exp, c_max_len)}" for c in self.local.coefficients)
+        ).rstrip()
 
         if self.nlcc:
             yield f" NLCC {len(self.nlcc):{i_fmt}}"
 
             r_nlcc_max_exp = -min(nlcc.r.as_tuple().exponent for nlcc in self.nlcc)
             r_nlcc_max_len = max(6 + r_nlcc_max_exp, *(len(f"{nlcc.r:.{r_nlcc_max_exp}f}") for nlcc in self.nlcc))
-            r_nlcc_fmt = f"{r_nlcc_max_len}.{r_nlcc_max_exp}f"
 
             c_nlcc_max_exp = -min(nlcc.c.as_tuple().exponent for nlcc in self.nlcc)
             c_nlcc_max_len = max(6 + c_nlcc_max_exp, *(len(f"{nlcc.c:.{c_nlcc_max_exp}f}") for nlcc in self.nlcc))
-            c_nlcc_fmt = f"{c_nlcc_max_len}.{c_nlcc_max_exp}f"
 
             for nlcc in self.nlcc:
-                yield f" {nlcc.r:{r_nlcc_fmt}} {nlcc.n:{i_fmt}} {nlcc.c:{c_nlcc_fmt}}"
+                yield (
+                    f" {dformat(nlcc.r, r_nlcc_max_exp, r_nlcc_max_len)} {nlcc.n:{i_fmt}}"
+                    f" {dformat(nlcc.c, c_nlcc_max_exp, c_nlcc_max_len)}"
+                ).rstrip()
 
         yield f" {len(self.non_local):{i_fmt}}"
         nl_matrix_indent = 1 + r_max_len + 1 + i_fmt + 1
 
         for nonl in self.non_local:
             # print the first N (=nproj) coefficients (first row of the matrix)
-            yield f" {nonl.r:{r_fmt}} {nonl.nproj:{i_fmt}} " + " ".join(f"{c:{c_fmt}}" for c in nonl.coefficients[: nonl.nproj])
+            yield (
+                f" {dformat(nonl.r, r_max_exp, r_max_len)} {nonl.nproj:{i_fmt}} "
+                + " ".join(f"{dformat(c, c_max_exp, c_max_len)}" for c in nonl.coefficients[: nonl.nproj])
+            ).rstrip()
 
             # for a non-scalar non-empty matrix, print the rest of the coefficients
             for nrow in range(1, nonl.nproj):
                 scol = nrow * nonl.nproj - nrow * (nrow - 1) // 2
                 ecol = scol + nonl.nproj - nrow
-                yield " " * (nl_matrix_indent + nrow * (c_max_len + 1)) + " ".join(
-                    f"{c:{c_fmt}}" for c in nonl.coefficients[scol:ecol]
-                )
+                yield (
+                    " " * (nl_matrix_indent + nrow * (c_max_len + 1))
+                    + " ".join(f"{dformat(c, c_max_exp, c_max_len)}" for c in nonl.coefficients[scol:ecol])
+                ).rstrip()
