@@ -16,17 +16,26 @@ from .tokenizer import TokenizerError
 
 
 @contextlib.contextmanager
-def smart_open(filename=None):
+def smart_open(filename=None, mode="r"):
     """A context manager to automatically read from stdin, based on https://stackoverflow.com/a/17603000/1400465"""
-    if filename and filename != "-":
+
+    assert mode in ("r", "w", "x"), "Only r and w/x modes are supported"
+
+    filebased = filename and str(filename) != "-"
+
+    if filebased and mode == "r":
         fhandle = open(filename, "r")
-    else:
+    elif filebased and mode in ("x", "w"):
+        fhandle = open(filename, mode)
+    elif mode == "r":
         fhandle = sys.stdin
+    else:
+        fhandle = sys.stdout
 
     try:
         yield fhandle
     finally:
-        if fhandle is not sys.stdin:
+        if filebased:
             fhandle.close()
 
 
@@ -366,24 +375,53 @@ def cp2k_language_server():
 
 def cp2k_datafile_lint():
     parser = argparse.ArgumentParser(description="Linter/Pretty-printer for other CP2K data formats")
-    parser.add_argument("format", metavar="<format>", type=str, choices=("basisset", "pseudo"), help="expected format")
-    parser.add_argument("file", metavar="[<file>]", type=str, nargs="?", help="the file to lint (otherwise stdin is used)")
+    parser.add_argument("-i", "--inplace", action="store_true", help="replace the original file with the linted/prettified one")
+    parser.add_argument(
+        "format",
+        metavar="<format>",
+        type=str,
+        choices=("basis", "basisset", "basissets", "pseudo", "pseudos", "pseudopotential", "pseudopotentials", "potentials"),
+        help="expected format",
+    )
+    parser.add_argument(
+        "file",
+        metavar="[<file>]",
+        type=pathlib.Path,
+        default=pathlib.Path("-"),
+        nargs="?",
+        help="the file to lint (otherwise stdin is used)",
+    )
     args = parser.parse_args()
 
     from .basissets import BasisSetData
     from .pseudopotentials import PseudopotentialData
 
-    class_map = {"basisset": BasisSetData, "pseudo": PseudopotentialData}
+    if args.format in ("basis", "basisset", "basissets"):
+        datafile = BasisSetData
+    elif args.format in ("pseudo", "pseudos", "pseudopotential", "pseudopotentials", "potentials"):
+        datafile = PseudopotentialData
+
+    swpfile = None
+
+    if args.inplace:
+        assert str(args.file) != "-", "Replacing file content does not work when reading from stdin"
+        swpfile = args.file.parent / f".{args.file.name}.swp"
+
     has_preceeding_comments = False
-    with smart_open(args.file) as fhandle:
-        for entry in class_map[args.format].datafile_iter(fhandle, keep_going=False, emit_comments=True):
-            if isinstance(entry, str):
-                print(entry)
-                has_preceeding_comments = True
-            else:
-                if not has_preceeding_comments:
-                    print("#")
+    with smart_open(args.file, "r") as fhandle:
+        with smart_open(swpfile, "x") as fouthandle:
+            for entry in datafile.datafile_iter(fhandle, keep_going=False, emit_comments=True):
+                if isinstance(entry, str):
+                    print(entry, file=fouthandle)
+                    has_preceeding_comments = True
                 else:
-                    has_preceeding_comments = False
-                for line in entry.cp2k_format_line_iter():
-                    print(line)
+                    if not has_preceeding_comments:
+                        print("#", file=fouthandle)
+                    else:
+                        has_preceeding_comments = False
+                    for line in entry.cp2k_format_line_iter():
+                        print(line, file=fouthandle)
+
+    if args.inplace:
+        args.file.write_text(swpfile.read_text())
+        swpfile.unlink()
