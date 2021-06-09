@@ -38,7 +38,7 @@ pytest-console-scripts = "^1.0.0"
 sphinx = "^4.0.1"
 sphinx-rtd-theme = "^0.5.0"
 taskipy = "^1.4.0"
-mypy = "^0.812"
+mypy = "^0.901"
 
 [tool.poetry.scripts]
 cp2klint = 'cp2k_input_tools.cli:cp2klint'
