@@ -1,3 +1,6 @@
+import pathlib
+import tempfile
+
 from cp2k_input_tools.pseudopotentials import PseudopotentialData
 
 from . import TEST_DIR
@@ -32,3 +35,19 @@ def test_datafile_lint(script_runner):
     assert ret.stderr == ""
     assert ret.success
     assert ret.stdout == pseudofile.read_text()
+
+
+def test_datafile_lint_inplace(script_runner):
+    """check that reformatting a formatted file inplace leaves it as is"""
+    pseudofile_orig = INPUTS_DIR / "POTENTIAL.formatted"
+    content = pseudofile_orig.read_text()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        pseudofile = pathlib.Path(tmpdir).joinpath("pseudos")
+        pseudofile.write_text(content)
+
+        ret = script_runner.run("cp2k-datafile-lint", "--inplace", "pseudo", str(pseudofile))
+
+        assert ret.stderr == ""
+        assert ret.success
+        assert pseudofile.read_text() == content

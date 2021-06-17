@@ -415,13 +415,13 @@ def cp2k_datafile_lint():
                     print(entry, file=fouthandle)
                     has_preceeding_comments = True
                 else:
-                    if not has_preceeding_comments:
+                    if not has_preceeding_comments:  # if there is no comment before the next entry, add at least an empty one
                         print("#", file=fouthandle)
-                    else:
-                        has_preceeding_comments = False
+
                     for line in entry.cp2k_format_line_iter():
                         print(line, file=fouthandle)
 
+                    has_preceeding_comments = False
+
     if args.inplace:
-        args.file.write_text(swpfile.read_text())
-        swpfile.unlink()
+        swpfile.replace(args.file)
