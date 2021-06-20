@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from cp2k_input_tools.cli import DEFAULT_CP2K_INPUT_XML
+from cp2k_input_tools import DEFAULT_CP2K_INPUT_XML
 from cp2k_input_tools.generator import CP2KInputGenerator
 
 from . import TEST_DIR

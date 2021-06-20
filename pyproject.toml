@@ -25,6 +25,7 @@ dataclasses = {version = ">=0.7,~0", python = "~3.6"}
 Jinja2 = ">=2.11.3,<4.0.0"
 pydantic = "^1.8.2"
 dacite = "^1.6.0"
+click = "^8.0.1"
 
 [tool.poetry.extras]
 yaml = ["ruamel.yaml"]
@@ -39,15 +40,16 @@ sphinx = "^4.0.1"
 sphinx-rtd-theme = "^0.5.0"
 taskipy = "^1.4.0"
 mypy = "^0.902"
+sphinx-click = "^3.0.1"
 
 [tool.poetry.scripts]
-cp2klint = 'cp2k_input_tools.cli:cp2klint'
-fromcp2k = 'cp2k_input_tools.cli:fromcp2k'
-tocp2k = 'cp2k_input_tools.cli:tocp2k'
-cp2kgen = 'cp2k_input_tools.cli:cp2kgen'
-cp2kget = 'cp2k_input_tools.cli:cp2kget'
-cp2k-language-server = 'cp2k_input_tools.cli:cp2k_language_server'
-cp2k-datafile-lint = 'cp2k_input_tools.cli:cp2k_datafile_lint'
+cp2klint = 'cp2k_input_tools.cli.lint:cp2klint'
+fromcp2k = 'cp2k_input_tools.cli.fromcp2k:fromcp2k'
+tocp2k = 'cp2k_input_tools.cli.tocp2k:tocp2k'
+cp2kgen = 'cp2k_input_tools.cli.cp2kgen:cp2kgen'
+cp2kget = 'cp2k_input_tools.cli.cp2kget:cp2kget'
+cp2k-language-server = 'cp2k_input_tools.cli.lsp:cp2k_language_server'
+cp2k-datafile-lint = 'cp2k_input_tools.cli.datafile_lint:cp2k_datafile_lint'
 
 [tool.black]
 line-length = 132

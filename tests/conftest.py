@@ -11,7 +11,7 @@ CALL_TIMEOUT = 3
 
 @pytest.fixture
 def parser():
-    from cp2k_input_tools.cli import DEFAULT_CP2K_INPUT_XML
+    from cp2k_input_tools import DEFAULT_CP2K_INPUT_XML
     from cp2k_input_tools.parser import CP2KInputParser
 
     return CP2KInputParser(DEFAULT_CP2K_INPUT_XML)

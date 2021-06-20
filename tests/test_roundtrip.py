@@ -1,6 +1,6 @@
 import io
 
-from cp2k_input_tools.cli import DEFAULT_CP2K_INPUT_XML
+from cp2k_input_tools import DEFAULT_CP2K_INPUT_XML
 from cp2k_input_tools.generator import CP2KInputGenerator
 from cp2k_input_tools.parser import CP2KInputParser, CP2KInputParserSimplified
 
