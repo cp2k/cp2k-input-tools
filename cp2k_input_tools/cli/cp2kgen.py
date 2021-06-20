@@ -23,8 +23,7 @@ def cp2kgen(fhandle, expressions, base_dir, canonical, var_values):
 
     Examples for generator expressions:
 
-        "force_eval/dft/mgrid/cutoff=[300,400,500,100]"
-        "force_eval/subsys/cell/a/0=10.0"
+    "force_eval/dft/mgrid/cutoff=[300,400,500,800]", "force_eval/subsys/cell/a/0=10.0"
     """
 
     if canonical:
