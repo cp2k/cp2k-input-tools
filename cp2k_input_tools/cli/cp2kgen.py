@@ -1,4 +1,3 @@
-
 import itertools
 import pathlib
 import re
@@ -9,7 +8,8 @@ import click
 from cp2k_input_tools.generator import CP2KInputGenerator
 from cp2k_input_tools.parser import CP2KInputParser, CP2KInputParserSimplified
 
-from . import fhandle_argument, base_dir_option, canonical_option, var_values_option
+from . import base_dir_option, canonical_option, fhandle_argument, var_values_option
+
 
 @click.command()
 @fhandle_argument

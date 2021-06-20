@@ -1,7 +1,6 @@
-
 import contextlib
-import sys
 import pathlib
+import sys
 
 import click
 
@@ -38,7 +37,7 @@ def click_validate_kv(ctx, param, args):
 
     for arg in args:
         try:
-            parsed.update((arg.split("=", maxsplit=1), ))
+            parsed.update((arg.split("=", maxsplit=1),))
         except ValueError:
             raise click.BadParameter(f"format must be 'key=value', got '{arg}'") from None
 
@@ -54,11 +53,20 @@ def yaml_option(func):
 
 
 def canonical_option(func):
-    return click.option("-c", "--canonical", is_flag=True, help="use the canonical output format instead of the simplified one")(func)
+    return click.option("-c", "--canonical", is_flag=True, help="use the canonical output format instead of the simplified one")(
+        func
+    )
 
 
 def base_dir_option(func):
-    return click.option("-b", "--base-dir", type=click.Path(exists=True, file_okay=False, path_type=pathlib.Path), default=".", help="search path used for relative @include's", show_default=True)(func)
+    return click.option(
+        "-b",
+        "--base-dir",
+        type=click.Path(exists=True, file_okay=False, path_type=pathlib.Path),
+        default=".",
+        help="search path used for relative @include's",
+        show_default=True,
+    )(func)
 
 
 def var_values_option(func):

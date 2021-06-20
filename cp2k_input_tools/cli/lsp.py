@@ -1,11 +1,11 @@
-
-import sys
 import logging
+import sys
 
 import click
 
 try:
     import pygls  # noqa: F401
+
     from cp2k_input_tools.ls import cp2k_server
 except ImportError:
     print(

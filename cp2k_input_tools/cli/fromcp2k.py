@@ -1,15 +1,18 @@
-
+import functools
 import json
 import sys
-from typing import Mapping, MutableSequence
 from enum import Enum
-import functools
+from typing import Mapping, MutableSequence
+
 import click
 
-from cp2k_input_tools.parser import CP2KInputParser, CP2KInputParserAiiDA, CP2KInputParserSimplified
+from cp2k_input_tools.parser import (
+    CP2KInputParser,
+    CP2KInputParserAiiDA,
+    CP2KInputParserSimplified,
+)
 
-
-from . import fhandle_argument, canonical_option, base_dir_option, var_values_option
+from . import base_dir_option, canonical_option, fhandle_argument, var_values_option
 
 
 def _key_trafo(string):
@@ -27,13 +30,19 @@ class Trafos(Enum):
 
 @click.command()
 @fhandle_argument
-@click.option("oformat", "-f", "--format", type=click.Choice(("json", "yaml", "aiida-cp2k-calc")), default="json", help="output format")
+@click.option(
+    "oformat", "-f", "--format", type=click.Choice(("json", "yaml", "aiida-cp2k-calc")), default="json", help="output format"
+)
 @canonical_option
 @base_dir_option
-@click.option("-t", "--trafo",
-        type=click.Choice([t.name for t in Trafos]), callback=lambda c, p, v: getattr(Trafos, v) if v else None, default="auto",  # see https://github.com/pallets/click/issues/605#issuecomment-847361079
-        help="transformation applied to key and section names",
-    )
+@click.option(
+    "-t",
+    "--trafo",
+    type=click.Choice([t.name for t in Trafos]),
+    callback=lambda c, p, v: getattr(Trafos, v) if v else None,
+    default="auto",  # see https://github.com/pallets/click/issues/605#issuecomment-847361079
+    help="transformation applied to key and section names",
+)
 @var_values_option
 def fromcp2k(fhandle, oformat, canonical, base_dir, trafo, var_values):
     """Convert CP2K input to JSON (default), YAML or an aiida-cp2k run script template"""

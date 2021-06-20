@@ -1,4 +1,3 @@
-
 import pathlib
 
 import click
@@ -10,8 +9,14 @@ from . import smart_open
 
 
 @click.command()
-@click.argument("iformat", metavar="<format>", type=click.Choice(("basis", "basisset", "basissets", "pseudo", "pseudos", "pseudopotential", "pseudopotentials", "potentials")))
-@click.argument("fpath", metavar="[<file to lint>]", type=click.Path(dir_okay=False, allow_dash=True, path_type=pathlib.Path), default="-")
+@click.argument(
+    "iformat",
+    metavar="<format>",
+    type=click.Choice(("basis", "basisset", "basissets", "pseudo", "pseudos", "pseudopotential", "pseudopotentials", "potentials")),
+)
+@click.argument(
+    "fpath", metavar="[<file to lint>]", type=click.Path(dir_okay=False, allow_dash=True, path_type=pathlib.Path), default="-"
+)
 @click.option("-i", "--inplace", is_flag=True, help="replace the original file with the linted/prettified one")
 def cp2k_datafile_lint(iformat, fpath, inplace):
     """Linter/Pretty-printer for other CP2K data formats

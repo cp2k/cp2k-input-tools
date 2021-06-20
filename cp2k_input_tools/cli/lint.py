@@ -1,13 +1,13 @@
-
 import re
 import sys
+
 import click
 
-from cp2k_input_tools.tokenizer import TokenizerError
-from cp2k_input_tools.parser_errors import ParserError
 from cp2k_input_tools.parser import CP2KInputParser
+from cp2k_input_tools.parser_errors import ParserError
+from cp2k_input_tools.tokenizer import TokenizerError
 
-from . import fhandle_argument, var_values_option, base_dir_option
+from . import base_dir_option, fhandle_argument, var_values_option
 
 
 @click.command()

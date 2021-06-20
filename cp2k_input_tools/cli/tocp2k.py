@@ -1,4 +1,3 @@
-
 import json
 
 import click
@@ -6,6 +5,7 @@ import click
 from cp2k_input_tools.generator import CP2KInputGenerator
 
 from . import fhandle_argument, yaml_option
+
 
 @click.command()
 @fhandle_argument
