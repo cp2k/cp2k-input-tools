@@ -1,10 +1,10 @@
 import json
-from tempfile import TemporaryDirectory
 import pathlib
+from tempfile import TemporaryDirectory
+
 import pytest
 
 from . import TEST_DIR
-
 
 INPUTS_DIR = TEST_DIR / "inputs"
 
@@ -184,7 +184,7 @@ def test_cp2klint_invalid_set_arg(script_runner):
     ret = script_runner.run("cp2klint", "--set", "missing-equal-sign", str(INPUTS_DIR / "test01.inp"))
 
     assert not ret.success
-    assert "error: argument -E/--set" in ret.stderr
+    assert "Error: Invalid value for '-E' / '--set'" in ret.stderr
 
 
 def test_cp2klint_invalid_without_set_var(script_runner):
@@ -234,7 +234,7 @@ def test_cp2kgen_simplified_indexed_single_value(script_runner):
         assert ret.success
 
         cwd = pathlib.Path(cwd)
-        assert (cwd / f"NaCl-0_10.0.inp").exists()
+        assert (cwd / "NaCl-0_10.0.inp").exists()
 
 
 def test_cp2kgen_invalid_expression(script_runner):

@@ -1,16 +1,15 @@
 import collections
-import re
 import pathlib
-from fractions import Fraction
-from dataclasses import dataclass
-from typing import Any
+import re
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass
+from fractions import Fraction
+from typing import Any
 
 import pint
 
 from .parser_errors import InvalidParameterError
-from .tokenizer import tokenize, COMMENT_CHARS
-
+from .tokenizer import COMMENT_CHARS, tokenize
 
 UREG = pint.UnitRegistry()
 UREG.load_definitions(str(pathlib.Path(__file__).resolve().parent.joinpath("pint_units.txt")))

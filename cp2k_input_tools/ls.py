@@ -1,6 +1,10 @@
 from typing import Union
 
-from pygls.lsp.methods import TEXT_DOCUMENT_DID_CHANGE, TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN
+from pygls.lsp.methods import (
+    TEXT_DOCUMENT_DID_CHANGE,
+    TEXT_DOCUMENT_DID_CLOSE,
+    TEXT_DOCUMENT_DID_OPEN,
+)
 from pygls.lsp.types import (
     Diagnostic,
     DidChangeTextDocumentParams,
@@ -10,7 +14,6 @@ from pygls.lsp.types import (
     Range,
 )
 from pygls.server import LanguageServer
-
 
 from .parser import CP2KInputParser
 from .parser_errors import ParserError
@@ -30,25 +33,25 @@ def _validate(ls, params: Union[DidChangeTextDocumentParams, DidCloseTextDocumen
             parser.parse(fhandle)
         except (TokenizerError, ParserError) as exc:
             ctx = exc.args[1]
-            line = ctx["line"].rstrip()
+            line = ctx.line.rstrip()
 
             msg = f"Syntax error: {exc.args[0]} ({exc.__cause__})"
 
-            linenr = ctx["linenr"] - 1
-            colnr = ctx["colnr"]
+            linenr = ctx.linenr - 1
+            colnr = ctx.colnr
 
             if colnr is not None:
                 count = 0  # number of underline chars after (positiv) or before (negative) the marker if ref_colnr given
                 nchars = colnr  # relevant line length
 
-                if ctx["ref_colnr"] is not None:
-                    count = ctx["ref_colnr"] - ctx["colnr"]
-                    nchars = min(ctx["ref_colnr"], ctx["colnr"])  # correct if ref comes before
+                if ctx.ref_colnr is not None:
+                    count = ctx.ref_colnr - ctx.colnr
+                    nchars = min(ctx.ref_colnr, ctx.colnr)  # correct if ref comes before
 
-                if ctx["colnrs"] is not None:
+                if ctx.colnrs:
                     # shift by the number of left-stripped ws
-                    # ctx["colnrs"] contains the left shift for each possibly continued line
-                    nchars += ctx["colnrs"][0]  # assume no line-continuation for now
+                    # ctx.colnrs contains the left shift for each possibly continued line
+                    nchars += ctx.colnrs[0]  # assume no line-continuation for now
 
                 # at least do one context
                 count = max(1, count)

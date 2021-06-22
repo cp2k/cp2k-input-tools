@@ -1,5 +1,6 @@
+from cp2k_input_tools.parser import CP2KInputParserAiiDA, CP2KInputParserSimplified
+
 from . import TEST_DIR
-from cp2k_input_tools.parser import CP2KInputParserSimplified, CP2KInputParserAiiDA
 
 
 def test_simplified_no_unpack():

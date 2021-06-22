@@ -2,7 +2,10 @@ import io
 
 import pytest
 
-from cp2k_input_tools.lineiterator import ContinuationLineIterator, LineContinuationError
+from cp2k_input_tools.lineiterator import (
+    ContinuationLineIterator,
+    LineContinuationError,
+)
 
 
 def test_broken_line_continuation():

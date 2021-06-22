@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.7.0] - 2021-06-22
+
+* add new `cp2k-datatafile-lint` script to lint/pretty-print CP2K datafiles (pseudos/basissets)
+* switch to click for CLI generation
+* tighten internal parser types by using `dataclasses` and `mypy`
+* include CLI in docs
+
 ## [0.6.3] - 2021-05-13
 
 * fix the language-server-protocol implementation

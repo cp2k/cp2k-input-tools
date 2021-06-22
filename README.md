@@ -12,6 +12,7 @@ Available commands (also available through an API, see below):
 * `cp2kgen` .. generate new input files based on a given input file and expressions to change parameters programmatically
 * `cp2kget` .. get values from a CP2K input file (most likely a restart file) given a path of sections and attribute
 * `cp2k-language-server` .. a [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) implementation for the CP2K input file format
+* `cp2k-datafile-lint` .. linters for other CP2K-related data file formats (like pseudos and basissets)
 
 For a description of the JSON/YAML formats used, see below.
 

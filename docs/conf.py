@@ -20,7 +20,7 @@
 import cp2k_input_tools
 
 project = "cp2k-input-tools"
-copyright = "2020, Tiziano Müller"
+copyright = "2021, Tiziano Müller"
 author = "Tiziano Müller"
 
 # The full version, including alpha/beta/rc tags
@@ -32,7 +32,7 @@ release = cp2k_input_tools.__version__
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.autodoc", "sphinx_rtd_theme"]
+extensions = ["sphinx.ext.autodoc", "sphinx_rtd_theme", "sphinx_click"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -58,6 +58,9 @@ html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 
 
+apidoc_exclude = ["cp2k_input_tools/cli"]
+
+
 def run_apidoc(_):
     """Runs sphinx-apidoc when building the documentation.
 
@@ -66,9 +69,9 @@ def run_apidoc(_):
 
     See also https://github.com/rtfd/readthedocs.org/issues/1139
     """
-    import sys
     import os
     import subprocess
+    import sys
 
     source_dir = os.path.abspath(os.path.dirname(__file__))
     apidoc_dir = os.path.join(source_dir, "apidoc")
@@ -88,6 +91,7 @@ def run_apidoc(_):
         "-o",
         apidoc_dir,
         package_dir,
+        *apidoc_exclude,
         "--private",
         "--force",
         "--no-toc",

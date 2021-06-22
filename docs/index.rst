@@ -10,6 +10,7 @@ Welcome to cp2k-input-tools's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   Command Line Interfaces <cli>
    API documentation <apidoc/cp2k_input_tools>
 
 Indices and tables

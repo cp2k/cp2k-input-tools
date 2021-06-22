@@ -1,7 +1,7 @@
-import re
 import collections
-import xml.etree.ElementTree as ET
 import itertools
+import re
+import xml.etree.ElementTree as ET
 
 from . import DEFAULT_CP2K_INPUT_XML
 
@@ -87,7 +87,7 @@ class CP2KInputGenerator:
         if dkw:
             return dkw
 
-        raise GeneratorError(f"invalid default keyword")
+        raise GeneratorError("invalid default keyword")
 
     def _render_keyword(self, value, kw_node):
         repeats = True if kw_node.get("repeats") == "yes" else False

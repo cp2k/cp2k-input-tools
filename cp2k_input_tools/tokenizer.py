@@ -1,8 +1,7 @@
-import collections
-from typing import NamedTuple
+from dataclasses import dataclass, field
+from typing import Any, List, Optional, Tuple
 
 import transitions
-
 
 COMMENT_CHARS = ("!", "#")
 
@@ -19,11 +18,19 @@ class InvalidTokenCharError(TokenizerError):
     pass
 
 
-def Context(**kwargs):
-    return collections.defaultdict(lambda: None, **kwargs)
+@dataclass
+class Context:
+    colnr: Optional[int] = None
+    colnrs: List[int] = field(default_factory=list)
+    ref_colnr: Optional[int] = None
+    line: Optional[str] = None
+    ref_line: Optional[str] = None
+    filename: Optional[str] = None
+    section: Any = None
 
 
-class Token(NamedTuple):
+@dataclass
+class Token:
     string: str
     ctx: Context
 
@@ -32,7 +39,7 @@ class CP2KInputTokenizer(transitions.Machine):
     def begin_basic_token(self, _, colnr):
         self._current_token_start = colnr
 
-    def end_basic_token(self, _, colnr):
+    def end_basic_token(self, _, colnr: int):
         # the end idx follows the python-default of specifying ranges,
         # since this is triggered on the character after, using idx is correct
         self._tokens += [(self._current_token_start, colnr)]
@@ -47,10 +54,10 @@ class CP2KInputTokenizer(transitions.Machine):
         self._tokens += [(self._current_token_start, colnr + 1)]
 
     def unterminated_string(self, _, colnr):
-        raise UnterminatedStringError(f"unterminated string detected", Context(colnr=colnr, ref_colnr=self._current_token_start))
+        raise UnterminatedStringError("unterminated string detected", Context(colnr=colnr, ref_colnr=self._current_token_start))
 
     def invalid_token_char(self, content, colnr):
-        raise InvalidTokenCharError(f"invalid keyword character found", Context(colnr=colnr, ref_colnr=self._current_token_start))
+        raise InvalidTokenCharError("invalid keyword character found", Context(colnr=colnr, ref_colnr=self._current_token_start))
 
     def is_not_escaped(self, content, colnr):
         if colnr > 0:
@@ -110,7 +117,7 @@ class CP2KInputTokenizer(transitions.Machine):
         self._tokens = []
 
 
-def tokenize(string):
+def tokenize(string: str) -> Tuple[str, ...]:
     tokenizer = CP2KInputTokenizer()
 
     char_map = {" ": tokenizer.ws_char, "\t": tokenizer.ws_char, "'": tokenizer.quote_char, '"': tokenizer.quote_char}

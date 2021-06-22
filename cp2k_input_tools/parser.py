@@ -1,17 +1,22 @@
+import itertools
 import re
 import xml.etree.ElementTree as ET
-import itertools
-from typing import List, Union
-from dataclasses import dataclass, field
 from collections import Counter
+from dataclasses import dataclass, field
 from fractions import Fraction
+from typing import Iterator, List, Optional, Tuple, Union
 
 from . import DEFAULT_CP2K_INPUT_XML
-from .tokenizer import Context, TokenizerError, COMMENT_CHARS
-from .keyword_helpers import Keyword, UREG
+from .keyword_helpers import UREG, Keyword
+from .parser_errors import (
+    InvalidNameError,
+    InvalidParameterError,
+    InvalidSectionError,
+    NameRepetitionError,
+    SectionMismatchError,
+)
 from .preprocessor import CP2KPreprocessor
-from .parser_errors import InvalidNameError, InvalidSectionError, NameRepetitionError, SectionMismatchError, InvalidParameterError
-
+from .tokenizer import COMMENT_CHARS, Context, TokenizerError
 
 _SECTION_MATCH = re.compile(r"&(?P<name>[\w\-_]+)\s*(?P<param>.*)")
 _KEYWORD_MATCH = re.compile(r"(?P<name>[\w\-_]+)\s*(?P<value>.*)")
@@ -26,18 +31,18 @@ class Section:
     param: Union[int, float, str, bool, None] = None
     repeats: bool = False
 
-    def subsections_by_name(self, name):
+    def subsections_by_name(self, name) -> Iterator["Section"]:
         yield from (s for s in self.subsections if s.name == name)
 
-    def keywords_by_name(self, name):
+    def keywords_by_name(self, name) -> Iterator[Keyword]:
         yield from (k for k in self.keywords if k.name == name)
 
     @property
-    def keyword_names(self):
+    def keyword_names(self) -> Iterator[Optional[str]]:
         yield from (n.text for n in self.node.iterfind("./KEYWORD/NAME"))
 
     @property
-    def section_names(self):
+    def section_names(self) -> Iterator[Optional[str]]:
         yield from (n.text for n in self.node.iterfind("./SECTION/NAME"))
 
     def find_node_by_name(self, tag, name):
@@ -210,11 +215,11 @@ class CP2KInputParser:
                 self._parse_as_keyword(line)
 
             except (TokenizerError, InvalidParameterError, InvalidSectionError, InvalidNameError) as exc:
-                exc.args[1]["filename"] = preprocessor.fname
-                exc.args[1]["linenr"] = preprocessor.line_range[1]
-                exc.args[1]["colnrs"] = preprocessor.colnrs
-                exc.args[1]["line"] = line
-                exc.args[1]["section"] = self._treerefs[-1]
+                exc.args[1].filename = preprocessor.fname
+                exc.args[1].linenr = preprocessor.line_range[1]
+                exc.args[1].colnrs = preprocessor.colnrs
+                exc.args[1].line = line
+                exc.args[1].section = self._treerefs[-1]
                 raise
 
         if len(self._treerefs) > 1:
@@ -226,7 +231,7 @@ class CP2KInputParser:
         # returning the nested dictionary representation for convenience
         return self.nested_dict
 
-    def coords(self, force_eval=0):
+    def coords(self, force_eval=0) -> Iterator[Tuple[str, Tuple[float, ...], Optional[str]]]:
         """
         Return an iterator to coordinates given in a FORCE_EVAL/SUBSYS/COORD section
         where the coordinates are proper float values and converted to Angstrom if specified in
@@ -237,11 +242,11 @@ class CP2KInputParser:
             coord = next(
                 next(
                     next(
-                        itertools.islice(self._tree.subsections_by_name("FORCE_EVAL"), force_eval, None), None
+                        itertools.islice(self._tree.subsections_by_name("FORCE_EVAL"), force_eval, force_eval + 1)
                     ).subsections_by_name("SUBSYS")
                 ).subsections_by_name("COORD")
             )
-        except AttributeError:
+        except StopIteration:
             return
 
         scaled = next(coord.keywords_by_name("SCALED"), False)
