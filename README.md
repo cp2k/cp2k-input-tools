@@ -1,6 +1,6 @@
 # cp2k-input-tools
 
-[![Build status](https://github.com/cp2k/cp2k-input-tools/workflows/Run%20Tests/badge.svg)](https://github.com/cp2k/cp2k-input-tools/actions) [![codecov](https://codecov.io/gh/cp2k/cp2k-input-tools/branch/develop/graph/badge.svg)](https://codecov.io/gh/cp2k/cp2k-input-tools) [![PyPI](https://img.shields.io/pypi/pyversions/cp2k-input-tools)](https://pypi.org/project/cp2k-input-tools/)
+[![Build status](https://github.com/cp2k/cp2k-input-tools/actions/workflows/test.yml/badge.svg)](https://github.com/cp2k/cp2k-input-tools/actions) [![codecov](https://codecov.io/gh/cp2k/cp2k-input-tools/branch/develop/graph/badge.svg)](https://codecov.io/gh/cp2k/cp2k-input-tools) [![PyPI](https://img.shields.io/pypi/pyversions/cp2k-input-tools)](https://pypi.org/project/cp2k-input-tools/)
 
 Fully validating pure-python CP2K input file parsers including preprocessing capabilities
 
