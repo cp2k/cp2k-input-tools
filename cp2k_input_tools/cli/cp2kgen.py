@@ -1,6 +1,7 @@
 import itertools
 import pathlib
 import re
+import sys
 from copy import deepcopy
 
 import click
@@ -8,6 +9,7 @@ import click
 from cp2k_input_tools.generator import CP2KInputGenerator
 from cp2k_input_tools.parser import CP2KInputParser, CP2KInputParserSimplified
 
+from .. import __version__
 from . import base_dir_option, canonical_option, fhandle_argument, var_values_option
 
 
@@ -85,6 +87,9 @@ def cp2kgen(fhandle, expressions, base_dir, canonical, var_values):
         print(f"Writing '{opath}'...")
 
         with opath.open("w") as fouthandle:
+            fouthandle.write(f"! Generated with the CP2K input tool cp2kgen v{__version__}\n! ")
+            fouthandle.write(" \\\n!   ".join(f"'{arg}'" for arg in sys.argv))
+            fouthandle.write("\n")
             cp2k_generator = CP2KInputGenerator()
             for line in cp2k_generator.line_iter(curr_tree):
                 fouthandle.write(f"{line}\n")

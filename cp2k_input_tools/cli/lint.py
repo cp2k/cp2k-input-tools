@@ -17,7 +17,6 @@ from . import base_dir_option, fhandle_argument, var_values_option
 def cp2klint(fhandle, var_values, base_dir):
     """Check the passed CP2K file for syntax errors"""
 
-    print(var_values)
     cp2k_parser = CP2KInputParser(base_dir=base_dir)
 
     try:

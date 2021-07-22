@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.7.1] - 2021-07-22
+
+* updated XML definition to include SIRIUS options
+* the `emit_comments` argument of the `datafile_iter` is now properly respected
+* files generated with `cp2kgen` now have a comment header to indicate
+  how they were generated
+
 ## [0.7.0] - 2021-06-22
 
 * add new `cp2k-datatafile-lint` script to lint/pretty-print CP2K datafiles (pseudos/basissets)

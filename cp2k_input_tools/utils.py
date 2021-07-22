@@ -172,6 +172,7 @@ class DatafileIterMixin:
 
         :param fhandle: Open file handle (in text mode) to a data file
         :param keep_going: Whether to ignore invalid entries and keep going
+        :param emit_comments: Whether to also emit line breaks and comments when found
         """
 
         # find the beginning of a new data entry, then
@@ -189,7 +190,7 @@ class DatafileIterMixin:
             if EMPTY_LINE_MATCH.match(line):
                 if line_buffer:
                     post_comments.append(line.strip())
-                else:
+                elif emit_comments:
                     yield (line.strip())
                 continue  # ignore empty and comment lines
 
@@ -205,7 +206,8 @@ class DatafileIterMixin:
                     errors.append(newexc)
 
                 if post_comments:
-                    yield from post_comments
+                    if emit_comments:
+                        yield from post_comments
                     post_comments = []
 
                 line_buffer = []
@@ -214,7 +216,7 @@ class DatafileIterMixin:
 
         assert len(line_buffer) == 1 and line_buffer[0] == EOF_MARKER_LINE
 
-        if post_comments:
+        if post_comments and emit_comments:
             yield from post_comments
 
         if len(errors) == 1:
