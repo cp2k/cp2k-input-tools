@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.7.2] - 2021-07-22
+
+* relax click dependency to permit 7.1.x
+
 ## [0.7.1] - 2021-07-22
 
 * updated XML definition to include SIRIUS options
