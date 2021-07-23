@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.7.3] - 2021-07-23
+
+* `PseudopotentialData`/`BasisSetData`: expose dacites `type_hooks` for field aliasing
+* fix a typing issue
+
 ## [0.7.2] - 2021-07-22
 
 * relax click dependency to permit 7.1.x
