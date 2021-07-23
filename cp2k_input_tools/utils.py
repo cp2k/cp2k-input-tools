@@ -5,7 +5,19 @@ import itertools
 import re
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import IO, Any, Dict, Iterator, List, Sequence, Tuple, Type, TypeVar, Union
+from typing import (
+    IO,
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from typing_extensions import Protocol
 
@@ -154,11 +166,15 @@ class SupportsFromLines(Protocol):
 @dataclass
 class FromDictMixin:
     @classmethod
-    def from_dict(cls: Type[_T], data: Dict[str, Any]) -> _T:
+    def from_dict(cls: Type[_T], data: Dict[str, Any], type_hooks: Optional[Dict[Type, Callable[[Any], Any]]] = None) -> _T:
         """Create a data instance from a nested dictionary"""
         import dacite
 
-        return dacite.from_dict(data_class=cls, data=data, config=dacite.Config(cast=[Tuple, Decimal]))  # type: ignore
+        config = dacite.Config(cast=[tuple, Decimal])
+        if type_hooks:
+            config.type_hooks = type_hooks
+
+        return dacite.from_dict(data_class=cls, data=data, config=config)  # type: ignore
 
 
 @dataclass
