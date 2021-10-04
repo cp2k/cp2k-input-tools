@@ -33,7 +33,7 @@ lsp = ["pygls"]
 [tool.poetry.dev-dependencies]
 pytest = "^6.0"
 codecov = "^2.0.15"
-pytest-cov = "^2.7.1"
+pytest-cov = "^3.0.0"
 pytest-console-scripts = "^1.0.0"
 sphinx = "^4.0.1"
 sphinx-rtd-theme = "^1.0.0"
