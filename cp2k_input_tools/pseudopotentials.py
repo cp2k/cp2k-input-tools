@@ -5,28 +5,24 @@ import itertools
 from decimal import Decimal, InvalidOperation
 from typing import Iterator, List, Sequence
 
-from pydantic import root_validator
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel, Extra, Field, root_validator
 
-from .utils import DatafileIterMixin, FromDictMixin, dformat
-
-
-class _PseudopotentialDataConfig:
-    validate_all = True
-    extra = "forbid"
+from .utils import DatafileIterMixin, dformat
 
 
-@dataclass(config=_PseudopotentialDataConfig)
-class PseudopotentialDataLocal:
+class PseudopotentialDataLocal(BaseModel):
     r: Decimal
-    coefficients: List[Decimal]
+    coefficients: List[Decimal] = Field(..., alias="coeffs")
+
+    class Config:
+        extra = "forbid"
+        allow_population_by_field_name = True
 
 
-@dataclass(config=_PseudopotentialDataConfig)
-class PseudopotentialDataNonLocal:
+class PseudopotentialDataNonLocal(BaseModel):
     r: Decimal
     nproj: int
-    coefficients: List[Decimal]
+    coefficients: List[Decimal] = Field(..., alias="coeffs")
 
     @root_validator
     def check_coefficients(cls, values):
@@ -35,9 +31,12 @@ class PseudopotentialDataNonLocal:
         ), "invalid number of coefficients for non-local projection"
         return values
 
+    class Config:
+        extra = "forbid"
+        allow_population_by_field_name = True
 
-@dataclass(config=_PseudopotentialDataConfig)
-class PseudopotentialDataNLCC:
+
+class PseudopotentialDataNLCC(BaseModel, extra=Extra.forbid):
     """Nonlinear Core Correction data"""
 
     r: Decimal
@@ -45,14 +44,13 @@ class PseudopotentialDataNLCC:
     c: Decimal
 
 
-@dataclass(config=_PseudopotentialDataConfig)
-class PseudopotentialData(DatafileIterMixin, FromDictMixin):
+class PseudopotentialData(BaseModel, DatafileIterMixin, extra=Extra.forbid):
     element: str
     identifiers: List[str]
     n_el: List[int]
     local: PseudopotentialDataLocal
     non_local: List[PseudopotentialDataNonLocal]
-    nlcc: List[PseudopotentialDataNLCC]
+    nlcc: List[PseudopotentialDataNLCC] = Field(default_factory=list)
 
     @classmethod
     def from_lines(cls, lines: Sequence[str]) -> "PseudopotentialData":
@@ -76,7 +74,7 @@ class PseudopotentialData(DatafileIterMixin, FromDictMixin):
         #   <radius> <nfuncs> [<func-coeff-1> [<func-coeff-2> ...]]
         r_loc_s, nexp_ppl_s, *cexp_ppl_s = lines[2].split()
 
-        local = PseudopotentialDataLocal(Decimal(r_loc_s), [Decimal(f) for f in cexp_ppl_s])
+        local = PseudopotentialDataLocal(r=Decimal(r_loc_s), coefficients=[Decimal(f) for f in cexp_ppl_s])
 
         if int(nexp_ppl_s) != len(local.coefficients):
             raise ValueError("less coefficients found than expected while parsing the block")
@@ -93,7 +91,7 @@ class PseudopotentialData(DatafileIterMixin, FromDictMixin):
                     nline += 1
                     while len(nlcc) < n_nlcc:
                         nlcc_r, nlcc_n, nlcc_c = lines[nline].split()
-                        nlcc.append(PseudopotentialDataNLCC(Decimal(nlcc_r), int(nlcc_n), Decimal(nlcc_c)))
+                        nlcc.append(PseudopotentialDataNLCC(r=Decimal(nlcc_r), n=int(nlcc_n), c=Decimal(nlcc_c)))
                         nline += 1
                 except IndexError as exc:
                     raise ValueError("premature end-of-lines while reading the NLCC parameters") from exc
@@ -129,11 +127,13 @@ class PseudopotentialData(DatafileIterMixin, FromDictMixin):
 
                 prj_ppnl.append(
                     PseudopotentialDataNonLocal(
-                        Decimal(r_nprj_s), nprj_ppnl, hprj_ppnl  # store for convenience  # upper triangular matrix
+                        r=Decimal(r_nprj_s),
+                        nproj=nprj_ppnl,  # store for convenience
+                        coefficients=hprj_ppnl,  # upper triangular matrix
                     )
                 )
 
-        return cls(element, identifiers, n_el, local, prj_ppnl, nlcc)
+        return cls(element=element, identifiers=identifiers, n_el=n_el, local=local, non_local=prj_ppnl, nlcc=nlcc)
 
     def cp2k_format_line_iter(self) -> Iterator[str]:
         """Generate lines of strings from this PP in the format expected by CP2K."""

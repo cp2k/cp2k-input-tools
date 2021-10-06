@@ -215,5 +215,5 @@ def test_bset_from_dicts():
     }
 
     # NOTE: they are not identical since the first one goes via the internal bit-representation of the float
-    BasisSetData.from_dict(floated_dict)
-    BasisSetData.from_dict(stringified_dict)
+    BasisSetData.parse_obj(floated_dict)
+    BasisSetData.parse_obj(stringified_dict)

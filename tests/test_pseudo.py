@@ -1,13 +1,7 @@
-import dataclasses
 import pathlib
 import tempfile
 
-import pytest
-
-from cp2k_input_tools.pseudopotentials import (
-    PseudopotentialData,
-    PseudopotentialDataLocal,
-)
+from cp2k_input_tools.pseudopotentials import PseudopotentialData
 
 from . import TEST_DIR
 
@@ -27,22 +21,15 @@ def test_single_pseudo_import():
 
 
 def test_single_pseudo_from_dict_aliased():
+    """Check that for local/non_local data we can also use the abbrev 'coeffs' for loading"""
     with (TEST_DIR / "inputs" / "GTH_POTENTIALS.Cl").open() as fhandle:
         pseudo = PseudopotentialData.from_lines([line for line in fhandle])
 
-    asdict = dataclasses.asdict(pseudo)
+    asdict = pseudo.dict()
+    assert pseudo.local.coefficients
 
     asdict["local"]["coeffs"] = asdict["local"].pop("coefficients")
-
-    with pytest.raises(Exception):
-        # required value is not set
-        PseudopotentialData.from_dict(asdict)
-
-    def rename(data):
-        data["coefficients"] = data.pop("coeffs")
-        return data
-
-    reloaded = PseudopotentialData.from_dict(asdict, type_hooks={PseudopotentialDataLocal: rename})
+    reloaded = PseudopotentialData.parse_obj(asdict)
 
     assert reloaded == pseudo
 
