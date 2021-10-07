@@ -39,6 +39,18 @@ def test_single_pseudo_parse_obj_aliased():
     assert reloaded == pseudo
 
 
+def test_single_pseudo_parse_obj_nlcc_empty_default():
+    """Check that for local/non_local data we can also use the abbrev 'coeffs' for loading"""
+    with (TEST_DIR / "inputs" / "GTH_POTENTIALS.Cl").open() as fhandle:
+        pseudo = PseudopotentialData.from_lines([line for line in fhandle])
+
+    assert pseudo.nlcc is not None
+    asdict = pseudo.dict()
+    asdict.pop("nlcc")
+    reloaded = PseudopotentialData.parse_obj(asdict)
+    assert reloaded.nlcc == []
+
+
 def test_single_pseudo_from_dict_deprecated():
     """Check that from_dict still works as intented"""
     with (TEST_DIR / "inputs" / "GTH_POTENTIALS.Cl").open() as fhandle:
