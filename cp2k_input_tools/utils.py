@@ -3,11 +3,16 @@
 
 import itertools
 import re
+import warnings
 from dataclasses import dataclass
 from typing import (
     IO,
+    Any,
+    Callable,
     Iterator,
     List,
+    Mapping,
+    Optional,
     Sequence,
     Type,
     TypeVar,
@@ -221,6 +226,17 @@ class DatafileIterMixin:
 
         if errors:
             raise MulitpleValueErrorsException(errors)
+
+
+class FromDictMixin:
+    @classmethod
+    def from_dict(cls: Type[_T], data: Mapping[str, Any], type_hooks: Optional[Mapping[Type, Callable[[Any], Any]]] = None) -> _T:
+        """Create a data instance from a nested dictionary"""
+        warnings.warn("This helper function will be removed, use '.parse_obj' instead.", PendingDeprecationWarning)
+        if type_hooks:
+            warnings.warn("The 'type_hooks' attribute has been removed and is being ignored.", DeprecationWarning)
+
+        return cls.parse_obj(data)  # type: ignore
 
 
 def dformat(val, ndigits, slen):

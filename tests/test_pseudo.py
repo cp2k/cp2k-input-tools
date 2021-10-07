@@ -1,7 +1,12 @@
 import pathlib
 import tempfile
 
-from cp2k_input_tools.pseudopotentials import PseudopotentialData
+import pytest
+
+from cp2k_input_tools.pseudopotentials import (
+    PseudopotentialData,
+    PseudopotentialDataLocal,
+)
 
 from . import TEST_DIR
 
@@ -20,16 +25,46 @@ def test_single_pseudo_import():
     assert pseudo.non_local[1].nproj == 1
 
 
-def test_single_pseudo_from_dict_aliased():
+def test_single_pseudo_parse_obj_aliased():
     """Check that for local/non_local data we can also use the abbrev 'coeffs' for loading"""
     with (TEST_DIR / "inputs" / "GTH_POTENTIALS.Cl").open() as fhandle:
         pseudo = PseudopotentialData.from_lines([line for line in fhandle])
 
-    asdict = pseudo.dict()
     assert pseudo.local.coefficients
+    asdict = pseudo.dict()
 
     asdict["local"]["coeffs"] = asdict["local"].pop("coefficients")
     reloaded = PseudopotentialData.parse_obj(asdict)
+
+    assert reloaded == pseudo
+
+
+def test_single_pseudo_from_dict_deprecated():
+    """Check that from_dict still works as intented"""
+    with (TEST_DIR / "inputs" / "GTH_POTENTIALS.Cl").open() as fhandle:
+        pseudo = PseudopotentialData.from_lines([line for line in fhandle])
+
+    asdict = pseudo.dict()
+    with pytest.deprecated_call():
+        reloaded = PseudopotentialData.from_dict(asdict)
+
+    assert reloaded == pseudo
+
+
+def test_single_pseudo_from_dict_type_map_deprecated():
+    """Check that from_dict still works as intented with the type_map and its likely only use case"""
+    with (TEST_DIR / "inputs" / "GTH_POTENTIALS.Cl").open() as fhandle:
+        pseudo = PseudopotentialData.from_lines([line for line in fhandle])
+
+    asdict = pseudo.dict()
+    asdict["local"]["coeffs"] = asdict["local"].pop("coefficients")
+
+    def rename(data):
+        data["coefficients"] = data.pop("coeffs")
+        return data
+
+    with pytest.deprecated_call():
+        reloaded = PseudopotentialData.from_dict(asdict, type_hooks={PseudopotentialDataLocal: rename})
 
     assert reloaded == pseudo
 

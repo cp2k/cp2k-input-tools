@@ -7,7 +7,7 @@ from typing import Iterator, List, Sequence
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from .utils import DatafileIterMixin, dformat
+from .utils import DatafileIterMixin, FromDictMixin, dformat
 
 
 class PseudopotentialDataLocal(BaseModel):
@@ -44,7 +44,7 @@ class PseudopotentialDataNLCC(BaseModel, extra=Extra.forbid):
     c: Decimal
 
 
-class PseudopotentialData(BaseModel, DatafileIterMixin, extra=Extra.forbid):
+class PseudopotentialData(BaseModel, DatafileIterMixin, FromDictMixin, extra=Extra.forbid):
     element: str
     identifiers: List[str]
     n_el: List[int]

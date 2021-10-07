@@ -8,7 +8,7 @@ from typing import Iterator, List, Optional, Sequence, Tuple
 
 from pydantic import BaseModel, Extra
 
-from .utils import SYM2NUM, DatafileIterMixin, dformat
+from .utils import SYM2NUM, DatafileIterMixin, FromDictMixin, dformat
 
 N_VAL_EL_MATCH = re.compile(r"q(?P<nvalel>\d+)$")
 
@@ -21,7 +21,7 @@ class BasisSetCoefficients(BaseModel, extra=Extra.forbid):
     coefficients: List[List[Decimal]]
 
 
-class BasisSetData(BaseModel, DatafileIterMixin, extra=Extra.forbid):
+class BasisSetData(BaseModel, DatafileIterMixin, FromDictMixin, extra=Extra.forbid):
     """Basis set data for a single element"""
 
     element: str
