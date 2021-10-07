@@ -6,10 +6,8 @@ import re
 from dataclasses import dataclass
 from typing import (
     IO,
-    Callable,
     Iterator,
     List,
-    Optional,
     Sequence,
     Type,
     TypeVar,
