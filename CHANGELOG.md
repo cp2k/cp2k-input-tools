@@ -1,5 +1,16 @@
 # Change Log
 
+## [0.8.0] - 2021-10-08
+
+`PseudopotentialData`/`BasisSetData`:
+
+* Ue `pydantic.BaseModel` instead of dataclasses wrapper.
+* This fixes an issue with default values provided for example for the `nlcc` for Pseudos attribute.
+* `from_dict` helper is still provided but deprecated, the `type_hooks` parameter gets ignored.
+* Some fields can now be loaded with both their name and their alias (`coeffs` vs `coefficients`),
+  which was the motivation for the `type_hooks` in the first place.
+* Drop `dacite` requirement.
+
 ## [0.7.3] - 2021-07-23
 
 * `PseudopotentialData`/`BasisSetData`: expose dacites `type_hooks` for field aliasing
