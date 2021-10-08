@@ -6,20 +6,14 @@ import re
 from decimal import Decimal
 from typing import Iterator, List, Optional, Sequence, Tuple
 
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel, Extra
 
 from .utils import SYM2NUM, DatafileIterMixin, FromDictMixin, dformat
 
 N_VAL_EL_MATCH = re.compile(r"q(?P<nvalel>\d+)$")
 
 
-class _BasisSetConfig:
-    validate_all = True
-    extra = "forbid"
-
-
-@dataclass(config=_BasisSetConfig)
-class BasisSetCoefficients:
+class BasisSetCoefficients(BaseModel, extra=Extra.forbid):
     """A 'shell' in one single basis set"""
 
     n: int
@@ -27,8 +21,7 @@ class BasisSetCoefficients:
     coefficients: List[List[Decimal]]
 
 
-@dataclass(config=_BasisSetConfig)
-class BasisSetData(DatafileIterMixin, FromDictMixin):
+class BasisSetData(BaseModel, DatafileIterMixin, FromDictMixin, extra=Extra.forbid):
     """Basis set data for a single element"""
 
     element: str
@@ -74,16 +67,16 @@ class BasisSetData(DatafileIterMixin, FromDictMixin):
 
             blocks.append(
                 BasisSetCoefficients(
-                    qn_n,
-                    [(lqn, nl) for lqn, nl in zip(range(qn_lmin, qn_lmax + 1), ncoeffs)],
-                    [[Decimal(c) for c in lines[nline + n].split()] for n in range(nexp)],
+                    n=qn_n,
+                    l=[(lqn, nl) for lqn, nl in zip(range(qn_lmin, qn_lmax + 1), ncoeffs)],
+                    coefficients=[[Decimal(c) for c in lines[nline + n].split()] for n in range(nexp)],
                 )
             )
 
             # advance by the number of exponents
             nline += nexp
 
-        return cls(element, identifiers, n_el, blocks)
+        return cls(element=element, identifiers=identifiers, n_el=n_el, blocks=blocks)
 
     def cp2k_format_line_iter(self) -> Iterator[str]:
         """Generate lines of strings from this Basis Set in the format expected by CP2K."""
