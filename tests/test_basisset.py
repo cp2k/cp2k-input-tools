@@ -1,3 +1,5 @@
+import pytest
+
 from cp2k_input_tools.basissets import BasisSetData
 
 from . import TEST_DIR
@@ -7,10 +9,20 @@ INPUTS_DIR = TEST_DIR / "inputs"
 
 def test_single_basisset_import():
     with (TEST_DIR / "inputs" / "BASIS_MOLOPT.H").open() as fhandle:
-        bset = BasisSetData.from_lines([line for line in fhandle])
+        lines = [line for line in fhandle]
+
+    bset = BasisSetData.from_lines(lines)
 
     assert bset.element == "H"
     assert bset.n_el == 1
+
+
+def test_single_basisset_import_invalid_nexp():
+    with (TEST_DIR / "inputs" / "BASIS_MOLOPT.invalid_Rn").open() as fhandle:
+        lines = [line for line in fhandle]
+
+    with pytest.raises(ValueError):
+        BasisSetData.from_lines(lines)
 
 
 def test_single_basisset_roundtrip():
