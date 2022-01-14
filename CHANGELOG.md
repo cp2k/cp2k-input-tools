@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.8.1] - 2022-01-14
+
+* fix error when parsing values with an 'internal_cp2k' default unit (#54)
+* give more info when encountering parser errors for basisset data
+
 ## [0.8.0] - 2021-10-08
 
 `PseudopotentialData`/`BasisSetData`:

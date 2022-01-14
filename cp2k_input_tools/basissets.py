@@ -55,7 +55,7 @@ class BasisSetData(BaseModel, DatafileIterMixin, FromDictMixin, extra=Extra.forb
         blocks = []
 
         # go through all blocks containing different sets of orbitals
-        for _ in range(n_blocks):
+        for nblock in range(n_blocks):
             # get the quantum numbers for this set, formatted as follows:
             # n lmin lmax nexp nshell(lmin) nshell(lmin+1) ... nshell(lmax-1) nshell(lmax)
             # ignore everything after nshell(lmax) on the same line (as CP2K does)
@@ -65,11 +65,16 @@ class BasisSetData(BaseModel, DatafileIterMixin, FromDictMixin, extra=Extra.forb
 
             nline += 1
 
+            try:
+                coefficients = [[Decimal(c) for c in lines[nline + n].split()] for n in range(nexp)]
+            except IndexError:
+                raise ValueError(f"Not enough exponents found. Expected {nexp} lines for block {nblock+1}") from None
+
             blocks.append(
                 BasisSetCoefficients(
                     n=qn_n,
                     l=[(lqn, nl) for lqn, nl in zip(range(qn_lmin, qn_lmax + 1), ncoeffs)],
-                    coefficients=[[Decimal(c) for c in lines[nline + n].split()] for n in range(nexp)],
+                    coefficients=coefficients,
                 )
             )
 

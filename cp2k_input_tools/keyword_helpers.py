@@ -123,6 +123,9 @@ class Keyword:
         except AttributeError:
             pass
 
+        if default_unit and default_unit == "internal_cp2k":
+            default_unit = None  # we can't do any conversion for hat
+
         if default_unit:
             default_unit = UREG.parse_expression(default_unit)
 
@@ -133,7 +136,9 @@ class Keyword:
         for token in tokens:
             if token.startswith("["):
                 if not default_unit:
-                    raise InvalidParameterError("unit specified for value in keyword, but no default unit available")
+                    raise InvalidParameterError(
+                        "unit specified for value in keyword, but no default unit available or default unit is 'internal_cp2k'"
+                    )
                 current_unit = UREG.parse_expression(token.strip("[]"), case_sensitive=False)
                 continue
 

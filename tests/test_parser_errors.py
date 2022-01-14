@@ -150,3 +150,69 @@ def test_invalid_keyword():
         cp2k_parser.parse(fhandle)
 
     assert "invalid keyword" in excinfo.value.args[0]
+
+
+def test_internal_cp2k_unit():
+    """
+    Ensure that values for keywords with a default internal_cp2k unit are accepted unless there is an explicit unit.
+    The first one is a reproducer of https://github.com/cp2k/cp2k-input-tools/issues/54
+    """
+
+    cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
+
+    fhandle_no_extra_unit = io.StringIO(
+        """
+        &FORCE_EVAL
+          METHOD  FIST
+          &MM
+            &FORCEFIELD
+              IGNORE_MISSING_CRITICAL_PARAMS  T
+              &BOND
+                ATOMS O H
+                KIND  HARMONIC
+                K      4.7265512325474252E-01
+                R0     1.9124028464802707E+00
+              &END BOND
+              &BEND
+                ATOMS H O H
+                KIND  HARMONIC
+                K     1.2095435014802065E-01
+                THETA0     1.9764108449583786E+00
+              &END BEND
+            &END FORCEFIELD
+          &END MM
+        &END FORCE_EVAL
+        """
+    )
+
+    cp2k_parser.parse(fhandle_no_extra_unit)
+
+    fhandle_extra_unit = io.StringIO(
+        """
+        &FORCE_EVAL
+          METHOD  FIST
+          &MM
+            &FORCEFIELD
+              IGNORE_MISSING_CRITICAL_PARAMS  T
+              &BOND
+                ATOMS O H
+                KIND  HARMONIC
+                K      [hartree] 4.7265512325474252E-01
+                R0     1.9124028464802707E+00
+              &END BOND
+              &BEND
+                ATOMS H O H
+                KIND  HARMONIC
+                K     [hartree] 1.2095435014802065E-01
+                THETA0     1.9764108449583786E+00
+              &END BEND
+            &END FORCEFIELD
+          &END MM
+        &END FORCE_EVAL
+        """
+    )
+
+    with pytest.raises(InvalidParameterError) as excinfo:
+        cp2k_parser.parse(fhandle_extra_unit)
+
+    assert "invalid values" in excinfo.value.args[0]
