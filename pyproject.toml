@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cp2k-input-tools"
-version = "0.8.1"
+version = "0.8.2"
 description = "Python tools to handle CP2K input files"
 authors = ["Tiziano Müller <tiziano.mueller@chem.uzh.ch>"]
 repository = "https://github.com/cp2k/cp2k-input-tools"
