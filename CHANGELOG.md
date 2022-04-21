@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.8.2] - 2022-04-21
+
+* fix issue with `base_dir` and click v7's `path_type`, thanks to @yakutovicha for the initial fix
+* bump pre-commit tools, mypy, fix some style issues
+
 ## [0.8.1] - 2022-01-14
 
 * fix error when parsing values with an 'internal_cp2k' default unit (#54)
