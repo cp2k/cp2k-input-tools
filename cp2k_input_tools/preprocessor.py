@@ -1,3 +1,4 @@
+import os
 import re
 from collections import defaultdict
 from collections.abc import Iterator
@@ -35,7 +36,7 @@ class CP2KPreprocessor(Iterator):
         if isinstance(base_dir, (str, Path)):
             self._inc_dirs = [Path(base_dir)]
         elif isinstance(base_dir, bytes):
-            self._inc_dirs = [Path(str(base_dir))]
+            self._inc_dirs = [Path(os.fsdecode(base_dir))]
         elif isinstance(base_dir, Sequence):
             self._inc_dirs = [Path(b) for b in base_dir]
         else:
