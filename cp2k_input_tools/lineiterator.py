@@ -35,11 +35,12 @@ class ContinuationLineIterator(Iterator):
         self._colnrs = []
         line = ""
 
-        for self._linenr, raw_line in self._fiter:
+        for linenr, raw_line in self._fiter:
+            self._linenr = linenr
             lstripped = raw_line.lstrip()  # CP2K consequently strips all left whitespace
             self._colnrs += [len(raw_line) - len(lstripped)]  # remember where the original colnr started
 
-            # Python has universal line endings (always only \n)
+            # Python has universal line endings (always just \n)
             line += lstripped.rstrip("\n")
 
             if line.endswith("\\"):
