@@ -15,7 +15,7 @@ repos:
     name: isort (pyi)
     types: [pyi]
 - repo: https://github.com/ambv/black
-  rev: 22.3.0
+  rev: 22.6.0
   hooks:
   - id: black
 - repo: https://github.com/pycqa/flake8
