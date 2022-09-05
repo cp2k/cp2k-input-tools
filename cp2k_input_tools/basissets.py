@@ -44,7 +44,11 @@ class BasisSetData(BaseModel, DatafileIterMixin, FromDictMixin, extra=Extra.forb
 
         # the ALL* tags indicate an all-electron basis set, but they might be ambigious,
         # ignore them if we found an explicit #(val.el.) spec already
-        if not n_el and any(kw in identifiers for kw in ("ALL", "ALLELECTRON")):
+        if (
+            not n_el
+            and any(kw in identifiers for kw in ("ALL", "ALLELECTRON"))
+            or any(identifier.endswith("-ae") for identifier in identifiers)
+        ):
             n_el = SYM2NUM[element]
 
         # The second line contains the number of sets, conversion to int ignores any whitespace

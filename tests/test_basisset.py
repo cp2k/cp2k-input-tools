@@ -1,6 +1,7 @@
 import pytest
 
 from cp2k_input_tools.basissets import BasisSetData
+from cp2k_input_tools.utils import SYM2NUM
 
 from . import TEST_DIR
 
@@ -229,3 +230,12 @@ def test_bset_from_dicts():
     # NOTE: they are not identical since the first one goes via the internal bit-representation of the float
     BasisSetData.parse_obj(floated_dict)
     BasisSetData.parse_obj(stringified_dict)
+
+
+def test_new_style_ae_basisset_import():
+    """Test that for new style -ae basis sets the number of electrons is properly set"""
+
+    with (TEST_DIR / "inputs" / "BASIS_MOLOPT.new_style_ae").open() as fhandle:
+        for entry in BasisSetData.datafile_iter(fhandle):
+            assert entry.n_el, "Number of electrons is not set"
+            assert entry.n_el == SYM2NUM[entry.element], "Invalid number of electrons"
