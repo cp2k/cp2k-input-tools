@@ -8,7 +8,7 @@ from typing import Iterator, List, Optional, Sequence, Tuple
 
 from pydantic import BaseModel, Extra
 
-from .utils import SYM2NUM, DatafileIterMixin, FromDictMixin, dformat
+from ..utils import SYM2NUM, DatafileIterMixin, FromDictMixin, dformat
 
 N_VAL_EL_MATCH = re.compile(r"q(?P<nvalel>\d+)$")
 

@@ -7,7 +7,7 @@ from typing import Iterator, List, Sequence
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from .utils import DatafileIterMixin, FromDictMixin, dformat
+from ..utils import DatafileIterMixin, FromDictMixin, dformat
 
 
 class PseudopotentialDataLocal(BaseModel):
