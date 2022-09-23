@@ -54,6 +54,18 @@ def test_datafile_lint(script_runner):
     assert ret.stdout == bsetfile.read_text()
 
 
+def test_datafile_lint_crystal(script_runner):
+    """check that reformatting a formatted file leaves it as is"""
+    bsetfile = INPUTS_DIR / "29_Cu.pob-DZVP-rev2"
+    ret = script_runner.run(
+        "cp2k-datafile-lint", "basisset", "--input-basis-format", "crystal", "--output-basis-format", "crystal", str(bsetfile)
+    )
+
+    assert ret.stderr == ""
+    assert ret.success
+    assert ret.stdout == bsetfile.read_text()
+
+
 def test_bset_from_dicts():
     floated_dict = {
         "element": "Au",
