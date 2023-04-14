@@ -9,24 +9,24 @@ jobs:
         python-version: ['3.9', '3.10', '3.11']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Set up python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
         architecture: x64
 
     - name: Install Poetry
-      run: pip install poetry==1.1.6
+      uses: snok/install-poetry@v1.3.1
 
     - name: Install dependencies
       run: poetry install -E yaml -E lsp
 
     - name: Run pytest
-      run: poetry run pytest --cov-report=xml --cov-report=term-missing --cov-append --cov=./ tests/
+      run: poetry run pytest --cov-report=xml --cov-report=term-missing --cov-append --cov=cp2k_input_tools tests/
 
-    - uses: codecov/codecov-action@v1
+    - uses: codecov/codecov-action@v3.1.0
       with:
-        file: ./coverage.xml
+        files: ./coverage.xml
         fail_ci_if_error: true

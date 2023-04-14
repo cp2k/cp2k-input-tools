@@ -18,10 +18,9 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.9,<4"
 transitions = "^0.7"
-pint = ">=0.15,<0.18"
+Pint = ">=0.15,<0.21"
 "ruamel.yaml" = {version = ">=0.16.5,<0.18.0", optional = true}
 pygls = {version = ">=0.10,<0.12", optional = true}
-dataclasses = {version = ">=0.7,~0", python = "~3.6"}
 Jinja2 = ">=2.11.3,<4.0.0"
 pydantic = "^1.8.2"
 click = ">=7.1.2,<9"
@@ -31,9 +30,9 @@ yaml = ["ruamel.yaml"]
 lsp = ["pygls"]
 
 [tool.poetry.dev-dependencies]
-pytest = "^7.0"
+pytest = "^7.1"
 pytest-cov = "^4.0"
-pytest-console-scripts = "^1.0"
+pytest-console-scripts = "^1.2"
 sphinx = "^5.0.0"
 sphinx-rtd-theme = "^1.0.0"
 taskipy = "^1.4"
