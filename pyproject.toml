@@ -16,7 +16,7 @@ classifiers = [
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.6.1,<4"
+python = ">=3.9,<4"
 transitions = "^0.7"
 pint = ">=0.15,<0.18"
 "ruamel.yaml" = {version = ">=0.16.5,<0.18.0", optional = true}
@@ -37,7 +37,7 @@ pytest-console-scripts = "^1.0"
 sphinx = "^5.0.0"
 sphinx-rtd-theme = "^1.0.0"
 taskipy = "^1.4"
-mypy = "^0.961"
+mypy = "^1.2.0"
 sphinx-click = "^3.0.1"
 
 [tool.poetry.scripts]
@@ -51,7 +51,7 @@ cp2k-datafile-lint = 'cp2k_input_tools.cli.datafile_lint:cp2k_datafile_lint'
 
 [tool.black]
 line-length = 132
-target_version = ['py36']
+target_version = ['py39']
 
 [tool.ruff]
 # Enable flake8-bugbear (`B`) and isort (`I`) rules.
