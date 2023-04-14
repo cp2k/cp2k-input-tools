@@ -17,7 +17,7 @@ class BasisSetCoefficients(BaseModel, extra=Extra.forbid):
     """A 'shell' in one single basis set"""
 
     n: int
-    l: List[Tuple[int, int]]
+    l: List[Tuple[int, int]]  # noqa: E741
     coefficients: List[List[Decimal]]
 
 

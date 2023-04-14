@@ -144,7 +144,6 @@ def test_no_lone_keyword_addition_for_section_params():
 
 
 def test_start_empty_lines():
-
     cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
 
     with open(TEST_DIR.joinpath("inputs/empty_lines.inp"), "r") as fhandle:

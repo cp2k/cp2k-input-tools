@@ -114,7 +114,6 @@ def test_fromcp2k_aiida_calc(script_runner):
 
 
 def test_fromcp2k_stdin(script_runner):
-
     with (INPUTS_DIR / "test01.inp").open() as stdin:
         ret = script_runner.run("fromcp2k", stdin=stdin)
 

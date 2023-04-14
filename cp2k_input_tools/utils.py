@@ -245,9 +245,9 @@ class FromDictMixin:
     @classmethod
     def from_dict(cls: Type[_T], data: Mapping[str, Any], type_hooks: Optional[Mapping[Type, Callable[[Any], Any]]] = None) -> _T:
         """Create a data instance from a nested dictionary"""
-        warnings.warn("This helper function will be removed, use '.parse_obj' instead.", PendingDeprecationWarning)
+        warnings.warn("This helper function will be removed, use '.parse_obj' instead.", PendingDeprecationWarning, stacklevel=1)
         if type_hooks:
-            warnings.warn("The 'type_hooks' attribute has been removed and is being ignored.", DeprecationWarning)
+            warnings.warn("The 'type_hooks' attribute has been removed and is being ignored.", DeprecationWarning, stacklevel=1)
 
         return cls.parse_obj(data)  # type: ignore
 
