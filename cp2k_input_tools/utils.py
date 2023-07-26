@@ -211,10 +211,10 @@ class DatafileIterMixin:
                 try:
                     yield cls.from_lines(line_buffer)
                 except ValueError as exc:
-                    newexc = chained_exception(ValueError, f"failed to parse block for: {line_buffer[0].strip()}", exc)
+                    msg = f"failed to parse block for: {line_buffer[0].strip()}"
                     if not keep_going:
-                        raise newexc
-                    errors.append(newexc)
+                        raise ValueError(msg) from exc
+                    errors.append(chained_exception(ValueError, msg, exc))
 
                 if post_comments:
                     if emit_comments:
