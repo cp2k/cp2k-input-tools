@@ -165,10 +165,10 @@ class PseudopotentialData(BaseModel, DatafileIterMixin, FromDictMixin, extra="fo
         if self.nlcc:
             yield f" NLCC {len(self.nlcc):{i_fmt}}"
 
-            r_nlcc_max_exp = -min(nlcc.r.as_tuple().exponent for nlcc in self.nlcc)
+            r_nlcc_max_exp = -min(int(nlcc.r.as_tuple().exponent) for nlcc in self.nlcc)
             r_nlcc_max_len = max(6 + r_nlcc_max_exp, *(len(f"{nlcc.r:.{r_nlcc_max_exp}f}") for nlcc in self.nlcc))
 
-            c_nlcc_max_exp = -min(nlcc.c.as_tuple().exponent for nlcc in self.nlcc)
+            c_nlcc_max_exp = -min(int(nlcc.c.as_tuple().exponent) for nlcc in self.nlcc)
             c_nlcc_max_len = max(6 + c_nlcc_max_exp, *(len(f"{nlcc.c:.{c_nlcc_max_exp}f}") for nlcc in self.nlcc))
 
             for nlcc in self.nlcc:

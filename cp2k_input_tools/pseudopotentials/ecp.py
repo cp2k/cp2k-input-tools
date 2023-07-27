@@ -17,9 +17,9 @@ class ECP(BaseModel, extra="forbid"):
     def crystal_format_line_iter(self) -> Iterator[str]:
         yield f"{self.Znuc} " + " ".join(str(m) for m in self.M)
 
-        exp_max_exp = -min(r[0].as_tuple().exponent for r in self.coefficients)
+        exp_max_exp = -min(int(r[0].as_tuple().exponent) for r in self.coefficients)
         exp_max_len = max(exp_max_exp, *(len(f"{r[0]:.{exp_max_exp}f}") for r in self.coefficients))
-        coeff_max_exp = -min(r[1].as_tuple().exponent for r in self.coefficients)
+        coeff_max_exp = -min(int(r[1].as_tuple().exponent) for r in self.coefficients)
         coeff_max_len = max(exp_max_exp, *(len(f"{r[1]:.{coeff_max_exp}f}") for r in self.coefficients))
 
         for row in self.coefficients:

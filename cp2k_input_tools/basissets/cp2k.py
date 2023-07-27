@@ -93,7 +93,7 @@ class BasisSetData(BaseModel, DatafileIterMixin, FromDictMixin, extra="forbid"):
         yield f"{self.element:2} {' '.join(n for n in self.identifiers)}"
         yield f" {len(self.blocks):2}"  # the number of sets this basis set contains
 
-        max_exp = -min(c.as_tuple().exponent for b in self.blocks for r in b.coefficients for c in r)
+        max_exp = -min(int(c.as_tuple().exponent) for b in self.blocks for r in b.coefficients for c in r)
         max_len = max(len(f"{c:.{max_exp}f}") for b in self.blocks for r in b.coefficients for c in r[1:])
         max_len_exp = max(9 + max_exp, *(len(str(r[0])) for b in self.blocks for r in b.coefficients))
 
