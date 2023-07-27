@@ -47,7 +47,7 @@ def test_check_formatting():
 def test_datafile_lint(script_runner):
     """check that reformatting a formatted file leaves it as is"""
     bsetfile = INPUTS_DIR / "BASIS_SET.formatted"
-    ret = script_runner.run("cp2k-datafile-lint", "basisset", str(bsetfile))
+    ret = script_runner.run(["cp2k-datafile-lint", "basisset", str(bsetfile)])
 
     assert ret.stderr == ""
     assert ret.success
@@ -58,7 +58,7 @@ def test_datafile_lint_crystal(script_runner):
     """check that reformatting a formatted file leaves it as is"""
     bsetfile = INPUTS_DIR / "29_Cu.pob-DZVP-rev2"
     ret = script_runner.run(
-        "cp2k-datafile-lint", "basisset", "--input-basis-format", "crystal", "--output-basis-format", "crystal", str(bsetfile)
+        ["cp2k-datafile-lint", "basisset", "--input-basis-format", "crystal", "--output-basis-format", "crystal", str(bsetfile)]
     )
 
     assert ret.stderr == ""
@@ -240,8 +240,8 @@ def test_bset_from_dicts():
     }
 
     # NOTE: they are not identical since the first one goes via the internal bit-representation of the float
-    BasisSetData.parse_obj(floated_dict)
-    BasisSetData.parse_obj(stringified_dict)
+    BasisSetData.model_validate(floated_dict)
+    BasisSetData.model_validate(stringified_dict)
 
 
 def test_new_style_ae_basisset_import():

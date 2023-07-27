@@ -6,14 +6,14 @@ import re
 from decimal import Decimal
 from typing import Iterator, List, Optional, Sequence, Tuple
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 
 from ..utils import SYM2NUM, DatafileIterMixin, FromDictMixin, dformat
 
 N_VAL_EL_MATCH = re.compile(r"q(?P<nvalel>\d+)$")
 
 
-class BasisSetCoefficients(BaseModel, extra=Extra.forbid):
+class BasisSetCoefficients(BaseModel, extra="forbid"):
     """A 'shell' in one single basis set"""
 
     n: int
@@ -21,7 +21,7 @@ class BasisSetCoefficients(BaseModel, extra=Extra.forbid):
     coefficients: List[List[Decimal]]
 
 
-class BasisSetData(BaseModel, DatafileIterMixin, FromDictMixin, extra=Extra.forbid):
+class BasisSetData(BaseModel, DatafileIterMixin, FromDictMixin, extra="forbid"):
     """Basis set data for a single element"""
 
     element: str

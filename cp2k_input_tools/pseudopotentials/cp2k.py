@@ -5,7 +5,7 @@ import itertools
 from decimal import Decimal, InvalidOperation
 from typing import Iterator, List, Sequence
 
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 from ..utils import DatafileIterMixin, FromDictMixin, dformat
 
@@ -14,9 +14,10 @@ class PseudopotentialDataLocal(BaseModel):
     r: Decimal
     coefficients: List[Decimal] = Field(..., alias="coeffs")
 
-    class Config:
-        extra = "forbid"
-        allow_population_by_field_name = True
+    model_config = {
+        "extra": "forbid",
+        "populate_by_name": True,
+    }
 
 
 class PseudopotentialDataNonLocal(BaseModel):
@@ -24,19 +25,18 @@ class PseudopotentialDataNonLocal(BaseModel):
     nproj: int
     coefficients: List[Decimal] = Field(..., alias="coeffs")
 
-    @root_validator
-    def check_coefficients(cls, values):
-        assert (
-            len(values["coefficients"]) == values["nproj"] * (values["nproj"] + 1) // 2
-        ), "invalid number of coefficients for non-local projection"
-        return values
+    @model_validator(mode="after")
+    def check_coefficients(cls, obj):
+        assert len(obj.coefficients) == obj.nproj * (obj.nproj + 1) // 2, "invalid number of coefficients for non-local projection"
+        return obj
 
-    class Config:
-        extra = "forbid"
-        allow_population_by_field_name = True
+    model_config = {
+        "extra": "forbid",
+        "populate_by_name": True,
+    }
 
 
-class PseudopotentialDataNLCC(BaseModel, extra=Extra.forbid):
+class PseudopotentialDataNLCC(BaseModel, extra="forbid"):
     """Nonlinear Core Correction data"""
 
     r: Decimal
@@ -44,7 +44,7 @@ class PseudopotentialDataNLCC(BaseModel, extra=Extra.forbid):
     c: Decimal
 
 
-class PseudopotentialData(BaseModel, DatafileIterMixin, FromDictMixin, extra=Extra.forbid):
+class PseudopotentialData(BaseModel, DatafileIterMixin, FromDictMixin, extra="forbid"):
     element: str
     identifiers: List[str]
     n_el: List[int]

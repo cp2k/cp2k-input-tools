@@ -1,12 +1,12 @@
 from decimal import Decimal
 from typing import Iterator, List, Tuple
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 
 from ..utils import NUM2SYM, dformat
 
 
-class ECP(BaseModel, extra=Extra.forbid):
+class ECP(BaseModel, extra="forbid"):
     """ECP for a single element"""
 
     Z: int
