@@ -19,7 +19,7 @@ readme = "README.md"
 python = ">=3.9,<4"
 transitions = ">=0.7,<0.10"
 Pint = ">=0.15,<0.23"
-"ruamel.yaml" = {version = ">=0.16.5,<0.18.0", optional = true}
+"ruamel.yaml" = {version = ">=0.16.5,<0.19.0", optional = true}
 pygls = {version = "^1.0.0", optional = true}
 Jinja2 = ">=2.11.3,<4.0.0"
 pydantic = ">=2,<3.0"
