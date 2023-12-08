@@ -385,11 +385,11 @@ class CP2KInputParserAiiDA(CP2KInputParserSimplified):
         # NOTE: some CP2K input files can not be represented in this form
 
         super().__init__(
+            *args,
             key_trafo=str.upper,
             multi_value_unpack=False,
             repeated_section_unpack=False,
             level_reduction_blacklist=["KIND"],
             default_keyword_symbol=" ",
-            *args,
             **kwargs,
         )

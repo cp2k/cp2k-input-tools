@@ -6,22 +6,22 @@ import re
 from decimal import Decimal
 from typing import Iterator, List, Optional, Sequence, Tuple
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 
-from .utils import SYM2NUM, DatafileIterMixin, FromDictMixin, dformat
+from ..utils import SYM2NUM, DatafileIterMixin, FromDictMixin, dformat
 
 N_VAL_EL_MATCH = re.compile(r"q(?P<nvalel>\d+)$")
 
 
-class BasisSetCoefficients(BaseModel, extra=Extra.forbid):
+class BasisSetCoefficients(BaseModel, extra="forbid"):
     """A 'shell' in one single basis set"""
 
     n: int
-    l: List[Tuple[int, int]]
+    l: List[Tuple[int, int]]  # noqa: E741
     coefficients: List[List[Decimal]]
 
 
-class BasisSetData(BaseModel, DatafileIterMixin, FromDictMixin, extra=Extra.forbid):
+class BasisSetData(BaseModel, DatafileIterMixin, FromDictMixin, extra="forbid"):
     """Basis set data for a single element"""
 
     element: str
@@ -44,7 +44,11 @@ class BasisSetData(BaseModel, DatafileIterMixin, FromDictMixin, extra=Extra.forb
 
         # the ALL* tags indicate an all-electron basis set, but they might be ambigious,
         # ignore them if we found an explicit #(val.el.) spec already
-        if not n_el and any(kw in identifiers for kw in ("ALL", "ALLELECTRON")):
+        if (
+            not n_el
+            and any(kw in identifiers for kw in ("ALL", "ALLELECTRON"))
+            or any(identifier.endswith("-ae") for identifier in identifiers)
+        ):
             n_el = SYM2NUM[element]
 
         # The second line contains the number of sets, conversion to int ignores any whitespace
@@ -89,7 +93,7 @@ class BasisSetData(BaseModel, DatafileIterMixin, FromDictMixin, extra=Extra.forb
         yield f"{self.element:2} {' '.join(n for n in self.identifiers)}"
         yield f" {len(self.blocks):2}"  # the number of sets this basis set contains
 
-        max_exp = -min(c.as_tuple().exponent for b in self.blocks for r in b.coefficients for c in r)
+        max_exp = -min(int(c.as_tuple().exponent) for b in self.blocks for r in b.coefficients for c in r)
         max_len = max(len(f"{c:.{max_exp}f}") for b in self.blocks for r in b.coefficients for c in r[1:])
         max_len_exp = max(9 + max_exp, *(len(str(r[0])) for b in self.blocks for r in b.coefficients))
 

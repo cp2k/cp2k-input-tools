@@ -1,11 +1,9 @@
 from typing import Union
 
-from pygls.lsp.methods import (
+from lsprotocol.types import (
     TEXT_DOCUMENT_DID_CHANGE,
     TEXT_DOCUMENT_DID_CLOSE,
     TEXT_DOCUMENT_DID_OPEN,
-)
-from pygls.lsp.types import (
     Diagnostic,
     DidChangeTextDocumentParams,
     DidCloseTextDocumentParams,
@@ -85,5 +83,5 @@ def setup_cp2k_ls_server(server):
         _validate(ls, params)
 
 
-cp2k_server = LanguageServer()
+cp2k_server = LanguageServer("cp2k-lsp", "v0.1")
 setup_cp2k_ls_server(cp2k_server)

@@ -22,7 +22,6 @@ def tocp2k(fhandle, yaml):
 
         tree = yaml.load(fhandle)
     else:
-
         tree = json.load(fhandle)
 
     cp2k_generator = CP2KInputGenerator()

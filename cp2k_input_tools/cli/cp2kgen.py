@@ -19,7 +19,10 @@ from . import base_dir_option, canonical_option, fhandle_argument, var_values_op
 @base_dir_option
 @canonical_option
 @var_values_option
-def cp2kgen(fhandle, expressions, base_dir, canonical, var_values):
+@click.option(
+    "zipped", "--zip/--no-zip", default=False, help="whether multiple expressions are zip'ed or a cartesian product is built"
+)
+def cp2kgen(fhandle, expressions, base_dir, canonical, var_values, zipped):
     """
     Generates variations of the given CP2K input file
 
@@ -55,7 +58,12 @@ def cp2kgen(fhandle, expressions, base_dir, canonical, var_values):
     onamesuffix = fpath.suffix
 
     # first generate a list of list of tuples [ [(key/a, 10), (key/a, 20), ...], [(key/b, 100), ...], ...]
-    for substtuple in itertools.product(*[[(k, v) for v in values] for k, values in substitutions]):
+    if zipped:
+        iter_func = zip
+    else:
+        iter_func = itertools.product
+
+    for substtuple in iter_func(*[[(k, v) for v in values] for k, values in substitutions]):
         # ... then iterate over the cartesian product
         curr_tree = deepcopy(tree)  # create a full copy of the initial tree
         onameparts = []  # output name parts

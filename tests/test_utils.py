@@ -20,3 +20,9 @@ def test_dformat():
     assert utils.dformat(d3, 10, 16) == "    1.23        "
     assert utils.dformat(d4, 10, 16) == "    0.0000000000"
     assert utils.dformat(d5, 10, 16) == "    0.0000000001"
+
+
+def test_sym2num_num2sym():
+    assert utils.SYM2NUM["H"] == 1
+    assert utils.SYM2NUM["Og"] == 118
+    assert all(sym == utils.NUM2SYM[Z] for sym, Z in utils.SYM2NUM.items())

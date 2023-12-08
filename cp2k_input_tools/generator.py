@@ -62,7 +62,6 @@ class CP2KInputGenerator:
         return section
 
     def _get_keyword(self, name, section_node):
-
         for kw in section_node.iterfind("./KEYWORD"):
             if name.upper() in [e.text for e in kw.iterfind("./NAME")]:
                 break
