@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.9.0] - 2023-12-08
+
+* basissets: add support for new-style All-Electron basis sets
+* cp2kgen: add `--zip` option, similar to Python's zip function
+* reorganize basisset and pseudo datatypes dir (although should remain compatible)
+* basissets: add parsing and converting options from CRYSTAL07 format
+* reformat code as part of the move from pyflake to ruff
+* bump minimal required Python version to 3.9
+* update and fix LSP implementation
+* update to Pydantic 2+
+* resolved some code smells 
+
 ## [0.8.2] - 2022-04-21
 
 * fix issue with `base_dir` and click v7's `path_type`, thanks to @yakutovicha for the initial fix
