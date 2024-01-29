@@ -30,7 +30,7 @@ yaml = ["ruamel.yaml"]
 lsp = ["pygls"]
 
 [tool.poetry.dev-dependencies]
-pytest = "^7.1"
+pytest = "^8.0"
 pytest-cov = "^4.0"
 pytest-console-scripts = "^1.4"
 sphinx = "^7.2.6"
