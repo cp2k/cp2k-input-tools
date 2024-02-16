@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.9.1] - 2024-02-16
+
+ * chores
+
 ## [0.9.0] - 2023-12-08
 
 * basissets: add support for new-style All-Electron basis sets
