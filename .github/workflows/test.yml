@@ -6,19 +6,19 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         architecture: x64
 
     - name: Install Poetry
-      uses: snok/install-poetry@v1.3.1
+      uses: snok/install-poetry@v1.3.4
 
     - name: Install dependencies
       run: poetry install -E yaml -E lsp
@@ -26,7 +26,8 @@ jobs:
     - name: Run pytest
       run: poetry run pytest --cov-report=xml --cov-report=term-missing --cov-append --cov=cp2k_input_tools tests/
 
-    - uses: codecov/codecov-action@v3.1.0
+    - uses: codecov/codecov-action@v4.0.1
       with:
         files: ./coverage.xml
         fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}
