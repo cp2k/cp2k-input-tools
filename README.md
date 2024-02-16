@@ -18,7 +18,7 @@ For a description of the JSON/YAML formats used, see below.
 
 ## Requirements
 
-* Python 3.6+
+* Python 3.9+
 * https://pypi.org/project/transitions/
 * https://pypi.org/project/pint/
 * optional: https://pypi.org/project/ruamel.yaml/ for YAML support
