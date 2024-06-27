@@ -26,8 +26,7 @@ jobs:
     - name: Run pytest
       run: poetry run pytest --cov-report=xml --cov-report=term-missing --cov-append --cov=cp2k_input_tools tests/
 
-    - uses: codecov/codecov-action@v4.0.1
+    - uses: codecov/codecov-action@v4.5.0
       with:
         files: ./coverage.xml
-        fail_ci_if_error: true
         token: ${{ secrets.CODECOV_TOKEN }}
