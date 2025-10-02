@@ -25,29 +25,29 @@ def test_single_pseudo_import():
     assert pseudo.non_local[1].nproj == 1
 
 
-def test_single_pseudo_parse_obj_aliased():
+def test_single_pseudo_model_validate_aliased():
     """Check that for local/non_local data we can also use the abbrev 'coeffs' for loading"""
     with (TEST_DIR / "inputs" / "GTH_POTENTIALS.Cl").open() as fhandle:
         pseudo = PseudopotentialData.from_lines([line for line in fhandle])
 
     assert pseudo.local.coefficients
-    asdict = pseudo.dict()
+    asdict = pseudo.model_dump()
 
     asdict["local"]["coeffs"] = asdict["local"].pop("coefficients")
-    reloaded = PseudopotentialData.parse_obj(asdict)
+    reloaded = PseudopotentialData.model_validate(asdict)
 
     assert reloaded == pseudo
 
 
-def test_single_pseudo_parse_obj_nlcc_empty_default():
+def test_single_pseudo_model_validate_nlcc_empty_default():
     """Check that for local/non_local data we can also use the abbrev 'coeffs' for loading"""
     with (TEST_DIR / "inputs" / "GTH_POTENTIALS.Cl").open() as fhandle:
         pseudo = PseudopotentialData.from_lines([line for line in fhandle])
 
     assert pseudo.nlcc is not None
-    asdict = pseudo.dict()
+    asdict = pseudo.model_dump()
     asdict.pop("nlcc")
-    reloaded = PseudopotentialData.parse_obj(asdict)
+    reloaded = PseudopotentialData.model_validate(asdict)
     assert reloaded.nlcc == []
 
 
@@ -56,7 +56,7 @@ def test_single_pseudo_from_dict_deprecated():
     with (TEST_DIR / "inputs" / "GTH_POTENTIALS.Cl").open() as fhandle:
         pseudo = PseudopotentialData.from_lines([line for line in fhandle])
 
-    asdict = pseudo.dict()
+    asdict = pseudo.model_dump()
     with pytest.deprecated_call():
         reloaded = PseudopotentialData.from_dict(asdict)
 
@@ -68,7 +68,7 @@ def test_single_pseudo_from_dict_type_map_deprecated():
     with (TEST_DIR / "inputs" / "GTH_POTENTIALS.Cl").open() as fhandle:
         pseudo = PseudopotentialData.from_lines([line for line in fhandle])
 
-    asdict = pseudo.dict()
+    asdict = pseudo.model_dump()
     asdict["local"]["coeffs"] = asdict["local"].pop("coefficients")
 
     def rename(data):
@@ -91,7 +91,7 @@ def test_single_pseudo_roundtrip():
 def test_datafile_lint(script_runner):
     """check that reformatting a formatted file leaves it as is"""
     pseudofile = INPUTS_DIR / "POTENTIAL.formatted"
-    ret = script_runner.run("cp2k-datafile-lint", "pseudo", str(pseudofile))
+    ret = script_runner.run(["cp2k-datafile-lint", "pseudo", str(pseudofile)])
 
     assert ret.stderr == ""
     assert ret.success
@@ -107,7 +107,7 @@ def test_datafile_lint_inplace(script_runner):
         pseudofile = pathlib.Path(tmpdir).joinpath("pseudos")
         pseudofile.write_text(content)
 
-        ret = script_runner.run("cp2k-datafile-lint", "--inplace", "pseudo", str(pseudofile))
+        ret = script_runner.run(["cp2k-datafile-lint", "--inplace", "pseudo", str(pseudofile)])
 
         assert ret.stderr == ""
         assert ret.success

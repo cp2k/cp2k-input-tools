@@ -6,7 +6,7 @@ import re
 from decimal import Decimal
 from typing import Iterator, List, Optional, Sequence, Tuple
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 
 from ..pseudopotentials.ecp import ECP
 from ..utils import NUM2SYM, DatafileIterMixin, FromDictMixin
@@ -14,7 +14,7 @@ from ..utils import NUM2SYM, DatafileIterMixin, FromDictMixin
 BLOCK_MATCH = re.compile(r"^\s*\d+\s+\d+\s*$")
 
 
-class BasisSetCoefficients(BaseModel, extra=Extra.forbid):
+class BasisSetCoefficients(BaseModel, extra="forbid"):
     """A 'shell' in one single basis set"""
 
     shell: int  # 0: s, 1: s and p, 2: p, 3: d, 4:f
@@ -23,7 +23,7 @@ class BasisSetCoefficients(BaseModel, extra=Extra.forbid):
     coefficients: List[Tuple[Decimal, Decimal]]
 
 
-class BasisSetData(BaseModel, DatafileIterMixin, FromDictMixin, extra=Extra.forbid):
+class BasisSetData(BaseModel, DatafileIterMixin, FromDictMixin, extra="forbid"):
     """Basis set data for a single element"""
 
     Z: int
