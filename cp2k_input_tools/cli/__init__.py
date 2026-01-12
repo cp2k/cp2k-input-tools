@@ -80,3 +80,12 @@ def var_values_option(func):
         callback=click_validate_kv,
         help="preset the value for a CP2K preprocessor variable",
     )(func)
+
+
+def xml_option(func):
+    return click.option(
+        "--xml",
+        "-x",
+        type=click.Path(exists=True, dir_okay=False),
+        help="Use alternative XML format specification file"
+    )(func)

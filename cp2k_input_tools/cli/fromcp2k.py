@@ -12,7 +12,7 @@ from cp2k_input_tools.parser import (
     CP2KInputParserSimplified,
 )
 
-from . import base_dir_option, canonical_option, fhandle_argument, var_values_option
+from . import base_dir_option, canonical_option, fhandle_argument, var_values_option, xml_option
 
 
 def _key_trafo(string):
@@ -44,6 +44,7 @@ class Trafos(Enum):
     help="transformation applied to key and section names",
 )
 @var_values_option
+@xml_option
 def fromcp2k(fhandle, oformat, canonical, base_dir, trafo, var_values):
     """Convert CP2K input to JSON (default), YAML or an aiida-cp2k run script template"""
 
