@@ -1,7 +1,7 @@
 import functools
 import json
 import sys
-from enum import Enum
+from enum import Enum, member
 from typing import Mapping, MutableSequence
 
 import click
@@ -23,9 +23,9 @@ def _key_trafo(string):
 
 class Trafos(Enum):
     # see https://stackoverflow.com/a/40486992 need to wrap functions in function objects
-    auto = functools.partial(_key_trafo)
-    lower = functools.partial(str.lower)
-    upper = functools.partial(str.upper)
+    auto = member(functools.partial(_key_trafo))
+    lower = member(functools.partial(str.lower))
+    upper = member(functools.partial(str.upper))
 
 
 @click.command()
@@ -45,8 +45,10 @@ class Trafos(Enum):
 )
 @var_values_option
 @xml_option
-def fromcp2k(fhandle, oformat, canonical, base_dir, trafo, var_values):
+def fromcp2k(fhandle, oformat, canonical, base_dir, trafo, var_values, xml):
     """Convert CP2K input to JSON (default), YAML or an aiida-cp2k run script template"""
+
+    print(f"    Use XML definition '{xml}'")
 
     if oformat == "aiida-cp2k-calc":
         if canonical:
