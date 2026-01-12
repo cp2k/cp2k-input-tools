@@ -1,6 +1,7 @@
 import contextlib
 import pathlib
 import sys
+
 import click
 
 
@@ -87,5 +88,5 @@ def xml_option(func):
         "-x",
         type=click.Path(exists=True, dir_okay=False, path_type=pathlib.Path),
         help="Use alternative XML format specification file",
-        default=None
+        default=None,
     )(func)

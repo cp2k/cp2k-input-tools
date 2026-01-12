@@ -68,7 +68,7 @@ class CP2KInputParser:
         """
 
         if None == xmlspec:
-            xmlspec= DEFAULT_CP2K_INPUT_XML
+            xmlspec = DEFAULT_CP2K_INPUT_XML
 
         # schema:
         self._spec = ET.parse(xmlspec)
