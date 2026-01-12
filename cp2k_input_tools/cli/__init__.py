@@ -86,5 +86,6 @@ def xml_option(func):
         "--xml",
         "-x",
         type=click.Path(exists=True, dir_okay=False, path_type=pathlib.Path),
-        help="Use alternative XML format specification file"
+        help="Use alternative XML format specification file",
+        default=None
     )(func)

@@ -58,11 +58,11 @@ def fromcp2k(fhandle, oformat, canonical, base_dir, trafo, var_values, xml):
                 "Any key transformation function other than 'auto' is ignored when generating an aiida-cp2k run script template",
                 file=sys.stderr,
             )
-        cp2k_parser = CP2KInputParserAiiDA(base_dir=base_dir)
+        cp2k_parser = CP2KInputParserAiiDA(xmlspec=xml,base_dir=base_dir)
     elif canonical:
-        cp2k_parser = CP2KInputParser(base_dir=base_dir, key_trafo=trafo.value)
+        cp2k_parser = CP2KInputParser(xmlspec=xml,base_dir=base_dir, key_trafo=trafo.value)
     else:
-        cp2k_parser = CP2KInputParserSimplified(base_dir=base_dir, key_trafo=trafo.value)
+        cp2k_parser = CP2KInputParserSimplified(xmlspec=xml,base_dir=base_dir, key_trafo=trafo.value)
 
     tree = cp2k_parser.parse(fhandle, dict(var_values))
 
