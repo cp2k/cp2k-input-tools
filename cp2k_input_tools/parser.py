@@ -58,7 +58,7 @@ class Section:
 
 
 class CP2KInputParser:
-    def __init__(self, xmlspec=DEFAULT_CP2K_INPUT_XML, base_dir=".", key_trafo=str.lower):
+    def __init__(self, xmlspec=None, base_dir=".", key_trafo=str.lower):
         """
         The CP2K input parser.
 
@@ -66,6 +66,9 @@ class CP2KInputParser:
         :param base_dir: The base directory to be used for resolving `@include` directives
         :param key_trafo: A function object used for mangling key names, must treat input case-insensitive
         """
+
+        if not xmlspec:
+            xmlspec = DEFAULT_CP2K_INPUT_XML
 
         # schema:
         self._spec = ET.parse(xmlspec)

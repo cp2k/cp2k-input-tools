@@ -4,6 +4,17 @@ import sys
 
 import click
 
+"""
+Environment variable that specifies the path to an alternative CP2K input XML definition file.
+
+When this environment variable is set, it overrides the default XML definition file
+location used by the application. The value should be a path to a valid XML file
+that defines the CP2K input format specification.
+
+The --xml command line option takes precedence of this environment variable, however.
+"""
+ENV_VAR_FOR_CP2K_INPUT_XML = "FROMCP2K_XML_DEFINITION"
+
 
 @contextlib.contextmanager
 def smart_open(filename=None, mode="r"):
@@ -79,4 +90,13 @@ def var_values_option(func):
         type=click.UNPROCESSED,
         callback=click_validate_kv,
         help="preset the value for a CP2K preprocessor variable",
+    )(func)
+
+
+def xml_option(func):
+    return click.option(
+        "--xml",
+        type=click.Path(exists=True, dir_okay=False, path_type=pathlib.Path),
+        help="Use alternative XML format specification file",
+        default=None,
     )(func)
