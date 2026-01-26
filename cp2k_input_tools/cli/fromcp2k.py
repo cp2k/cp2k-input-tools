@@ -48,7 +48,7 @@ class Trafos(Enum):
 def fromcp2k(fhandle, oformat, canonical, base_dir, trafo, var_values, xml):
     """Convert CP2K input to JSON (default), YAML or an aiida-cp2k run script template"""
 
-    print(f"    Use XML definition '{xml}'")
+    print(f"    Using XML definition '{xml}'", file=sys.stderr)
 
     if oformat == "aiida-cp2k-calc":
         if canonical:
