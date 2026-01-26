@@ -21,6 +21,7 @@ def _key_trafo(string):
         return string.upper()
     return string.lower()
 
+
 try:
     # Should be used in Python >= 3.11, needed in >= 3.14 to avoid a FutureWarning
     from enum import member
