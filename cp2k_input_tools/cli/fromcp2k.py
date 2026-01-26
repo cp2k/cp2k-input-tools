@@ -52,7 +52,8 @@ def fromcp2k(fhandle, oformat, canonical, base_dir, trafo, var_values, xml):
     if not xml:
         xml = os.environ.get(ENV_VAR_FOR_CP2K_INPUT_XML)
 
-    print(f"    Using XML definition '{xml}'", file=sys.stderr)
+    if xml:
+        print(f"    Using XML definition '{xml}'", file=sys.stderr)
 
     if oformat == "aiida-cp2k-calc":
         if canonical:
