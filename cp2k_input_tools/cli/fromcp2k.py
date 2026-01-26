@@ -1,6 +1,6 @@
-import os
 import functools
 import json
+import os
 import sys
 from enum import Enum, member
 from typing import Mapping, MutableSequence
@@ -13,7 +13,7 @@ from cp2k_input_tools.parser import (
     CP2KInputParserSimplified,
 )
 
-from . import base_dir_option, canonical_option, fhandle_argument, var_values_option, xml_option, ENV_VAR_FOR_CP2K_INPUT_XML
+from . import ENV_VAR_FOR_CP2K_INPUT_XML, base_dir_option, canonical_option, fhandle_argument, var_values_option, xml_option
 
 
 def _key_trafo(string):

@@ -13,7 +13,7 @@ that defines the CP2K input format specification.
 
 The --xml command line option takes precedence of this environment variable, however.
 """
-ENV_VAR_FOR_CP2K_INPUT_XML="FROMCP2K_XML_DEFINITION"
+ENV_VAR_FOR_CP2K_INPUT_XML = "FROMCP2K_XML_DEFINITION"
 
 
 @contextlib.contextmanager
