@@ -67,7 +67,7 @@ class CP2KInputParser:
         :param key_trafo: A function object used for mangling key names, must treat input case-insensitive
         """
 
-        if xmlspec:
+        if not xmlspec:
             xmlspec = DEFAULT_CP2K_INPUT_XML
 
         # schema:
