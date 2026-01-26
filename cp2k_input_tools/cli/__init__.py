@@ -85,7 +85,6 @@ def var_values_option(func):
 def xml_option(func):
     return click.option(
         "--xml",
-        "-x",
         type=click.Path(exists=True, dir_okay=False, path_type=pathlib.Path),
         help="Use alternative XML format specification file",
         default=None,
