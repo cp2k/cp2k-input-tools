@@ -27,7 +27,9 @@ class PseudopotentialDataNonLocal(BaseModel):
 
     @model_validator(mode="after")
     def check_coefficients(self):
-        assert len(self.coefficients) == self.nproj * (self.nproj + 1) // 2, "invalid number of coefficients for non-local projection"
+        assert (
+            len(self.coefficients) == self.nproj * (self.nproj + 1) // 2
+        ), "invalid number of coefficients for non-local projection"
         return self
 
     model_config = {
