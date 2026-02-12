@@ -22,7 +22,7 @@ def _key_trafo(string):
     return string.lower()
 
 
-if sys.version_info >= (3, 14):
+if sys.version_info >= (3, 13):
     from enum import member
 else:
 
