@@ -22,11 +22,10 @@ def _key_trafo(string):
     return string.lower()
 
 
-try:
-    # Should be used in Python >= 3.11, needed in >= 3.14 to avoid a FutureWarning
+if sys.version_info >= (3, 14):
     from enum import member
-except ImportError:
-    # Python 3.9 and earlier: Define 'member' as an identity function
+else:
+
     def member(value):
         return value
 
