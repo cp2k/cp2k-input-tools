@@ -91,7 +91,7 @@ Options:
 ```
 
 The XML format specification file can also be specified with the environment
-variable ENV_VAR_FOR_CP2K_INPUT_XML. If --xml is specified then it has precedency.
+variable FROMCP2K_XML_DEFINITION. If --xml is specified then it has precedency.
 
 Generate an [aiida-cp2k](https://github.com/aiidateam/aiida-cp2k) template run script:
 
