@@ -16,7 +16,7 @@ classifiers = [
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4"
+python = ">=3.10,<4"
 transitions = ">=0.7,<0.10"
 Pint = ">=0.15,<0.25"
 "ruamel.yaml" = {version = ">=0.16.5,<0.19.0", optional = true}
@@ -50,14 +50,14 @@ cp2k-datafile-lint = 'cp2k_input_tools.cli.datafile_lint:cp2k_datafile_lint'
 
 [tool.black]
 line-length = 132
-target_version = ['py39']
+target_version = ['py310']
 
 [tool.ruff]
 # Enable flake8-bugbear (`B`) and isort (`I`) rules.
 select = ["E", "F", "B", "I"]
 line-length = 136
-# ignore missing strict= argument for zip for py<3.10 compat
-ignore = ["B905"]
+
+
 
 [tool.taskipy.tasks]
 test = "pytest"
