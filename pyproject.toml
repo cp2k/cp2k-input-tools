@@ -36,7 +36,7 @@ pytest-console-scripts = "^1.4"
 sphinx = "^7.2.6"
 sphinx-rtd-theme = "^2.0.0"
 taskipy = "^1.4"
-mypy = "^1.2.0"
+mypy = "^2.0.0"
 sphinx-click = "^6.0.0"
 
 [tool.poetry.scripts]
