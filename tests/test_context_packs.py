@@ -190,7 +190,7 @@ class TestContextPackIntegration:
         """Cursor context should have expected structure."""
         text = "&GLOBAL\n  RUN_TYPE ENERGY\n&END GLOBAL"
         pack = get_context_pack(text, line=1, char=10, uri="file://test.inp")
-        
+
         if pack.cursor:
             # Should be a dict with relevant context
             assert isinstance(pack.cursor, dict)
@@ -200,7 +200,7 @@ class TestContextPackIntegration:
         """Completions should be list of completion items."""
         text = "&GLOBAL\n  RUN_TYPE \n&END GLOBAL"
         pack = get_context_pack(text, line=1, char=12, uri="file://test.inp")
-        
+
         assert isinstance(pack.completions, list)
         # Each completion should be a dict
         for completion in pack.completions:
@@ -210,7 +210,7 @@ class TestContextPackIntegration:
         """Diagnostics should be list of diagnostic items."""
         text = "&GLOBAL\n  RUN_TYPE ENERGY\n&END GLOBAL"
         pack = get_context_pack(text, line=0, char=0, uri="file://test.inp")
-        
+
         assert isinstance(pack.diagnostics, list)
         # Each diagnostic should be a dict
         for diag in pack.diagnostics:
@@ -220,7 +220,7 @@ class TestContextPackIntegration:
         """Hover should provide information when cursor is on known element."""
         text = "&GLOBAL\n  RUN_TYPE ENERGY\n&END GLOBAL"
         pack = get_context_pack(text, line=1, char=8, uri="file://test.inp")
-        
+
         # hover may be None or dict
         if pack.hover:
             assert isinstance(pack.hover, dict)
@@ -232,6 +232,7 @@ class TestCLIIntegration:
     def test_context_command_exists(self):
         """Context command should be available in CLI."""
         import subprocess
+
         result = subprocess.run(
             ["python3", "-m", "cp2k_input_tools.cli.main", "context", "--help"],
             capture_output=True,
@@ -242,9 +243,9 @@ class TestCLIIntegration:
 
     def test_context_command_output_json(self):
         """Context command should output valid JSON."""
+        import json
         import subprocess
         import tempfile
-        import json
 
         # Create temporary test file
         with tempfile.NamedTemporaryFile(mode="w", suffix=".inp", delete=False) as f:
@@ -257,10 +258,10 @@ class TestCLIIntegration:
                 capture_output=True,
                 text=True,
             )
-            
+
             # Should succeed
             assert result.returncode == 0
-            
+
             # Should be valid JSON
             data = json.loads(result.stdout)
             assert "cursor" in data
@@ -270,13 +271,13 @@ class TestCLIIntegration:
             assert "timestamp" in data
         finally:
             import os
+
             os.unlink(temp_path)
 
     def test_context_command_with_pretty(self):
         """Context command with --pretty should format output."""
         import subprocess
         import tempfile
-        import json
 
         # Create temporary test file
         with tempfile.NamedTemporaryFile(mode="w", suffix=".inp", delete=False) as f:
@@ -289,13 +290,14 @@ class TestCLIIntegration:
                 capture_output=True,
                 text=True,
             )
-            
+
             # Should succeed
             assert result.returncode == 0
-            
+
             # Pretty output should have indentation (multiple lines)
             lines = result.stdout.strip().split("\n")
             assert len(lines) > 1  # Pretty JSON has multiple lines
         finally:
             import os
+
             os.unlink(temp_path)

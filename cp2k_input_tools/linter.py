@@ -15,13 +15,13 @@ import difflib
 import pathlib
 import re
 import xml.etree.ElementTree as ET
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import Dict, List, Optional, Set, Tuple
 
 from . import DEFAULT_CP2K_INPUT_XML
-from .validator import Diagnostic, ValidationResult
+from .validator import Diagnostic
 
 # Lint rule codes
 RULE_MISSPELLED_KEYWORD = "lint/misspelled-keyword"
@@ -105,6 +105,7 @@ GEO_OPT_MAX_ITER_LOW = 5  # very few iterations for geometry optimization
 @dataclass
 class SectionNode:
     """Represents a parsed section with its context."""
+
     name: str
     keywords: List[Tuple[str, str, int]] = field(default_factory=list)  # (name, value, line)
     subsections: List["SectionNode"] = field(default_factory=list)
@@ -146,7 +147,7 @@ def _get_all_schema_sections() -> Set[str]:
 
 def _parse_sections(text: str) -> List[SectionNode]:
     """Parse CP2K input text into a section tree."""
-    lines = text.split('\n')
+    lines = text.split("\n")
     root = SectionNode(name="/", line=0)
     stack = [root]
 
@@ -207,7 +208,7 @@ def _fuzzy_match(keyword: str, valid_keywords: Set[str], threshold: float = 0.7)
 def lint_keywords_misspelled(text: str, valid_keywords: Set[str]) -> List[Diagnostic]:
     """Detect potentially misspelled keywords by fuzzy matching against schema."""
     diagnostics = []
-    lines = text.split('\n')
+    lines = text.split("\n")
     section_re = re.compile(r"^(\s*)&(\w[\w\-_]*)\s*", re.IGNORECASE)
     end_re = re.compile(r"^(\s*)&END\s+(\w[\w\-_]*)", re.IGNORECASE)
     keyword_re = re.compile(r"^(\s*)(\w[\w\-_]*)\s+(.*)")
@@ -226,14 +227,16 @@ def lint_keywords_misspelled(text: str, valid_keywords: Set[str]) -> List[Diagno
             if kw_name not in valid_keywords:
                 suggestion = _fuzzy_match(kw_name, valid_keywords)
                 if suggestion:
-                    diagnostics.append(Diagnostic(
-                        severity="warning",
-                        source="cp2k-lint",
-                        code=RULE_MISSPELLED_KEYWORD,
-                        message=f"Unknown keyword '{kw_name}'. Did you mean '{suggestion}'?",
-                        line=i,
-                        column=kw_match.start(2),
-                    ))
+                    diagnostics.append(
+                        Diagnostic(
+                            severity="warning",
+                            source="cp2k-lint",
+                            code=RULE_MISSPELLED_KEYWORD,
+                            message=f"Unknown keyword '{kw_name}'. Did you mean '{suggestion}'?",
+                            line=i,
+                            column=kw_match.start(2),
+                        )
+                    )
     return diagnostics
 
 
@@ -245,14 +248,16 @@ def lint_invalid_nesting(text: str, valid_sections: Set[str]) -> List[Diagnostic
     def check_section(node: SectionNode, parent_name: str):
         valid_parents = VALID_SECTION_PARENTS.get(node.name)
         if valid_parents is not None and parent_name not in valid_parents:
-            diagnostics.append(Diagnostic(
-                severity="error",
-                source="cp2k-lint",
-                code=RULE_INVALID_NESTING,
-                message=f"Section '&{node.name}' is not valid under '&{parent_name}'. "
-                        f"Expected one of: {', '.join(sorted(valid_parents))}",
-                line=node.line,
-            ))
+            diagnostics.append(
+                Diagnostic(
+                    severity="error",
+                    source="cp2k-lint",
+                    code=RULE_INVALID_NESTING,
+                    message=f"Section '&{node.name}' is not valid under '&{parent_name}'. "
+                    f"Expected one of: {', '.join(sorted(valid_parents))}",
+                    line=node.line,
+                )
+            )
         for sub in node.subsections:
             check_section(sub, node.name)
 
@@ -276,14 +281,16 @@ def lint_duplicates(text: str) -> List[Diagnostic]:
                 if count > 1:
                     # Find the line of the second occurrence
                     lines = [kw[2] for kw in node.keywords if kw[0] == kw_name]
-                    diagnostics.append(Diagnostic(
-                        severity="warning",
-                        source="cp2k-lint",
-                        code=RULE_DUPLICATE_KEYWORD,
-                        message=f"Keyword '{kw_name}' appears {count} times in section '&{node.name}'. "
-                                f"This may be unintended.",
-                        line=lines[1] if len(lines) > 1 else lines[0],
-                    ))
+                    diagnostics.append(
+                        Diagnostic(
+                            severity="warning",
+                            source="cp2k-lint",
+                            code=RULE_DUPLICATE_KEYWORD,
+                            message=f"Keyword '{kw_name}' appears {count} times in section '&{node.name}'. "
+                            f"This may be unintended.",
+                            line=lines[1] if len(lines) > 1 else lines[0],
+                        )
+                    )
 
         # Check for duplicate non-repeating sections
         sec_names = [sub.name for sub in node.subsections]
@@ -292,14 +299,15 @@ def lint_duplicates(text: str) -> List[Diagnostic]:
             if count > 1 and sec_name not in REPEATABLE_SECTIONS:
                 # Find the line of the second occurrence
                 lines = [sub.line for sub in node.subsections if sub.name == sec_name]
-                diagnostics.append(Diagnostic(
-                    severity="warning",
-                    source="cp2k-lint",
-                    code=RULE_DUPLICATE_SECTION,
-                    message=f"Section '&{sec_name}' appears {count} times under '&{node.name}'. "
-                            f"This may be unintended.",
-                    line=lines[1] if len(lines) > 1 else lines[0],
-                ))
+                diagnostics.append(
+                    Diagnostic(
+                        severity="warning",
+                        source="cp2k-lint",
+                        code=RULE_DUPLICATE_SECTION,
+                        message=f"Section '&{sec_name}' appears {count} times under '&{node.name}'. " f"This may be unintended.",
+                        line=lines[1] if len(lines) > 1 else lines[0],
+                    )
+                )
 
         for sub in node.subsections:
             check_duplicates(sub)
@@ -313,7 +321,7 @@ def lint_duplicates(text: str) -> List[Diagnostic]:
 def lint_config_smells(text: str) -> List[Diagnostic]:
     """Detect configuration smells like very low cutoff, few SCF iterations, etc."""
     diagnostics = []
-    lines = text.split('\n')
+    lines = text.split("\n")
     keyword_re = re.compile(r"^(\s*)(\w[\w\-_]*)\s+(.*)", re.IGNORECASE)
 
     current_section_path = []  # Track current section context
@@ -350,32 +358,36 @@ def lint_config_smells(text: str) -> List[Diagnostic]:
             if kw_name == "CUTOFF":
                 try:
                     # Extract numeric value, ignoring unit
-                    val_str = re.sub(r'[^\d.eE+-]', '', kw_value.split()[0]) if kw_value.split() else kw_value
+                    val_str = re.sub(r"[^\d.eE+-]", "", kw_value.split()[0]) if kw_value.split() else kw_value
                     cutoff_val = float(val_str)
                     if cutoff_val < LOW_CUTOFF_THRESHOLD:
-                        diagnostics.append(Diagnostic(
-                            severity="warning",
-                            source="cp2k-lint",
-                            code=RULE_LOW_CUTOFF,
-                            message=f"CUTOFF {cutoff_val} Ry is very low. Consider ≥ {LOW_CUTOFF_THRESHOLD} Ry for reasonable accuracy.",
-                            line=i,
-                        ))
+                        diagnostics.append(
+                            Diagnostic(
+                                severity="warning",
+                                source="cp2k-lint",
+                                code=RULE_LOW_CUTOFF,
+                                message=f"CUTOFF {cutoff_val} Ry is very low. Consider ≥ {LOW_CUTOFF_THRESHOLD} Ry for reasonable accuracy.",
+                                line=i,
+                            )
+                        )
                 except (ValueError, IndexError):
                     pass
 
             # Check REL_CUTOFF
             if kw_name == "REL_CUTOFF":
                 try:
-                    val_str = re.sub(r'[^\d.eE+-]', '', kw_value.split()[0]) if kw_value.split() else kw_value
+                    val_str = re.sub(r"[^\d.eE+-]", "", kw_value.split()[0]) if kw_value.split() else kw_value
                     rel_cutoff_val = float(val_str)
                     if rel_cutoff_val < LOW_REL_CUTOFF_THRESHOLD:
-                        diagnostics.append(Diagnostic(
-                            severity="warning",
-                            source="cp2k-lint",
-                            code=RULE_LOW_REL_CUTOFF,
-                            message=f"REL_CUTOFF {rel_cutoff_val} Ry is very low. Consider ≥ {LOW_REL_CUTOFF_THRESHOLD} Ry.",
-                            line=i,
-                        ))
+                        diagnostics.append(
+                            Diagnostic(
+                                severity="warning",
+                                source="cp2k-lint",
+                                code=RULE_LOW_REL_CUTOFF,
+                                message=f"REL_CUTOFF {rel_cutoff_val} Ry is very low. Consider ≥ {LOW_REL_CUTOFF_THRESHOLD} Ry.",
+                                line=i,
+                            )
+                        )
                 except (ValueError, IndexError):
                     pass
 
@@ -384,13 +396,15 @@ def lint_config_smells(text: str) -> List[Diagnostic]:
                 try:
                     max_scf = int(kw_value.split()[0]) if kw_value.split() else int(kw_value)
                     if max_scf < FEW_SCF_THRESHOLD:
-                        diagnostics.append(Diagnostic(
-                            severity="warning",
-                            source="cp2k-lint",
-                            code=RULE_MAX_SCF_TOO_LOW,
-                            message=f"MAX_SCF {max_scf} is very low. SCF may not converge. Consider ≥ {FEW_SCF_THRESHOLD}.",
-                            line=i,
-                        ))
+                        diagnostics.append(
+                            Diagnostic(
+                                severity="warning",
+                                source="cp2k-lint",
+                                code=RULE_MAX_SCF_TOO_LOW,
+                                message=f"MAX_SCF {max_scf} is very low. SCF may not converge. Consider ≥ {FEW_SCF_THRESHOLD}.",
+                                line=i,
+                            )
+                        )
                 except (ValueError, IndexError):
                     pass
 
@@ -400,13 +414,15 @@ def lint_config_smells(text: str) -> List[Diagnostic]:
                     eps_str = kw_value.split()[0] if kw_value.split() else kw_value
                     eps_val = float(eps_str)
                     if eps_val > LOOSE_SCF_EPS:
-                        diagnostics.append(Diagnostic(
-                            severity="warning",
-                            source="cp2k-lint",
-                            code=RULE_LOOSE_SCF_EPS,
-                            message=f"EPS_SCF {eps_val} is very loose. Consider ≤ 1.0e-6 for production runs.",
-                            line=i,
-                        ))
+                        diagnostics.append(
+                            Diagnostic(
+                                severity="warning",
+                                source="cp2k-lint",
+                                code=RULE_LOOSE_SCF_EPS,
+                                message=f"EPS_SCF {eps_val} is very loose. Consider ≤ 1.0e-6 for production runs.",
+                                line=i,
+                            )
+                        )
                 except (ValueError, IndexError):
                     pass
 
@@ -416,24 +432,28 @@ def lint_config_smells(text: str) -> List[Diagnostic]:
                     # TIMESTEP can have units like [fs]
                     parts = kw_value.split()
                     if parts:
-                        val_str = re.sub(r'[^\d.eE+-]', '', parts[0])
+                        val_str = re.sub(r"[^\d.eE+-]", "", parts[0])
                         timestep_val = float(val_str)
                         if 0 < timestep_val < SHORT_TIMESTEP_FS:
-                            diagnostics.append(Diagnostic(
-                                severity="warning",
-                                source="cp2k-lint",
-                                code=RULE_SHORT_TIMESTEP,
-                                message=f"TIMESTEP {timestep_val} fs is very short. Is this intentional?",
-                                line=i,
-                            ))
+                            diagnostics.append(
+                                Diagnostic(
+                                    severity="warning",
+                                    source="cp2k-lint",
+                                    code=RULE_SHORT_TIMESTEP,
+                                    message=f"TIMESTEP {timestep_val} fs is very short. Is this intentional?",
+                                    line=i,
+                                )
+                            )
                         elif timestep_val > LONG_TIMESTEP_FS:
-                            diagnostics.append(Diagnostic(
-                                severity="warning",
-                                source="cp2k-lint",
-                                code=RULE_LONG_TIMESTEP,
-                                message=f"TIMESTEP {timestep_val} fs is very long. Most MD simulations use 0.5-2.0 fs.",
-                                line=i,
-                            ))
+                            diagnostics.append(
+                                Diagnostic(
+                                    severity="warning",
+                                    source="cp2k-lint",
+                                    code=RULE_LONG_TIMESTEP,
+                                    message=f"TIMESTEP {timestep_val} fs is very long. Most MD simulations use 0.5-2.0 fs.",
+                                    line=i,
+                                )
+                            )
                 except (ValueError, IndexError):
                     pass
 
@@ -442,13 +462,15 @@ def lint_config_smells(text: str) -> List[Diagnostic]:
                 try:
                     max_iter = int(kw_value.split()[0]) if kw_value.split() else int(kw_value)
                     if max_iter < GEO_OPT_MAX_ITER_LOW:
-                        diagnostics.append(Diagnostic(
-                            severity="warning",
-                            source="cp2k-lint",
-                            code=RULE_GEO_OPT_MAX_ITER_LOW,
-                            message=f"GEO_OPT MAX_ITER {max_iter} is very low. Geometry optimization may not converge.",
-                            line=i,
-                        ))
+                        diagnostics.append(
+                            Diagnostic(
+                                severity="warning",
+                                source="cp2k-lint",
+                                code=RULE_GEO_OPT_MAX_ITER_LOW,
+                                message=f"GEO_OPT MAX_ITER {max_iter} is very low. Geometry optimization may not converge.",
+                                line=i,
+                            )
+                        )
                 except (ValueError, IndexError):
                     pass
 
@@ -458,7 +480,7 @@ def lint_config_smells(text: str) -> List[Diagnostic]:
 def lint_missing_end(text: str) -> List[Diagnostic]:
     """Detect sections with missing &END."""
     diagnostics = []
-    lines = text.split('\n')
+    lines = text.split("\n")
     section_re = re.compile(r"^(\s*)&(\w[\w\-_]*)\s*(.*)", re.IGNORECASE)
     end_re = re.compile(r"^(\s*)&END\s*(.*)", re.IGNORECASE)
 
@@ -494,13 +516,15 @@ def lint_missing_end(text: str) -> List[Diagnostic]:
 
     # Report any sections left on the stack (missing END)
     for sec_name, line_num in section_stack:
-        diagnostics.append(Diagnostic(
-            severity="error",
-            source="cp2k-syntax",
-            code=RULE_MISSING_END,
-            message=f"Section '&{sec_name}' is missing &END{sec_name}.",
-            line=line_num,
-        ))
+        diagnostics.append(
+            Diagnostic(
+                severity="error",
+                source="cp2k-syntax",
+                code=RULE_MISSING_END,
+                message=f"Section '&{sec_name}' is missing &END{sec_name}.",
+                line=line_num,
+            )
+        )
 
     return diagnostics
 
@@ -508,7 +532,7 @@ def lint_missing_end(text: str) -> List[Diagnostic]:
 def lint_unknown_enum(text: str) -> List[Diagnostic]:
     """Detect keyword values that don't match schema-defined enum values."""
     diagnostics = []
-    lines = text.split('\n')
+    lines = text.split("\n")
     keyword_re = re.compile(r"^(\s*)(\w[\w\-_]*)\s+(.*)")
 
     # Get enum values from schema
@@ -561,15 +585,17 @@ def lint_unknown_enum(text: str) -> List[Diagnostic]:
                     # Get a few suggestions
                     suggestions = difflib.get_close_matches(value_upper, allowed_values, n=2, cutoff=0.6)
                     suggest_text = f" Did you mean: {', '.join(suggestions)}?" if suggestions else ""
-                    diagnostics.append(Diagnostic(
-                        severity="error",
-                        source="cp2k-schema",
-                        code=RULE_UNKNOWN_ENUM,
-                        message=f"Unknown enum value '{value_parts}' for keyword '{kw_name}'. "
-                                f"Allowed: {', '.join(allowed_values[:5])}{'...' if len(allowed_values) > 5 else ''}.{suggest_text}",
-                        line=i,
-                        column=kw_match.start(2),
-                    ))
+                    diagnostics.append(
+                        Diagnostic(
+                            severity="error",
+                            source="cp2k-schema",
+                            code=RULE_UNKNOWN_ENUM,
+                            message=f"Unknown enum value '{value_parts}' for keyword '{kw_name}'. "
+                            f"Allowed: {', '.join(allowed_values[:5])}{'...' if len(allowed_values) > 5 else ''}.{suggest_text}",
+                            line=i,
+                            column=kw_match.start(2),
+                        )
+                    )
 
     return diagnostics
 
@@ -577,7 +603,7 @@ def lint_unknown_enum(text: str) -> List[Diagnostic]:
 def lint_missing_files(text: str, base_dir: str = ".") -> List[Diagnostic]:
     """Detect references to basis set and potential files that don't exist."""
     diagnostics = []
-    lines = text.split('\n')
+    lines = text.split("\n")
     keyword_re = re.compile(r"^(\s*)(\w[\w\-_]*)\s+(.*)")
 
     current_section_path = []
@@ -617,25 +643,29 @@ def lint_missing_files(text: str, base_dir: str = ".") -> List[Diagnostic]:
             if kw_name == "BASIS_SET_FILE_NAME" and "SUBSYS" in current_section_path:
                 file_path = pathlib.Path(base_dir) / kw_value
                 if not file_path.exists() and not _is_builtin_basis(kw_value):
-                    diagnostics.append(Diagnostic(
-                        severity="error",
-                        source="cp2k-files",
-                        code=RULE_MISSING_BASIS,
-                        message=f"Basis set file not found: '{kw_value}'",
-                        line=i,
-                    ))
+                    diagnostics.append(
+                        Diagnostic(
+                            severity="error",
+                            source="cp2k-files",
+                            code=RULE_MISSING_BASIS,
+                            message=f"Basis set file not found: '{kw_value}'",
+                            line=i,
+                        )
+                    )
 
             # Check POTENTIAL_FILE_NAME
             if kw_name == "POTENTIAL_FILE_NAME" and "SUBSYS" in current_section_path:
                 file_path = pathlib.Path(base_dir) / kw_value
                 if not file_path.exists() and not _is_builtin_potential(kw_value):
-                    diagnostics.append(Diagnostic(
-                        severity="error",
-                        source="cp2k-files",
-                        code=RULE_MISSING_POTENTIAL,
-                        message=f"Potential file not found: '{kw_value}'",
-                        line=i,
-                    ))
+                    diagnostics.append(
+                        Diagnostic(
+                            severity="error",
+                            source="cp2k-files",
+                            code=RULE_MISSING_POTENTIAL,
+                            message=f"Potential file not found: '{kw_value}'",
+                            line=i,
+                        )
+                    )
 
     return diagnostics
 
@@ -644,8 +674,16 @@ def _is_builtin_basis(filename: str) -> bool:
     """Check if this is a known built-in basis set name."""
     # Common built-in basis set names
     builtin_prefixes = {
-        "BASIS_MOLOPT", "BASIS_ADMM", "BASIS_SET", "GTH",
-        "DZVP", "TZVP", "QZVP", "SZV", "DOUBLE_ZETA", "TRIPLE_ZETA",
+        "BASIS_MOLOPT",
+        "BASIS_ADMM",
+        "BASIS_SET",
+        "GTH",
+        "DZVP",
+        "TZVP",
+        "QZVP",
+        "SZV",
+        "DOUBLE_ZETA",
+        "TRIPLE_ZETA",
     }
     fname_upper = filename.upper()
     return any(fname_upper.startswith(p) for p in builtin_prefixes)
@@ -655,8 +693,11 @@ def _is_builtin_potential(filename: str) -> bool:
     """Check if this is a known built-in potential name."""
     # Common built-in potential names
     builtin_prefixes = {
-        "GTH_POTENTIALS", "POTENTIAL", "ALL_POTENTIALS",
-        "PADE_POTENTIALS", "NLCC_POTENTIALS",
+        "GTH_POTENTIALS",
+        "POTENTIAL",
+        "ALL_POTENTIALS",
+        "PADE_POTENTIALS",
+        "NLCC_POTENTIALS",
     }
     fname_upper = filename.upper()
     return any(fname_upper.startswith(p) for p in builtin_prefixes)

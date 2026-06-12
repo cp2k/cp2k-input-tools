@@ -244,7 +244,7 @@ class CP2KPreprocessor(Iterator):
         for line in self._lineiter:
             try:
                 # Track current line number for EOF error reporting
-                if hasattr(self._lineiter, 'line_range'):
+                if hasattr(self._lineiter, "line_range"):
                     try:
                         self._last_linenr = self._lineiter.line_range[1]
                     except (IndexError, AttributeError):
@@ -273,9 +273,7 @@ class CP2KPreprocessor(Iterator):
         if self._conditional_block is not None:
             ctx = Context(ref_line=self._conditional_block.ctx.line)
             ctx.linenr = self._last_linenr
-            raise PreprocessorError(
-                "conditional block not closed at end of file", ctx
-            )
+            raise PreprocessorError("conditional block not closed at end of file", ctx)
 
         raise StopIteration
 

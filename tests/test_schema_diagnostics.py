@@ -11,11 +11,8 @@ Test Cases:
 
 import sys
 from time import sleep
-from pathlib import Path
 
 import pytest
-
-from . import TEST_DIR
 
 if hasattr(sys, "pypy_version_info"):
     pytest.skip("pypy is currently not supported", allow_module_level=True)
@@ -24,10 +21,9 @@ pygls = pytest.importorskip("pygls")
 
 from lsprotocol.types import (  # noqa: E402
     TEXT_DOCUMENT_DID_OPEN,
+    DiagnosticSeverity,
     DidOpenTextDocumentParams,
     TextDocumentItem,
-    TextDocumentIdentifier,
-    DiagnosticSeverity,
 )
 
 CALL_TIMEOUT = 5
@@ -40,11 +36,7 @@ def _open_file(client, server, filepath):
         content = fhandle.read()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(testpath), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(testpath), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
     return content
@@ -55,20 +47,12 @@ def test_unknown_section_diagnostic(client_server, tmp_path):
     client, server = client_server
 
     test_file = tmp_path / "unknown_section.inp"
-    test_file.write_text(
-        "&FAKE_SECTION_THAT_DOES_NOT_EXIST\n"
-        "   SOME_KEYWORD value\n"
-        "&END FAKE_SECTION_THAT_DOES_NOT_EXIST\n"
-    )
+    test_file.write_text("&FAKE_SECTION_THAT_DOES_NOT_EXIST\n" "   SOME_KEYWORD value\n" "&END FAKE_SECTION_THAT_DOES_NOT_EXIST\n")
 
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -85,20 +69,12 @@ def test_unknown_keyword_diagnostic(client_server, tmp_path):
     client, server = client_server
 
     test_file = tmp_path / "unknown_keyword.inp"
-    test_file.write_text(
-        "&FORCE_EVAL\n"
-        "   FAKE_KEYWORD_THAT_DOES_NOT_EXIST value\n"
-        "&END FORCE_EVAL\n"
-    )
+    test_file.write_text("&FORCE_EVAL\n" "   FAKE_KEYWORD_THAT_DOES_NOT_EXIST value\n" "&END FORCE_EVAL\n")
 
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -115,20 +91,12 @@ def test_invalid_enum_value_diagnostic(client_server, tmp_path):
     client, server = client_server
 
     test_file = tmp_path / "invalid_enum.inp"
-    test_file.write_text(
-        "&FORCE_EVAL\n"
-        "   METHOD NOT_A_VALID_METHOD_VALUE\n"
-        "&END FORCE_EVAL\n"
-    )
+    test_file.write_text("&FORCE_EVAL\n" "   METHOD NOT_A_VALID_METHOD_VALUE\n" "&END FORCE_EVAL\n")
 
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -146,21 +114,12 @@ def test_duplicate_keyword_diagnostic(client_server, tmp_path):
 
     test_file = tmp_path / "duplicate_keyword.inp"
     # METHOD is not repeatable in FORCE_EVAL, use same value
-    test_file.write_text(
-        "&FORCE_EVAL\n"
-        "   METHOD QS\n"
-        "   METHOD QS\n"
-        "&END FORCE_EVAL\n"
-    )
+    test_file.write_text("&FORCE_EVAL\n" "   METHOD QS\n" "   METHOD QS\n" "&END FORCE_EVAL\n")
 
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -168,8 +127,14 @@ def test_duplicate_keyword_diagnostic(client_server, tmp_path):
     assert client.diagnostics is not None, "Should have diagnostics"
 
     # Check for duplicate keyword diagnostic
-    duplicate_errors = [d for d in client.diagnostics if ("duplicate" in d.message.lower() or "appears" in d.message.lower() or "only be mentioned once" in d.message.lower())]
-    assert len(duplicate_errors) > 0, f"Should have diagnostic for duplicate keyword, got: {[d.message for d in client.diagnostics]}"
+    duplicate_errors = [
+        d
+        for d in client.diagnostics
+        if ("duplicate" in d.message.lower() or "appears" in d.message.lower() or "only be mentioned once" in d.message.lower())
+    ]
+    assert (
+        len(duplicate_errors) > 0
+    ), f"Should have diagnostic for duplicate keyword, got: {[d.message for d in client.diagnostics]}"
 
 
 def test_valid_input_no_schema_diagnostics(client_server, tmp_path):
@@ -177,21 +142,12 @@ def test_valid_input_no_schema_diagnostics(client_server, tmp_path):
     client, server = client_server
 
     test_file = tmp_path / "valid_input.inp"
-    test_file.write_text(
-        "&FORCE_EVAL\n"
-        "   METHOD QS\n"
-        "   PROJECT test\n"
-        "&END FORCE_EVAL\n"
-    )
+    test_file.write_text("&FORCE_EVAL\n" "   METHOD QS\n" "   PROJECT test\n" "&END FORCE_EVAL\n")
 
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -211,21 +167,12 @@ def test_type_mismatch_diagnostic(client_server, tmp_path):
 
     test_file = tmp_path / "type_mismatch.inp"
     # Using a keyword that expects an integer
-    test_file.write_text(
-        "&FORCE_EVAL\n"
-        "   METHOD QS\n"
-        "   MGRID should_be_number_not_string\n"
-        "&END FORCE_EVAL\n"
-    )
+    test_file.write_text("&FORCE_EVAL\n" "   METHOD QS\n" "   MGRID should_be_number_not_string\n" "&END FORCE_EVAL\n")
 
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 

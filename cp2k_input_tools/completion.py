@@ -12,6 +12,7 @@ Features:
 
 TDD: Implementation written to pass tests in tests/test_lsp.py and tests/test_preprocessor_lsp.py
 """
+
 from typing import List, Optional
 
 from lsprotocol.types import (
@@ -19,7 +20,6 @@ from lsprotocol.types import (
     CompletionItemKind,
     CompletionList,
     Position,
-    TextDocumentIdentifier,
 )
 
 from .cursor_context import CursorContext, resolve_cursor_context

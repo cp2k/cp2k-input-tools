@@ -7,13 +7,10 @@ Tests cover:
 - Proper range calculation for symbols
 """
 
-import pytest
 from lsprotocol.types import (
     SymbolKind,
-    Range,
-    Position,
-    SymbolInformation,
 )
+
 from cp2k_input_tools.symbols import (
     get_document_symbols,
     get_workspace_symbols,
@@ -38,14 +35,14 @@ class TestDocumentSymbols:
 """
         uri = "test.inp"
         symbols = get_document_symbols(text, uri)
-        
+
         # Should have one section symbol
         assert len(symbols) >= 1
-        
+
         # Find GLOBAL section
         global_symbols = [s for s in symbols if s.name == "GLOBAL"]
         assert len(global_symbols) == 1
-        
+
         global_sym = global_symbols[0]
         assert global_sym.kind == SymbolKind.Namespace
         assert global_sym.container_name == ""
@@ -66,18 +63,18 @@ class TestDocumentSymbols:
 """
         uri = "test.inp"
         symbols = get_document_symbols(text, uri)
-        
+
         # Should have FORCE_EVAL, DFT, and SCF sections
         section_names = [s.name for s in symbols if s.kind == SymbolKind.Namespace]
         assert "FORCE_EVAL" in section_names
         assert "DFT" in section_names
         assert "SCF" in section_names
-        
+
         # Check parent-child relationships
         force_eval = next(s for s in symbols if s.name == "FORCE_EVAL")
         dft = next(s for s in symbols if s.name == "DFT")
         scf = next(s for s in symbols if s.name == "SCF")
-        
+
         # DFT should be inside FORCE_EVAL
         assert dft.container_name == "FORCE_EVAL"
         # SCF should be inside DFT
@@ -92,15 +89,15 @@ class TestDocumentSymbols:
 """
         uri = "test.inp"
         symbols = get_document_symbols(text, uri)
-        
+
         # Should have keyword symbols
         keyword_symbols = [s for s in symbols if s.kind == SymbolKind.Field]
         assert len(keyword_symbols) >= 2
-        
+
         keyword_names = [s.name for s in keyword_symbols]
         assert "PROJECT_NAME" in keyword_names
         assert "RUN_TYPE" in keyword_names
-        
+
         # Keywords should be inside GLOBAL
         project = next(s for s in keyword_symbols if s.name == "PROJECT_NAME")
         assert project.container_name == "GLOBAL"
@@ -116,10 +113,10 @@ class TestDocumentSymbols:
 """
         uri = "test.inp"
         symbols = get_document_symbols(text, uri)
-        
+
         force_eval = next(s for s in symbols if s.name == "FORCE_EVAL")
         dft = next(s for s in symbols if s.name == "DFT")
-        
+
         # Symbols should have range objects
         assert force_eval.location.range is not None
         assert dft.location.range is not None
@@ -144,11 +141,11 @@ class TestDocumentSymbols:
 """
         uri = "test.inp"
         symbols = get_document_symbols(text, uri)
-        
+
         # Should have three top-level sections
         top_level = [s for s in symbols if s.container_name == ""]
         assert len(top_level) >= 3
-        
+
         section_names = [s.name for s in top_level]
         assert "GLOBAL" in section_names
         assert "FORCE_EVAL" in section_names
@@ -201,14 +198,14 @@ class TestDocumentSymbols:
 """
         uri = "test.inp"
         symbols = get_document_symbols(text, uri)
-        
+
         # Should have all major sections
         section_names = [s.name for s in symbols if s.kind == SymbolKind.Namespace]
-        
+
         # Top level sections
         assert "GLOBAL" in section_names
         assert "FORCE_EVAL" in section_names
-        
+
         # Nested sections
         assert "DFT" in section_names
         assert "MGRID" in section_names
@@ -219,7 +216,7 @@ class TestDocumentSymbols:
         assert "KIND" in section_names
         assert "CELL" in section_names
         assert "COORD" in section_names
-        
+
         # Should have keywords
         keyword_symbols = [s for s in symbols if s.kind == SymbolKind.Field]
         assert len(keyword_symbols) > 0
@@ -239,17 +236,17 @@ class TestWorkspaceSymbols:
   METHOD QS
 &END FORCE_EVAL
 """
-        
+
         all_files = {
             "test1.inp": file1_content,
             "test2.inp": file2_content,
         }
-        
+
         symbols = get_workspace_symbols("", all_files)
-        
+
         # Should have symbols from both files
         assert len(symbols) >= 2
-        
+
         # Should have symbols from both files
         uris = set(s.container_name for s in symbols)
         # container_name is used for file URI in workspace symbols
@@ -265,18 +262,18 @@ class TestWorkspaceSymbols:
   METHOD QS
 &END FORCE_EVAL
 """
-        
+
         all_files = {
             "test.inp": file1_content,
         }
-        
+
         # Search for "FORCE"
         symbols = get_workspace_symbols("FORCE", all_files)
-        
+
         # Should only return FORCE_EVAL
         assert len(symbols) >= 1
         assert all("FORCE" in s.name for s in symbols)
-        
+
         # Should not find GLOBAL
         assert not any(s.name == "GLOBAL" for s in symbols)
 
@@ -286,16 +283,16 @@ class TestWorkspaceSymbols:
   PROJECT_NAME test
 &END GLOBAL
 """
-        
+
         all_files = {
             "test.inp": file_content,
         }
-        
+
         # Search with different cases
         symbols_lower = get_workspace_symbols("global", all_files)
         symbols_upper = get_workspace_symbols("GLOBAL", all_files)
         symbols_mixed = get_workspace_symbols("Global", all_files)
-        
+
         # All should return the same results
         assert len(symbols_lower) == len(symbols_upper)
         assert len(symbols_upper) == len(symbols_mixed)
@@ -307,14 +304,14 @@ class TestWorkspaceSymbols:
   RUN_TYPE ENERGY
 &END GLOBAL
 """
-        
+
         all_files = {
             "test.inp": file_content,
         }
-        
+
         # Search for "PROJECT"
         symbols = get_workspace_symbols("PROJECT", all_files)
-        
+
         # Should find PROJECT_NAME keyword
         assert len(symbols) >= 1
         assert any("PROJECT" in s.name for s in symbols)
@@ -327,13 +324,13 @@ class TestWorkspaceSymbols:
   &END DFT
 &END FORCE_EVAL
 """
-        
+
         all_files = {
             "test.inp": file_content,
         }
-        
+
         symbols = get_workspace_symbols("", all_files)
-        
+
         # Each symbol should have required fields
         for sym in symbols:
             assert sym.name is not None
@@ -350,14 +347,14 @@ class TestWorkspaceSymbols:
   PROJECT_NAME test2
 &END GLOBAL
 """
-        
+
         all_files = {
             "test1.inp": file1_content,
             "test2.inp": file2_content,
         }
-        
+
         symbols = get_workspace_symbols("GLOBAL", all_files)
-        
+
         # Should find GLOBAL in both files
         global_symbols = [s for s in symbols if s.name == "GLOBAL"]
         assert len(global_symbols) >= 2
@@ -374,7 +371,7 @@ class TestSymbolKindMapping:
 """
         uri = "test.inp"
         symbols = get_document_symbols(text, uri)
-        
+
         global_sym = next(s for s in symbols if s.name == "GLOBAL")
         assert global_sym.kind == SymbolKind.Namespace
 
@@ -386,7 +383,7 @@ class TestSymbolKindMapping:
 """
         uri = "test.inp"
         symbols = get_document_symbols(text, uri)
-        
+
         project_sym = next(s for s in symbols if s.name == "PROJECT_NAME")
         assert project_sym.kind == SymbolKind.Field
 
@@ -407,7 +404,7 @@ class TestSymbolEdgeCases:
 """
         uri = "test.inp"
         symbols = get_document_symbols(text, uri)
-        
+
         # Should have KIND section
         kind_sym = next((s for s in symbols if s.name == "KIND"), None)
         assert kind_sym is not None
@@ -430,7 +427,7 @@ class TestSymbolEdgeCases:
 """
         uri = "test.inp"
         symbols = get_document_symbols(text, uri)
-        
+
         # Parser simplifies repeated KIND sections with parameters
         # into a single KIND dict entry with H and O as keys
         kind_symbols = [s for s in symbols if s.name == "KIND"]
@@ -455,7 +452,7 @@ class TestSymbolEdgeCases:
 """
         uri = "test.inp"
         symbols = get_document_symbols(text, uri)
-        
+
         # Should still find both sections
         section_names = [s.name for s in symbols if s.kind == SymbolKind.Namespace]
         assert "GLOBAL" in section_names
@@ -468,7 +465,7 @@ class TestSymbolEdgeCases:
   PROJECT_NAME test
 """
         uri = "test.inp"
-        
+
         # Should not crash, may return empty or partial symbols
         symbols = get_document_symbols(text, uri)
         assert isinstance(symbols, list)

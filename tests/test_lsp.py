@@ -15,13 +15,13 @@ pygls = pytest.importorskip("pygls")
 
 from lsprotocol.types import (  # noqa: E402
     TEXT_DOCUMENT_COMPLETION,
+    TEXT_DOCUMENT_DEFINITION,
     TEXT_DOCUMENT_DID_OPEN,
+    TEXT_DOCUMENT_DOCUMENT_SYMBOL,
     TEXT_DOCUMENT_FORMATTING,
     TEXT_DOCUMENT_HOVER,
-    TEXT_DOCUMENT_DEFINITION,
-    TEXT_DOCUMENT_REFERENCES,
-    TEXT_DOCUMENT_DOCUMENT_SYMBOL,
     TEXT_DOCUMENT_PREPARE_RENAME,
+    TEXT_DOCUMENT_REFERENCES,
     TEXT_DOCUMENT_RENAME,
     CompletionParams,
     DefinitionParams,
@@ -31,7 +31,6 @@ from lsprotocol.types import (  # noqa: E402
     HoverParams,
     Position,
     PrepareRenameParams,
-    Range,
     ReferenceParams,
     RenameParams,
     TextDocumentIdentifier,
@@ -48,11 +47,7 @@ def _open_file(client, server, filepath):
         content = fhandle.read()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(testpath), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(testpath), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
     return content
@@ -101,12 +96,12 @@ def test_hover_keyword(client_server):
     client, server = client_server
     testpath = TEST_DIR / "inputs" / "test01.inp"
     content = _open_file(client, server, testpath)
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     # Find a keyword line
     for i, line in enumerate(lines):
         line = line.strip()
-        if line and not line.startswith('&') and not line.startswith('!') and not line.startswith('@'):
+        if line and not line.startswith("&") and not line.startswith("!") and not line.startswith("@"):
             result = client.lsp.send_request(
                 TEXT_DOCUMENT_HOVER,
                 HoverParams(
@@ -149,11 +144,7 @@ def test_definition_include(client_server, tmp_path):
     content = main_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(main_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(main_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -177,11 +168,7 @@ def test_prepare_rename_variable(client_server, tmp_path):
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -206,11 +193,7 @@ def test_rename_variable(client_server, tmp_path):
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -237,11 +220,7 @@ def test_references_variable(client_server, tmp_path):
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 

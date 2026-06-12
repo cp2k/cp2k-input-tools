@@ -10,6 +10,7 @@ properties (types, defaults, enum values, descriptions).
 
 TDD: Implementation written to pass tests in tests/test_schema_index.py
 """
+
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -109,9 +110,7 @@ class CP2KSchemaIndex:
                 result[name] = spec
         return result
 
-    def get_keyword(
-        self, section_path: Tuple[str, ...], keyword_name: str
-    ) -> Optional[KeywordSpec]:
+    def get_keyword(self, section_path: Tuple[str, ...], keyword_name: str) -> Optional[KeywordSpec]:
         """Get a specific keyword specification.
 
         Args:

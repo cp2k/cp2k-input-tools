@@ -45,9 +45,7 @@ def _validate(ls, params: Union[DidChangeTextDocumentParams, DidCloseTextDocumen
                 line = diag.line - 1 if diag.line > 0 else 0
                 diagnostics.append(
                     Diagnostic(
-                        range=Range(
-                            start=Position(line=line, character=0), end=Position(line=line, character=100)
-                        ),
+                        range=Range(start=Position(line=line, character=0), end=Position(line=line, character=100)),
                         message=diag.message,
                         severity=severity,
                         source="cp2k-lsp",
@@ -83,9 +81,7 @@ def _validate(ls, params: Union[DidChangeTextDocumentParams, DidCloseTextDocumen
                 # Clamp character values to valid range [0, 2147483647]
                 start_char = max(0, colnr + 1 - count)
                 end_char = colnr + 1
-                erange = Range(
-                    start=Position(line=linenr, character=start_char), end=Position(line=linenr, character=end_char)
-                )
+                erange = Range(start=Position(line=linenr, character=start_char), end=Position(line=linenr, character=end_char))
 
             else:
                 erange = Range(start=Position(line=linenr, character=1), end=Position(line=linenr, character=len(line)))

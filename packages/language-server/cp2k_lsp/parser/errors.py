@@ -21,8 +21,15 @@ class ParseError(Exception):
 class SyntaxError(ParseError):
     """Syntax error during lexical or syntactic analysis."""
 
-    def __init__(self, message: str, line: int, column: int, source: Optional[str] = None,
-                 expected: Optional[str] = None, found: Optional[str] = None):
+    def __init__(
+        self,
+        message: str,
+        line: int,
+        column: int,
+        source: Optional[str] = None,
+        expected: Optional[str] = None,
+        found: Optional[str] = None,
+    ):
         super().__init__(message, line, column, source)
         self.expected = expected
         self.found = found
@@ -36,9 +43,11 @@ class SyntaxError(ParseError):
 
 class LexerError(ParseError):
     """Error during lexing."""
+
     pass
 
 
 class SemanticError(ParseError):
     """Semantic error (e.g., invalid section combination)."""
+
     pass

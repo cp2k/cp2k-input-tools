@@ -1,9 +1,9 @@
 """Context Packs CLI command for agent workflows (#57)."""
 
 import json
-import click
 from pathlib import Path
-from urllib.parse import urlparse
+
+import click
 
 from cp2k_input_tools.context_packs import get_context_pack
 

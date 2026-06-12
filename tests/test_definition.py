@@ -7,11 +7,10 @@ Tests cover:
 - Enum value navigation and references
 """
 
-import pytest
-from lsprotocol.types import Location, Position, Range
+from lsprotocol.types import Location, Position
+
 from cp2k_input_tools.definition import get_definition, get_references
 from tests import TEST_DIR
-
 
 # Sample CP2K input content for testing
 SAMPLE_INPUT = """&FORCE_EVAL
@@ -64,7 +63,7 @@ class TestGoToDefinition:
         # Test on FORCE_EVAL section name (line 1, character 1-10)
         position = Position(line=0, character=5)  # On "FORCE_EVAL"
         result = get_definition(SAMPLE_INPUT, position, "test://test.inp")
-        
+
         assert result is not None
         assert isinstance(result, Location)
         # Section definitions are in schema, not in the file
@@ -77,7 +76,7 @@ class TestGoToDefinition:
         # Test on METHOD keyword in FORCE_EVAL (line 2)
         position = Position(line=1, character=4)  # On "METHOD"
         result = get_definition(SAMPLE_INPUT, position, "test://test.inp")
-        
+
         assert result is not None
         assert isinstance(result, Location)
         # Keyword definitions are in schema
@@ -88,7 +87,7 @@ class TestGoToDefinition:
         # Test on DFT section (line 3, character 3-6)
         position = Position(line=2, character=4)  # On "DFT"
         result = get_definition(SAMPLE_INPUT, position, "test://test.inp")
-        
+
         assert result is not None
         assert isinstance(result, Location)
 
@@ -97,7 +96,7 @@ class TestGoToDefinition:
         # Test on &END MGRID (line 9 in 1-indexed, line 8 in 0-indexed)
         position = Position(line=8, character=5)  # On "END"
         result = get_definition(SAMPLE_INPUT, position, "test://test.inp")
-        
+
         assert result is not None
         # Should point to the opening &MGRID
         assert isinstance(result, Location)
@@ -119,7 +118,7 @@ class TestGoToDefinition:
         # "CUTOFF" is at position 6-12, "140" starts at position 13
         position = Position(line=7, character=14)  # On "140"
         result = get_definition(SAMPLE_INPUT, position, "test://test.inp")
-        
+
         assert result is None
 
 
@@ -131,7 +130,7 @@ class TestFindReferences:
         # Find references to FORCE_EVAL section
         position = Position(line=0, character=5)  # On "FORCE_EVAL"
         result = get_references(SAMPLE_INPUT, position, "test://test.inp")
-        
+
         assert isinstance(result, list)
         # Should find at least the section definition and its &END
         assert len(result) >= 1
@@ -141,7 +140,7 @@ class TestFindReferences:
         # Find references to BASIS_SET keyword
         position = Position(line=3, character=10)  # On "BASIS_SET"
         result = get_references(SAMPLE_INPUT, position, "test://test.inp")
-        
+
         assert isinstance(result, list)
         # Should find at least one usage
         assert len(result) >= 1
@@ -152,14 +151,14 @@ class TestFindReferences:
         # Test on SUBSYS which appears once
         position = Position(line=22, character=5)  # On "SUBSYS"
         result = get_references(SAMPLE_INPUT, position, "test://test.inp")
-        
+
         assert isinstance(result, list)
 
     def test_references_on_end_section(self):
         """Find references for &END should include matching &SECTION."""
         position = Position(line=8, character=5)  # On "END" of &END MGRID
         result = get_references(SAMPLE_INPUT, position, "test://test.inp")
-        
+
         assert isinstance(result, list)
         # Should find the opening &MGRID and the closing &END MGRID
         assert len(result) >= 2
@@ -171,15 +170,15 @@ class TestDefinitionWithRealFile:
     def test_definition_on_real_file(self):
         """Test go-to-definition on a real CP2K input file."""
         test_file = TEST_DIR / "inputs" / "He_PBE.inp"
-        
+
         with open(test_file, "r") as f:
             content = f.read()
-        
+
         # Test on GLOBAL section (last section in file)
         # Line 37: &GLOBAL
         position = Position(line=36, character=3)  # On "GLOBAL"
         result = get_definition(content, position, str(test_file))
-        
+
         assert result is not None or result is None  # Can be None if not implemented yet
         if result:
             assert isinstance(result, Location)
@@ -187,14 +186,14 @@ class TestDefinitionWithRealFile:
     def test_references_on_real_file(self):
         """Test find references on a real CP2K input file."""
         test_file = TEST_DIR / "inputs" / "He_PBE.inp"
-        
+
         with open(test_file, "r") as f:
             content = f.read()
-        
+
         # Test on DFT section
         position = Position(line=2, character=5)  # On "DFT"
         result = get_references(content, position, str(test_file))
-        
+
         assert isinstance(result, list)
 
 
@@ -205,7 +204,7 @@ class TestEdgeCases:
         """Test with empty input."""
         result = get_definition("", Position(line=0, character=0), "test://test.inp")
         assert result is None
-        
+
         refs = get_references("", Position(line=0, character=0), "test://test.inp")
         assert isinstance(refs, list)
         assert len(refs) == 0
@@ -214,7 +213,7 @@ class TestEdgeCases:
         """Test with position beyond file content."""
         result = get_definition(SAMPLE_INPUT, Position(line=100, character=0), "test://test.inp")
         assert result is None
-        
+
         refs = get_references(SAMPLE_INPUT, Position(line=100, character=0), "test://test.inp")
         assert isinstance(refs, list)
 
@@ -236,7 +235,7 @@ class TestEdgeCases:
         mixed_case_input = "&Force_Eval\n  METHOD Quickstep\n&END Force_Eval\n"
         position = Position(line=0, character=5)
         result = get_definition(mixed_case_input, position, "test://test.inp")
-        
+
         # Should handle case-insensitively
         assert result is None or isinstance(result, Location)
 
@@ -249,7 +248,7 @@ class TestEnumValueDefinition:
         # Test on "GPW" enum value in QS section
         position = Position(line=11, character=10)  # On "GPW"
         result = get_definition(SAMPLE_INPUT, position, "test://test.inp")
-        
+
         # For enum values, we might return a special location or hover info
         # For now, it should not crash
         assert result is None or isinstance(result, Location)
@@ -259,5 +258,5 @@ class TestEnumValueDefinition:
         # Test on "atomic" value for SCF_GUESS
         position = Position(line=17, character=15)  # On "atomic"
         result = get_references(SAMPLE_INPUT, position, "test://test.inp")
-        
+
         assert isinstance(result, list)

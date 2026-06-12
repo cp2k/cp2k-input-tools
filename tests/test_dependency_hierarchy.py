@@ -65,7 +65,7 @@ class TestVariableDependencies:
 """
         extractor = DependencyExtractor(base_dir=test_inputs_dir)
         graph = extractor.extract_from_content(content)
-        
+
         # Should have one variable node
         var_nodes = [n for n in graph.nodes if n.type == "variable"]
         assert len(var_nodes) == 1
@@ -82,11 +82,11 @@ class TestVariableDependencies:
 """
         extractor = DependencyExtractor(base_dir=test_inputs_dir)
         graph = extractor.extract_from_content(content)
-        
+
         # Should have two variable nodes
         var_nodes = [n for n in graph.nodes if n.type == "variable"]
         assert len(var_nodes) == 2
-        
+
         # VAR1 should have an edge to VAR2 (VAR1 must be resolved before VAR2)
         var1_refs = [e for e in graph.edges if e.source == "var_VAR1" and e.target == "var_VAR2"]
         assert len(var1_refs) == 1
@@ -102,11 +102,11 @@ class TestVariableDependencies:
 """
         extractor = DependencyExtractor(base_dir=test_inputs_dir)
         graph = extractor.extract_from_content(content)
-        
+
         # Should have three variable nodes
         var_nodes = [n for n in graph.nodes if n.type == "variable"]
         assert len(var_nodes) == 3
-        
+
         # BASE_DIR should have edges to both DATA_FILE and OUTPUT_FILE
         base_dir_refs = [e for e in graph.edges if e.source == "var_BASE_DIR"]
         assert len(base_dir_refs) == 2
@@ -125,7 +125,7 @@ class TestIncludeDependencies:
 """
         include_file = test_inputs_dir / "test_dependency_include.inc"
         include_file.write_text(include_content)
-        
+
         try:
             content = """@INCLUDE test_dependency_include.inc
 &FORCE_EVAL
@@ -134,7 +134,7 @@ class TestIncludeDependencies:
 """
             extractor = DependencyExtractor(base_dir=test_inputs_dir)
             graph = extractor.extract_from_content(content)
-            
+
             # Should have one include node
             include_nodes = [n for n in graph.nodes if n.type == "include"]
             assert len(include_nodes) == 1
@@ -155,13 +155,13 @@ class TestIncludeDependencies:
   BASIS_SET dzvp-molopt-sr-gth
 &END
 """
-        
+
         inner_file = test_inputs_dir / "test_inner_dependency.inc"
         outer_file = test_inputs_dir / "test_outer_dependency.inc"
-        
+
         inner_file.write_text(inner_content)
         outer_file.write_text(outer_content)
-        
+
         try:
             content = """@INCLUDE test_outer_dependency.inc
 @INCLUDE test_inner_dependency.inc
@@ -171,7 +171,7 @@ class TestIncludeDependencies:
 """
             extractor = DependencyExtractor(base_dir=test_inputs_dir)
             graph = extractor.extract_from_content(content)
-            
+
             # Should have two include nodes
             include_nodes = [n for n in graph.nodes if n.type == "include"]
             assert len(include_nodes) == 2
@@ -196,7 +196,7 @@ class TestExternalDependencies:
 """
         extractor = DependencyExtractor(base_dir=test_inputs_dir)
         graph = extractor.extract_from_content(content)
-        
+
         # Should have one external dependency node
         ext_nodes = [n for n in graph.nodes if n.type == "external"]
         assert len(ext_nodes) == 1
@@ -213,7 +213,7 @@ class TestExternalDependencies:
 """
         extractor = DependencyExtractor(base_dir=test_inputs_dir)
         graph = extractor.extract_from_content(content)
-        
+
         # Should have one external dependency node
         ext_nodes = [n for n in graph.nodes if n.type == "external"]
         assert len(ext_nodes) == 1
@@ -235,10 +235,10 @@ class TestGraphOperations:
 """
         extractor = DependencyExtractor(base_dir=test_inputs_dir)
         graph = extractor.extract_from_content(content)
-        
+
         # Get topological sort
         sorted_nodes = graph.get_topological_sort()
-        
+
         # VAR1 should come before VAR2, which should come before VAR3
         var_indices = {n.name: i for i, n in enumerate(sorted_nodes) if n.type == "variable"}
         if "VAR1" in var_indices and "VAR2" in var_indices and "VAR3" in var_indices:
@@ -256,16 +256,16 @@ class TestGraphOperations:
 """
         extractor = DependencyExtractor(base_dir=test_inputs_dir)
         graph = extractor.extract_from_content(content)
-        
+
         # Should detect cycles
         cycles = graph.detect_cycles()
         assert len(cycles) >= 1
-        
+
         # Cycle should involve VAR1, VAR2, VAR3
         cycle_nodes = set()
         for cycle in cycles:
             cycle_nodes.update(cycle)
-        
+
         # Check that the cycle contains at least some of these variables
         assert len(cycle_nodes) >= 2
 
@@ -280,7 +280,7 @@ class TestGraphOperations:
 """
         extractor = DependencyExtractor(base_dir=test_inputs_dir)
         graph = extractor.extract_from_content(content)
-        
+
         # Should not detect any cycles
         cycles = graph.detect_cycles()
         assert len(cycles) == 0
@@ -299,23 +299,23 @@ class TestGraphJSONSerialization:
 """
         extractor = DependencyExtractor(base_dir=test_inputs_dir)
         graph = extractor.extract_from_content(content)
-        
+
         # Convert to JSON
         json_data = graph.to_json()
-        
+
         # Verify structure
         assert "nodes" in json_data
         assert "edges" in json_data
         assert isinstance(json_data["nodes"], list)
         assert isinstance(json_data["edges"], list)
-        
+
         # Verify node structure
         if json_data["nodes"]:
             node = json_data["nodes"][0]
             assert "id" in node
             assert "type" in node
             assert "name" in node
-        
+
         # Verify edge structure
         if json_data["edges"]:
             edge = json_data["edges"][0]
@@ -332,14 +332,14 @@ class TestRealCP2KInput:
         nacl_file = test_inputs_dir / "NaCl.inp"
         if not nacl_file.exists():
             pytest.skip("NaCl.inp not found")
-        
+
         extractor = DependencyExtractor(base_dir=test_inputs_dir)
         graph = extractor.extract_from_file(str(nacl_file))
-        
+
         # Should have variable nodes for @SET directives
         var_nodes = [n for n in graph.nodes if n.type == "variable"]
         assert len(var_nodes) > 0
-        
+
         # Should find LATTICE, WITH_KP, DO_CELLOPT variables
         var_names = {n.name for n in var_nodes}
         assert "LATTICE" in var_names
@@ -351,14 +351,14 @@ class TestRealCP2KInput:
         nacl_file = test_inputs_dir / "NaCl.inp"
         if not nacl_file.exists():
             pytest.skip("NaCl.inp not found")
-        
+
         extractor = DependencyExtractor(base_dir=test_inputs_dir)
         graph = extractor.extract_from_file(str(nacl_file))
-        
+
         # Should have external dependency nodes
         ext_nodes = [n for n in graph.nodes if n.type == "external"]
         assert len(ext_nodes) > 0
-        
+
         # Should find BASIS_SET_FILE_NAME and POTENTIAL_FILE_NAME
         dep_names = {n.name for n in ext_nodes}
         assert any("BASIS_SET_FILE_NAME" in name for name in dep_names)

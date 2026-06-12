@@ -8,7 +8,7 @@ from cp2k_lsp.features.hover import HoverProvider
 
 __all__ = [
     "DiagnosticsProvider",
-    "CompletionProvider", 
+    "CompletionProvider",
     "HoverProvider",
     "FormattingProvider",
     "CodeActionProvider",

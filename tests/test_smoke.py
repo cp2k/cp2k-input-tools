@@ -12,7 +12,6 @@ TDD Workflow: These tests are written first (RED phase), then implementation fol
 """
 
 import json
-import os
 import subprocess
 import sys
 import tempfile
@@ -31,44 +30,43 @@ if hasattr(sys, "pypy_version_info"):
 pygls = pytest.importorskip("pygls")
 
 from lsprotocol.types import (
+    TEXT_DOCUMENT_COMPLETION,
+    TEXT_DOCUMENT_DEFINITION,
     TEXT_DOCUMENT_DID_CLOSE,
     TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_DOCUMENT_SYMBOL,
-    TEXT_DOCUMENT_COMPLETION,
     TEXT_DOCUMENT_HOVER,
-    TEXT_DOCUMENT_DEFINITION,
-    DidOpenTextDocumentParams,
-    DidCloseTextDocumentParams,
-    TextDocumentItem,
-    DocumentSymbolParams,
-    TextDocumentIdentifier,
     CompletionParams,
-    HoverParams,
     DefinitionParams,
+    DidCloseTextDocumentParams,
+    DidOpenTextDocumentParams,
+    DocumentSymbolParams,
+    HoverParams,
     Position,
-    ClientCapabilities,
-    InitializeParams,
+    TextDocumentIdentifier,
+    TextDocumentItem,
 )
-from cp2k_input_tools.parser import CP2KInputParser
-from cp2k_input_tools.parser_errors import ParserError
-from cp2k_input_tools.tokenizer import TokenizerError
+
+from cp2k_input_tools.cli.agent_inspect import cli as inspect_cli
 
 # Import CLI modules
 from cp2k_input_tools.cli.lint import cp2klint
-from cp2k_input_tools.cli.validate import cp2k_validate, validate_file
-from cp2k_input_tools.tool import main as tool_main
 from cp2k_input_tools.cli.main import cp2k_lsp
-from cp2k_input_tools.cli.agent_inspect import cli as inspect_cli
-
+from cp2k_input_tools.cli.validate import cp2k_validate
+from cp2k_input_tools.parser import CP2KInputParser
+from cp2k_input_tools.parser_errors import ParserError
+from cp2k_input_tools.tokenizer import TokenizerError
 
 # =============================================================================
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def runner():
     """Provide CliRunner for CLI testing."""
     return CliRunner()
+
 
 # Test configuration
 CALL_TIMEOUT = 5
@@ -80,6 +78,7 @@ VALID_INPUT_PATH = TEST_DIR / "harness" / "fixtures" / "valid_input.inp"
 # =============================================================================
 # Server Initialization Tests
 # =============================================================================
+
 
 class TestServerInitialization:
     """Test server initialization and basic document operations."""
@@ -108,12 +107,7 @@ class TestServerInitialization:
         client.lsp.notify(
             TEXT_DOCUMENT_DID_OPEN,
             DidOpenTextDocumentParams(
-                text_document=TextDocumentItem(
-                    uri=str(testpath),
-                    language_id="cp2k",
-                    version=1,
-                    text=content
-                )
+                text_document=TextDocumentItem(uri=str(testpath), language_id="cp2k", version=1, text=content)
             ),
         )
         sleep(CALL_TIMEOUT)
@@ -133,12 +127,7 @@ class TestServerInitialization:
         client.lsp.notify(
             TEXT_DOCUMENT_DID_OPEN,
             DidOpenTextDocumentParams(
-                text_document=TextDocumentItem(
-                    uri=str(testpath),
-                    language_id="cp2k",
-                    version=1,
-                    text=content
-                )
+                text_document=TextDocumentItem(uri=str(testpath), language_id="cp2k", version=1, text=content)
             ),
         )
         sleep(CALL_TIMEOUT)
@@ -146,9 +135,7 @@ class TestServerInitialization:
         # Close document
         client.lsp.notify(
             TEXT_DOCUMENT_DID_CLOSE,
-            DidCloseTextDocumentParams(
-                text_document=TextDocumentIdentifier(uri=str(testpath))
-            ),
+            DidCloseTextDocumentParams(text_document=TextDocumentIdentifier(uri=str(testpath))),
         )
         sleep(CALL_TIMEOUT)
 
@@ -159,6 +146,7 @@ class TestServerInitialization:
 # =============================================================================
 # CLI Smoke Tests
 # =============================================================================
+
 
 class TestCLISmoke:
     """Test CLI commands basic functionality."""
@@ -194,11 +182,7 @@ class TestCLISmoke:
     def test_cp2k_lsp_tool_check_help(self):
         """cp2k-lsp-tool check --help should accept path argument."""
         # Note: tool.py uses argparse, so we use subprocess
-        result = subprocess.run(
-            ["python3", "-m", "cp2k_input_tools.tool", "check", "--help"],
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(["python3", "-m", "cp2k_input_tools.tool", "check", "--help"], capture_output=True, text=True)
         assert result.returncode == 0
         assert "path" in result.stdout.lower() or "usage" in result.stdout.lower()
 
@@ -207,10 +191,7 @@ class TestCLISmoke:
         if not VALID_INPUT_PATH.exists():
             pytest.skip(f"Valid input fixture not found: {VALID_INPUT_PATH}")
 
-        result = runner.invoke(inspect_cli, [
-            "inspect", "diagnostics",
-            str(VALID_INPUT_PATH)
-        ])
+        result = runner.invoke(inspect_cli, ["inspect", "diagnostics", str(VALID_INPUT_PATH)])
         assert result.exit_code == 0
 
         # Should be valid JSON
@@ -225,10 +206,7 @@ class TestCLISmoke:
         if not INVALID_INPUT_PATH.exists():
             pytest.skip(f"Invalid input fixture not found: {INVALID_INPUT_PATH}")
 
-        result = runner.invoke(inspect_cli, [
-            "inspect", "diagnostics",
-            str(INVALID_INPUT_PATH)
-        ])
+        result = runner.invoke(inspect_cli, ["inspect", "diagnostics", str(INVALID_INPUT_PATH)])
         assert result.exit_code == 0  # CLI succeeds, but JSON reports errors
 
         # Should be valid JSON with error diagnostics
@@ -241,12 +219,7 @@ class TestCLISmoke:
             pytest.skip(f"NaCl.inp not found: {NACL_PATH}")
 
         # Position on &GLOBAL section (line 12, col 0 in NaCl.inp)
-        result = runner.invoke(inspect_cli, [
-            "inspect", "hover",
-            str(NACL_PATH),
-            "--line", "12",
-            "--character", "0"
-        ])
+        result = runner.invoke(inspect_cli, ["inspect", "hover", str(NACL_PATH), "--line", "12", "--character", "0"])
         assert result.exit_code == 0
 
         data = json.loads(result.output)
@@ -259,12 +232,7 @@ class TestCLISmoke:
             pytest.skip(f"NaCl.inp not found: {NACL_PATH}")
 
         # Position on @SET LATTICE (line 1, col 0)
-        result = runner.invoke(inspect_cli, [
-            "inspect", "references",
-            str(NACL_PATH),
-            "--line", "1",
-            "--character", "0"
-        ])
+        result = runner.invoke(inspect_cli, ["inspect", "references", str(NACL_PATH), "--line", "1", "--character", "0"])
         assert result.exit_code == 0
 
         data = json.loads(result.output)
@@ -276,10 +244,7 @@ class TestCLISmoke:
         if not VALID_INPUT_PATH.exists():
             pytest.skip(f"Valid input fixture not found: {VALID_INPUT_PATH}")
 
-        result = runner.invoke(inspect_cli, [
-            "inspect", "format-preview",
-            str(VALID_INPUT_PATH)
-        ])
+        result = runner.invoke(inspect_cli, ["inspect", "format-preview", str(VALID_INPUT_PATH)])
         assert result.exit_code == 0
 
         data = json.loads(result.output)
@@ -290,6 +255,7 @@ class TestCLISmoke:
 # =============================================================================
 # NaCl Full Workflow Tests
 # =============================================================================
+
 
 class TestNaClWorkflow:
     """Test complete LSP workflow on NaCl.inp fixture file."""
@@ -307,12 +273,7 @@ class TestNaClWorkflow:
         client.lsp.notify(
             TEXT_DOCUMENT_DID_OPEN,
             DidOpenTextDocumentParams(
-                text_document=TextDocumentItem(
-                    uri=str(NACL_PATH),
-                    language_id="cp2k",
-                    version=1,
-                    text=content
-                )
+                text_document=TextDocumentItem(uri=str(NACL_PATH), language_id="cp2k", version=1, text=content)
             ),
         )
         sleep(CALL_TIMEOUT)
@@ -340,12 +301,7 @@ class TestNaClWorkflow:
         client.lsp.notify(
             TEXT_DOCUMENT_DID_OPEN,
             DidOpenTextDocumentParams(
-                text_document=TextDocumentItem(
-                    uri=str(NACL_PATH),
-                    language_id="cp2k",
-                    version=1,
-                    text=content
-                )
+                text_document=TextDocumentItem(uri=str(NACL_PATH), language_id="cp2k", version=1, text=content)
             ),
         )
         sleep(CALL_TIMEOUT)
@@ -359,7 +315,7 @@ class TestNaClWorkflow:
             CompletionParams(
                 text_document=TextDocumentIdentifier(uri=str(NACL_PATH)),
                 position=Position(line=11, character=0),  # Line 12 (0-indexed)
-            )
+            ),
         ).result(timeout=CALL_TIMEOUT)
 
         assert result is not None
@@ -372,7 +328,7 @@ class TestNaClWorkflow:
             CompletionParams(
                 text_document=TextDocumentIdentifier(uri=str(NACL_PATH)),
                 position=Position(line=23, character=3),  # After "&"
-            )
+            ),
         ).result(timeout=CALL_TIMEOUT)
 
         assert result is not None
@@ -386,7 +342,7 @@ class TestNaClWorkflow:
                     CompletionParams(
                         text_document=TextDocumentIdentifier(uri=str(NACL_PATH)),
                         position=Position(line=i, character=len(line)),
-                    )
+                    ),
                 ).result(timeout=CALL_TIMEOUT)
                 break
 
@@ -403,12 +359,7 @@ class TestNaClWorkflow:
         client.lsp.notify(
             TEXT_DOCUMENT_DID_OPEN,
             DidOpenTextDocumentParams(
-                text_document=TextDocumentItem(
-                    uri=str(NACL_PATH),
-                    language_id="cp2k",
-                    version=1,
-                    text=content
-                )
+                text_document=TextDocumentItem(uri=str(NACL_PATH), language_id="cp2k", version=1, text=content)
             ),
         )
         sleep(CALL_TIMEOUT)
@@ -425,7 +376,7 @@ class TestNaClWorkflow:
                     HoverParams(
                         text_document=TextDocumentIdentifier(uri=str(NACL_PATH)),
                         position=Position(line=i, character=col),
-                    )
+                    ),
                 ).result(timeout=CALL_TIMEOUT)
 
                 # Should return hover info (may be None if no schema)
@@ -446,12 +397,7 @@ class TestNaClWorkflow:
         client.lsp.notify(
             TEXT_DOCUMENT_DID_OPEN,
             DidOpenTextDocumentParams(
-                text_document=TextDocumentItem(
-                    uri=str(NACL_PATH),
-                    language_id="cp2k",
-                    version=1,
-                    text=content
-                )
+                text_document=TextDocumentItem(uri=str(NACL_PATH), language_id="cp2k", version=1, text=content)
             ),
         )
         sleep(CALL_TIMEOUT)
@@ -466,7 +412,7 @@ class TestNaClWorkflow:
                         DefinitionParams(
                             text_document=TextDocumentIdentifier(uri=str(NACL_PATH)),
                             position=Position(line=i, character=0),
-                        )
+                        ),
                     ).result(timeout=CALL_TIMEOUT)
 
                     # Should return location or empty list (both valid)
@@ -490,22 +436,14 @@ class TestNaClWorkflow:
         client.lsp.notify(
             TEXT_DOCUMENT_DID_OPEN,
             DidOpenTextDocumentParams(
-                text_document=TextDocumentItem(
-                    uri=str(NACL_PATH),
-                    language_id="cp2k",
-                    version=1,
-                    text=content
-                )
+                text_document=TextDocumentItem(uri=str(NACL_PATH), language_id="cp2k", version=1, text=content)
             ),
         )
         sleep(CALL_TIMEOUT)
 
         try:
             result = client.lsp.send_request(
-                TEXT_DOCUMENT_DOCUMENT_SYMBOL,
-                DocumentSymbolParams(
-                    text_document=TextDocumentIdentifier(uri=str(NACL_PATH))
-                )
+                TEXT_DOCUMENT_DOCUMENT_SYMBOL, DocumentSymbolParams(text_document=TextDocumentIdentifier(uri=str(NACL_PATH)))
             ).result(timeout=CALL_TIMEOUT)
 
             assert result is not None
@@ -524,15 +462,13 @@ class TestNaClWorkflow:
 # Error Handling Tests
 # =============================================================================
 
+
 class TestErrorHandling:
     """Test error handling for edge cases."""
 
     def test_invalid_file_path(self, runner):
         """Invalid file path should produce helpful error message."""
-        result = runner.invoke(cp2k_lsp, [
-            "inspect", "diagnostics",
-            "/nonexistent/path/file.inp"
-        ])
+        result = runner.invoke(cp2k_lsp, ["inspect", "diagnostics", "/nonexistent/path/file.inp"])
         assert result.exit_code != 0
         # Should mention file not found
 
@@ -545,12 +481,7 @@ class TestErrorHandling:
         client.lsp.notify(
             TEXT_DOCUMENT_DID_OPEN,
             DidOpenTextDocumentParams(
-                text_document=TextDocumentItem(
-                    uri="test://malformed.inp",
-                    language_id="cp2k",
-                    version=1,
-                    text=malformed_content
-                )
+                text_document=TextDocumentItem(uri="test://malformed.inp", language_id="cp2k", version=1, text=malformed_content)
             ),
         )
         sleep(CALL_TIMEOUT)
@@ -573,12 +504,7 @@ class TestErrorHandling:
         client.lsp.notify(
             TEXT_DOCUMENT_DID_OPEN,
             DidOpenTextDocumentParams(
-                text_document=TextDocumentItem(
-                    uri="test://empty.inp",
-                    language_id="cp2k",
-                    version=1,
-                    text=""
-                )
+                text_document=TextDocumentItem(uri="test://empty.inp", language_id="cp2k", version=1, text="")
             ),
         )
         sleep(CALL_TIMEOUT)
@@ -599,12 +525,7 @@ class TestErrorHandling:
         client.lsp.notify(
             TEXT_DOCUMENT_DID_OPEN,
             DidOpenTextDocumentParams(
-                text_document=TextDocumentItem(
-                    uri=str(NACL_PATH),
-                    language_id="cp2k",
-                    version=1,
-                    text=content
-                )
+                text_document=TextDocumentItem(uri=str(NACL_PATH), language_id="cp2k", version=1, text=content)
             ),
         )
         sleep(CALL_TIMEOUT)
@@ -614,15 +535,9 @@ class TestErrorHandling:
         diagnostics = client.diagnostics
         if diagnostics is not None:
             # Check that preprocessor lines don't cause parse errors
-            preprocessor_errors = [
-                d for d in diagnostics
-                if "@SET" in d.message or "@IF" in d.message or "@ENDIF" in d.message
-            ]
+            preprocessor_errors = [d for d in diagnostics if "@SET" in d.message or "@IF" in d.message or "@ENDIF" in d.message]
             # We don't expect preprocessor syntax errors
-            syntax_errors = [
-                d for d in preprocessor_errors
-                if "syntax" in d.message.lower() or "parse" in d.message.lower()
-            ]
+            syntax_errors = [d for d in preprocessor_errors if "syntax" in d.message.lower() or "parse" in d.message.lower()]
             assert len(syntax_errors) == 0, "Preprocessor blocks should not cause parse errors"
 
         # Server should still be responsive
@@ -635,6 +550,7 @@ class TestErrorHandling:
         content = "&GLOBAL\n  PROJECT test\n  RUN_TYPE ENERGY\n"
         with pytest.raises((TokenizerError, ParserError)):
             import io
+
             parser.parse(io.StringIO(content))
 
     def test_parser_handles_invalid_keyword_values(self):
@@ -645,6 +561,7 @@ class TestErrorHandling:
         content = "&GLOBAL\n  PROJECT test\n  RUN_TYPE INVALID_VALUE\n&END GLOBAL\n"
         try:
             import io
+
             parser.parse(io.StringIO(content))
             # If no exception, check for validation errors
         except (TokenizerError, ParserError):
@@ -654,7 +571,6 @@ class TestErrorHandling:
     def test_cli_handles_nonexistent_include_path(self, runner):
         """CLI should handle @INCLUDE with nonexistent paths gracefully."""
         # Create temp file with invalid include
-        import tempfile
         with tempfile.NamedTemporaryFile(mode="w", suffix=".inp", delete=False) as f:
             f.write("@INCLUDE /nonexistent/file.inp\n")
             f.write("&GLOBAL\n&END GLOBAL\n")

@@ -6,28 +6,33 @@ import pytest
 # Issue #8: Package importability tests
 # =============================================================================
 
+
 class TestPackageImportability:
     """Test that cp2k_lsp package is importable and exposes expected API."""
 
     def test_import_cp2k_lsp(self):
         """Main package should be importable."""
         import cp2k_lsp
+
         assert cp2k_lsp is not None
 
     def test_import_version(self):
         """Package should expose version."""
         from cp2k_lsp import __version__
+
         assert isinstance(__version__, str)
         assert __version__ == "0.1.0"
 
     def test_import_server(self):
         """Language server class should be importable."""
         from cp2k_lsp import CP2KLanguageServer
+
         assert CP2KLanguageServer is not None
 
     def test_import_parser(self):
         """Parser classes should be importable."""
         from cp2k_lsp import CP2KInput, CP2KParser, Lexer
+
         assert CP2KParser is not None
         assert Lexer is not None
         assert CP2KInput is not None
@@ -35,39 +40,45 @@ class TestPackageImportability:
     def test_import_server_main(self):
         """Server main function should be importable."""
         from cp2k_lsp import server_main
+
         assert callable(server_main)
 
     def test_import_parser_subpackage(self):
         """Parser subpackage should be importable."""
         from cp2k_lsp.parser import CP2KInput, CP2KParser, Keyword, Lexer, ParseError, Section, SyntaxError, TokenType, Value
-        assert all([CP2KParser, Lexer, TokenType, CP2KInput, Section,
-                     Keyword, Value, ParseError, SyntaxError])
+
+        assert all([CP2KParser, Lexer, TokenType, CP2KInput, Section, Keyword, Value, ParseError, SyntaxError])
 
     def test_import_lexer_module(self):
         """Lexer module should be importable directly."""
         from cp2k_lsp.parser.lexer import Lexer, TokenType
+
         assert Lexer is not None
         assert TokenType is not None
 
     def test_import_parser_module(self):
         """Parser module should be importable directly."""
         from cp2k_lsp.parser.parser import CP2KParser
+
         assert CP2KParser is not None
 
     def test_import_ast_module(self):
         """AST module should be importable directly."""
         from cp2k_lsp.parser.ast import CP2KInput
+
         assert CP2KInput is not None
 
     def test_import_errors_module(self):
         """Errors module (Issue #9) should be importable."""
         from cp2k_lsp.parser.errors import ParseError, SyntaxError
+
         assert ParseError is not None
         assert SyntaxError is not None
 
     def test_server_instantiation(self):
         """Language server should be instantiable."""
         from cp2k_lsp import CP2KLanguageServer
+
         server = CP2KLanguageServer()
         assert server is not None
         assert hasattr(server, "parsed_documents")
@@ -77,12 +88,14 @@ class TestPackageImportability:
 # Issue #9: Parser smoke tests (missing errors module + basic grammar)
 # =============================================================================
 
+
 class TestParserSmoke:
     """Smoke tests for the enhanced parser grammar."""
 
     def _parse(self, text: str):
         """Helper to parse text and return (ast, errors)."""
         from cp2k_lsp.parser import CP2KParser
+
         parser = CP2KParser.parse_text(text)
         return parser.ast, parser.errors
 
@@ -125,6 +138,7 @@ class TestParserSmoke:
     def test_unterminated_string_error(self):
         """Unterminated string should produce SyntaxError (Issue #9)."""
         from cp2k_lsp.parser.errors import SyntaxError as ParserSyntaxError
+
         inp = """\
 &GLOBAL
   PROJECT_NAME "unterminated
@@ -225,11 +239,13 @@ class TestParserSmoke:
 # Issue #10: Grammar compatibility contract tests
 # =============================================================================
 
+
 class TestGrammarCompatibility:
     """Tests validating the grammar compatibility contract."""
 
     def _parse(self, text: str):
         from cp2k_lsp.parser import CP2KParser
+
         parser = CP2KParser.parse_text(text)
         return parser.ast, parser.errors
 
@@ -366,47 +382,57 @@ class TestGrammarCompatibility:
 # Issue #11: OpenQC contract fixture
 # =============================================================================
 
+
 class TestOpenQCContract:
     """OpenQC-facing contract tests for LSP startup and behavior."""
 
     def test_lsp_package_startup(self):
         """LSP package should start without import errors."""
         from cp2k_lsp import CP2KLanguageServer
+
         server = CP2KLanguageServer()
         assert server is not None
 
     def test_lsp_version(self):
         """LSP server should report version."""
         from cp2k_lsp import CP2KLanguageServer
+
         server = CP2KLanguageServer()
         # pygls v1 stores server info differently; verify it instantiates with our name/version
-        assert hasattr(server, 'name') or hasattr(server, '_server_name') or hasattr(server, 'name')
+        assert hasattr(server, "name") or hasattr(server, "_server_name") or hasattr(server, "name")
         assert server.name == "cp2k-lsp" or True  # name passed to __init__
 
     def test_lsp_can_parse_document(self):
         """LSP server should parse a document and store AST."""
         from cp2k_lsp import CP2KLanguageServer
+
         _server = CP2KLanguageServer()
 
         # Simulate document parsing
         from cp2k_lsp.parser import CP2KParser
-        parser = CP2KParser.parse_text("""\
+
+        parser = CP2KParser.parse_text(
+            """\
 &GLOBAL
   RUN_TYPE ENERGY
 &END GLOBAL
-""")
+"""
+        )
         assert parser.ast is not None
         assert parser.ast.global_section is not None
 
     def test_parser_and_lsp_separation(self):
         """Parser errors should be separable from LSP diagnostics."""
         from cp2k_lsp.parser import CP2KParser
-        parser = CP2KParser.parse_text("""\
+
+        parser = CP2KParser.parse_text(
+            """\
 &GLOBAL
   RUN_TYPE ENERGY
 &END GLOBAL
-""")
+"""
+        )
         # Parser produces AST and errors list independently
-        assert hasattr(parser, 'ast')
-        assert hasattr(parser, 'errors')
+        assert hasattr(parser, "ast")
+        assert hasattr(parser, "errors")
         assert isinstance(parser.errors, list)

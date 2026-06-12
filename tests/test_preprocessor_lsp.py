@@ -11,7 +11,6 @@ Test Cases:
 
 import sys
 from time import sleep
-from pathlib import Path
 
 import pytest
 
@@ -23,17 +22,15 @@ if hasattr(sys, "pypy_version_info"):
 pygls = pytest.importorskip("pygls")
 
 from lsprotocol.types import (  # noqa: E402
-    TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_COMPLETION,
-    DidOpenTextDocumentParams,
-    TextDocumentItem,
-    Position,
-    CompletionParams,
-    TextDocumentIdentifier,
-    TEXT_DOCUMENT_DEFINITION,
-    DefinitionParams,
+    TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_FORMATTING,
+    CompletionParams,
+    DidOpenTextDocumentParams,
     DocumentFormattingParams,
+    Position,
+    TextDocumentIdentifier,
+    TextDocumentItem,
 )
 
 CALL_TIMEOUT = 5
@@ -46,11 +43,7 @@ def _open_file(client, server, filepath):
         content = fhandle.read()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(testpath), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(testpath), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
     return content
@@ -77,13 +70,15 @@ def test_nacl_sample_no_spurious_diagnostics(client_server):
 
     # Check that there are no ERROR severity diagnostics (only warnings allowed)
     from lsprotocol.types import DiagnosticSeverity
+
     errors = [d for d in client.diagnostics if d.severity == DiagnosticSeverity.Error]
     assert len(errors) == 0, f"NaCl sample should parse without errors, got: {errors}"
 
     # Verify the known lint warnings are about duplicate keywords in conditional branches
     warning_messages = [d.message for d in client.diagnostics if d.severity == DiagnosticSeverity.Warning]
-    assert all("appears" in msg.lower() and "2 times" in msg.lower() for msg in warning_messages), \
-        f"Expected only duplicate-keyword warnings, got: {warning_messages}"
+    assert all(
+        "appears" in msg.lower() and "2 times" in msg.lower() for msg in warning_messages
+    ), f"Expected only duplicate-keyword warnings, got: {warning_messages}"
 
 
 def test_cursor_inside_if_block_completion(client_server, tmp_path):
@@ -113,11 +108,7 @@ def test_cursor_inside_if_block_completion(client_server, tmp_path):
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -145,22 +136,12 @@ def test_set_directive_no_diagnostic(client_server, tmp_path):
     client, server = client_server
 
     test_file = tmp_path / "set_test.inp"
-    test_file.write_text(
-        "@SET MY_VAR hello\n"
-        "@SET ANOTHER_VAR 123\n"
-        "&GLOBAL\n"
-        "   PROJECT test\n"
-        "&END GLOBAL\n"
-    )
+    test_file.write_text("@SET MY_VAR hello\n" "@SET ANOTHER_VAR 123\n" "&GLOBAL\n" "   PROJECT test\n" "&END GLOBAL\n")
 
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -191,11 +172,7 @@ def test_unclosed_if_diagnostic(client_server, tmp_path):
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -205,8 +182,9 @@ def test_unclosed_if_diagnostic(client_server, tmp_path):
 
     # Check that the diagnostic mentions the unclosed block
     messages = [d.message for d in client.diagnostics]
-    assert any("conditional" in msg.lower() or "not closed" in msg.lower() or "endif" in msg.lower() for msg in messages), \
-        f"Expected diagnostic about unclosed conditional, got: {messages}"
+    assert any(
+        "conditional" in msg.lower() or "not closed" in msg.lower() or "endif" in msg.lower() for msg in messages
+    ), f"Expected diagnostic about unclosed conditional, got: {messages}"
 
 
 def test_include_nonexistent_diagnostic(client_server, tmp_path):
@@ -217,21 +195,12 @@ def test_include_nonexistent_diagnostic(client_server, tmp_path):
     client, server = client_server
 
     test_file = tmp_path / "include_test.inp"
-    test_file.write_text(
-        "@INCLUDE nonexistent.inc\n"
-        "&GLOBAL\n"
-        "   PROJECT test\n"
-        "&END GLOBAL\n"
-    )
+    test_file.write_text("@INCLUDE nonexistent.inc\n" "&GLOBAL\n" "   PROJECT test\n" "&END GLOBAL\n")
 
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -241,8 +210,9 @@ def test_include_nonexistent_diagnostic(client_server, tmp_path):
 
     # Check that the diagnostic mentions the include issue
     messages = [d.message for d in client.diagnostics]
-    assert any("include" in msg.lower() or "could not be opened" in msg.lower() for msg in messages), \
-        f"Expected diagnostic about missing include, got: {messages}"
+    assert any(
+        "include" in msg.lower() or "could not be opened" in msg.lower() for msg in messages
+    ), f"Expected diagnostic about missing include, got: {messages}"
 
 
 @pytest.mark.xfail(reason="Formatter not yet implemented in LSP")
@@ -255,21 +225,13 @@ def test_formatter_preserves_preprocessor(client_server, tmp_path):
     client, server = client_server
 
     test_file = tmp_path / "format_preprocessor.inp"
-    original_content = (
-        "&GLOBAL\n"
-        "   @IF $TEST == yes\n"
-        "      PROJECT test\n"
-        "   @ENDIF\n"
-        "&END GLOBAL\n"
-    )
+    original_content = "&GLOBAL\n" "   @IF $TEST == yes\n" "      PROJECT test\n" "   @ENDIF\n" "&END GLOBAL\n"
     test_file.write_text(original_content)
 
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
         DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=original_content
-            )
+            text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=original_content)
         ),
     )
     sleep(CALL_TIMEOUT)
@@ -291,12 +253,12 @@ def test_formatter_preserves_preprocessor(client_server, tmp_path):
     for edit in result:
         if edit.range and edit.newText:
             # Apply the edit (simplified - in real scenario would need proper text edit application)
-            lines = formatted_text.split('\n')
+            lines = formatted_text.split("\n")
             start_line = edit.range.start.line
             end_line = edit.range.end.line
             if start_line == end_line:
                 lines[start_line] = edit.newText
-            formatted_text = '\n'.join(lines)
+            formatted_text = "\n".join(lines)
 
     assert "@IF" in formatted_text, "Formatted text should preserve @IF directive"
     assert "@ENDIF" in formatted_text, "Formatted text should preserve @ENDIF directive"
@@ -335,11 +297,7 @@ def test_variable_reference_in_cell(client_server, tmp_path):
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -375,11 +333,7 @@ def test_nested_section_with_preprocessor(client_server, tmp_path):
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 

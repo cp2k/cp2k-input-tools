@@ -3,10 +3,10 @@ Tests for CP2K input cursor context resolution.
 
 TDD: Tests written first, implementation to follow.
 """
+
 import pytest
 
 from cp2k_input_tools.cursor_context import (
-    CursorContext,
     resolve_cursor_context,
 )
 

@@ -13,26 +13,19 @@ against a golden corpus. Tests cover:
 """
 
 import json
-import os
-import tempfile
-from dataclasses import asdict
-from pathlib import Path
-from typing import Dict, List, Set
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 
 from cp2k_input_tools.evaluation import (
-    CompletionResult,
     DiagnosticComparison,
     EvaluationHarness,
     EvaluationMetrics,
     EvaluationReport,
-    HoverResult,
     TestFixture,
-    compare_diagnostics,
-    calculate_mrr,
     calculate_hit_at_k,
+    calculate_mrr,
+    compare_diagnostics,
     generate_html_report,
     generate_json_report,
 )
@@ -104,12 +97,8 @@ class TestDiagnosticComparison:
 
     def test_exact_match(self):
         """Test diagnostic exact matching."""
-        golden = [
-            {"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test error"}
-        ]
-        actual = [
-            {"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test error"}
-        ]
+        golden = [{"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test error"}]
+        actual = [{"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test error"}]
 
         comparison = compare_diagnostics(actual, golden)
         assert comparison.true_positives == 1
@@ -118,12 +107,8 @@ class TestDiagnosticComparison:
 
     def test_fuzzy_match_by_line_and_code(self):
         """Test fuzzy matching by line and code when exact match fails."""
-        golden = [
-            {"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test error"}
-        ]
-        actual = [
-            {"line": 5, "column": 5, "severity": "error", "code": "test_code", "message": "Slightly different"}
-        ]
+        golden = [{"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test error"}]
+        actual = [{"line": 5, "column": 5, "severity": "error", "code": "test_code", "message": "Slightly different"}]
 
         comparison = compare_diagnostics(actual, golden)
         # Should match by line and code
@@ -134,9 +119,7 @@ class TestDiagnosticComparison:
     def test_false_positive_extra_actual_diagnostic(self):
         """Test detection of false positives."""
         golden = []
-        actual = [
-            {"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test"}
-        ]
+        actual = [{"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test"}]
 
         comparison = compare_diagnostics(actual, golden)
         assert comparison.true_positives == 0
@@ -145,9 +128,7 @@ class TestDiagnosticComparison:
 
     def test_false_negative_missing_actual_diagnostic(self):
         """Test detection of false negatives."""
-        golden = [
-            {"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test"}
-        ]
+        golden = [{"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test"}]
         actual = []
 
         comparison = compare_diagnostics(actual, golden)
@@ -174,12 +155,8 @@ class TestDiagnosticComparison:
 
     def test_severity_mismatch_counts_as_difference(self):
         """Test that severity mismatch between actual and golden creates a difference."""
-        golden = [
-            {"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test"}
-        ]
-        actual = [
-            {"line": 5, "column": 3, "severity": "warning", "code": "test_code", "message": "Test"}
-        ]
+        golden = [{"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test"}]
+        actual = [{"line": 5, "column": 3, "severity": "warning", "code": "test_code", "message": "Test"}]
 
         comparison = compare_diagnostics(actual, golden)
         # Should count as different - severity is part of the match criteria
@@ -189,9 +166,7 @@ class TestDiagnosticComparison:
 
     def test_duplicate_handling(self):
         """Test that duplicate diagnostics are handled correctly."""
-        golden = [
-            {"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test"}
-        ]
+        golden = [{"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test"}]
         actual = [
             {"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test"},
             {"line": 5, "column": 3, "severity": "error", "code": "test_code", "message": "Test"},
@@ -408,16 +383,18 @@ class TestEvaluationHarness:
         fixture = TestFixture(
             name="test",
             input_content="&FORCE_EVAL\n  METHOD \n&END\n",
-            golden_completions=[{
-                "line": 1,
-                "column": 2,
-                "expected_items": ["METHOD_RHF", "METHOD_PBE0"],
-            }],
+            golden_completions=[
+                {
+                    "line": 1,
+                    "column": 2,
+                    "expected_items": ["METHOD_RHF", "METHOD_PBE0"],
+                }
+            ],
         )
 
         mock_completions = ["METHOD_RHF", "METHOD_PBE0"]
 
-        with patch.object(harness, '_get_completions', return_value=mock_completions):
+        with patch.object(harness, "_get_completions", return_value=mock_completions):
             results = harness.evaluate_completions(fixture)
 
         assert len(results) == 1
@@ -428,16 +405,18 @@ class TestEvaluationHarness:
         fixture = TestFixture(
             name="test",
             input_content="&FORCE_EVAL\n  METHOD XYZ\n&END\n",
-            golden_hover=[{
-                "line": 1,
-                "column": 2,
-                "expected_content": "electronic structure method",
-            }],
+            golden_hover=[
+                {
+                    "line": 1,
+                    "column": 2,
+                    "expected_content": "electronic structure method",
+                }
+            ],
         )
 
         mock_hover = "Specifies the electronic structure method to use"
 
-        with patch.object(harness, '_get_hover', return_value=mock_hover):
+        with patch.object(harness, "_get_hover", return_value=mock_hover):
             results = harness.evaluate_hover(fixture)
 
         assert len(results) == 1
@@ -449,18 +428,14 @@ class TestEvaluationHarness:
             EvaluationReport(
                 fixture_name="test1",
                 metrics=EvaluationMetrics(diagnostic_precision=0.9),
-                diagnostic_comparison=DiagnosticComparison(
-                    true_positives=9, false_positives=1, false_negatives=1
-                ),
+                diagnostic_comparison=DiagnosticComparison(true_positives=9, false_positives=1, false_negatives=1),
                 completion_results=[],
                 hover_results=[],
             ),
             EvaluationReport(
                 fixture_name="test2",
                 metrics=EvaluationMetrics(diagnostic_precision=0.8),
-                diagnostic_comparison=DiagnosticComparison(
-                    true_positives=8, false_positives=2, false_negatives=2
-                ),
+                diagnostic_comparison=DiagnosticComparison(true_positives=8, false_positives=2, false_negatives=2),
                 completion_results=[],
                 hover_results=[],
             ),
@@ -479,9 +454,9 @@ class TestEvaluationHarness:
 
         golden_file = fixture_dir / "test_golden.json"
 
-        with patch.object(harness, '_get_diagnostics', return_value=[
-            {"line": 1, "severity": "error", "code": "test", "message": "Test"}
-        ]):
+        with patch.object(
+            harness, "_get_diagnostics", return_value=[{"line": 1, "severity": "error", "code": "test", "message": "Test"}]
+        ):
             harness.update_golden_file(str(inp_file), str(golden_file))
 
         assert golden_file.exists()
@@ -499,9 +474,7 @@ class TestReportGeneration:
             EvaluationReport(
                 fixture_name="test",
                 metrics=EvaluationMetrics(diagnostic_precision=0.9),
-                diagnostic_comparison=DiagnosticComparison(
-                    true_positives=9, false_positives=1, false_negatives=1
-                ),
+                diagnostic_comparison=DiagnosticComparison(true_positives=9, false_positives=1, false_negatives=1),
                 completion_results=[],
                 hover_results=[],
             )
@@ -521,9 +494,7 @@ class TestReportGeneration:
             EvaluationReport(
                 fixture_name="test",
                 metrics=EvaluationMetrics(diagnostic_precision=0.9),
-                diagnostic_comparison=DiagnosticComparison(
-                    true_positives=9, false_positives=1, false_negatives=1
-                ),
+                diagnostic_comparison=DiagnosticComparison(true_positives=9, false_positives=1, false_negatives=1),
                 completion_results=[],
                 hover_results=[],
             )
@@ -551,41 +522,51 @@ class TestIntegration:
         inp1 = fixtures_dir / "basic_energy.inp"
         inp1.write_text("&FORCE_EVAL\n  METHOD XYZ\n&END\n")
         golden1 = fixtures_dir / "basic_energy_golden.json"
-        golden1.write_text(json.dumps({
-            "diagnostics": [
-                {"line": 1, "column": 2, "severity": "error", "code": "unknown", "message": "Unknown"}
-            ],
-            "completions": None,
-            "hover": None,
-        }))
+        golden1.write_text(
+            json.dumps(
+                {
+                    "diagnostics": [{"line": 1, "column": 2, "severity": "error", "code": "unknown", "message": "Unknown"}],
+                    "completions": None,
+                    "hover": None,
+                }
+            )
+        )
 
         # Fixture 2: With completions
         inp2 = fixtures_dir / "with_completions.inp"
         inp2.write_text("&FORCE_EVAL\n  METHOD \n&END\n")
         golden2 = fixtures_dir / "with_completions_golden.json"
-        golden2.write_text(json.dumps({
-            "diagnostics": [],
-            "completions": {
-                "line": 1,
-                "column": 2,
-                "expected_items": ["METHOD_RHF", "METHOD_PBE0", "METHOD_HF"],
-            },
-            "hover": None,
-        }))
+        golden2.write_text(
+            json.dumps(
+                {
+                    "diagnostics": [],
+                    "completions": {
+                        "line": 1,
+                        "column": 2,
+                        "expected_items": ["METHOD_RHF", "METHOD_PBE0", "METHOD_HF"],
+                    },
+                    "hover": None,
+                }
+            )
+        )
 
         # Fixture 3: With hover
         inp3 = fixtures_dir / "with_hover.inp"
         inp3.write_text("&FORCE_EVAL\n  METHOD XYZ\n&END\n")
         golden3 = fixtures_dir / "with_hover_golden.json"
-        golden3.write_text(json.dumps({
-            "diagnostics": [],
-            "completions": None,
-            "hover": {
-                "line": 1,
-                "column": 2,
-                "expected_content": "electronic structure",
-            },
-        }))
+        golden3.write_text(
+            json.dumps(
+                {
+                    "diagnostics": [],
+                    "completions": None,
+                    "hover": {
+                        "line": 1,
+                        "column": 2,
+                        "expected_content": "electronic structure",
+                    },
+                }
+            )
+        )
 
         return fixtures_dir
 
@@ -654,12 +635,8 @@ class TestEdgeCases:
 
     def test_no_matching_diagnostics_at_all(self):
         """Test when actual and golden diagnostics don't match at all."""
-        golden = [
-            {"line": 1, "severity": "error", "code": "error_1", "message": "Error 1"}
-        ]
-        actual = [
-            {"line": 5, "severity": "error", "code": "error_2", "message": "Error 2"}
-        ]
+        golden = [{"line": 1, "severity": "error", "code": "error_1", "message": "Error 1"}]
+        actual = [{"line": 5, "severity": "error", "code": "error_2", "message": "Error 2"}]
 
         comparison = compare_diagnostics(actual, golden)
         assert comparison.true_positives == 0

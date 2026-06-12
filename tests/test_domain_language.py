@@ -1,16 +1,14 @@
 """TDD tests for domain language description API (#36, #37, #38)."""
 
 import json
-import pytest
 
 from cp2k_input_tools.domain_language import (
+    describe_keyword,
     describe_language,
     describe_section,
-    describe_keyword,
-    suggest_next,
     make_example,
+    suggest_next,
 )
-
 
 # ============================================================================
 # #36 – Domain language description API
@@ -310,6 +308,7 @@ class TestMakeExample:
     def test_make_example_is_parseable(self):
         """Generated example should be parseable."""
         import io
+
         from cp2k_input_tools.parser import CP2KInputParser
 
         result = make_example("GLOBAL")

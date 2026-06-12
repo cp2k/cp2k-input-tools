@@ -6,16 +6,18 @@ Provides:
 """
 
 import re
-from typing import List, Optional, Tuple
+from typing import List, Optional
+
 from lsprotocol.types import Location, Position, Range
 
 # Try to import schema API; fall back to basic functionality if not available
 try:
     from cp2k_lsp.agent_api.schema import (
-        lookup_section_schema,
-        lookup_keyword_schema,
         lookup_keyword_at_path,
+        lookup_keyword_schema,
+        lookup_section_schema,
     )
+
     SCHEMA_AVAILABLE = True
 except ImportError:
     SCHEMA_AVAILABLE = False
@@ -44,16 +46,16 @@ def resolve_cursor_context(text: str, position: Position) -> Optional[dict]:
         - section_path: the section context (dot-separated path)
     """
     lines = text.split("\n")
-    
+
     if position.line >= len(lines):
         return None
-    
+
     line_text = lines[position.line]
-    
+
     # Skip empty lines and comments
     if not line_text.strip() or line_text.strip().startswith("!") or line_text.strip().startswith("#"):
         return None
-    
+
     # Check if cursor is on an end section FIRST (before section check)
     end_match = _END_SECTION_PATTERN.match(line_text.strip())
     if end_match:
@@ -63,7 +65,7 @@ def resolve_cursor_context(text: str, position: Position) -> Optional[dict]:
         end_text = "END"
         if start_char + len(end_text) <= len(line_text):
             end_char = start_char + len(end_text)
-            
+
             # Check if cursor is on "END"
             if start_char <= position.character <= end_char:
                 name = end_match.group("name") or ""
@@ -73,11 +75,11 @@ def resolve_cursor_context(text: str, position: Position) -> Optional[dict]:
                     "line": line_text,
                     "range": Range(
                         start=Position(line=position.line, character=start_char),
-                        end=Position(line=position.line, character=end_char)
+                        end=Position(line=position.line, character=end_char),
                     ),
-                    "section_path": None
+                    "section_path": None,
                 }
-            
+
             # Check if cursor is on the section name after "END"
             if name:
                 name_upper = name.upper()
@@ -91,11 +93,11 @@ def resolve_cursor_context(text: str, position: Position) -> Optional[dict]:
                             "line": line_text,
                             "range": Range(
                                 start=Position(line=position.line, character=name_start),
-                                end=Position(line=position.line, character=name_end)
+                                end=Position(line=position.line, character=name_end),
                             ),
-                            "section_path": None
+                            "section_path": None,
                         }
-    
+
     # Check if cursor is on a section definition
     section_match = _SECTION_PATTERN.match(line_text.strip())
     if section_match:
@@ -107,19 +109,18 @@ def resolve_cursor_context(text: str, position: Position) -> Optional[dict]:
         if name_start == -1:
             name_start = start_char
         end_char = name_start + len(name)
-        
+
         if start_char <= position.character <= end_char:
             return {
                 "type": "section",
                 "name": name,
                 "line": line_text,
                 "range": Range(
-                    start=Position(line=position.line, character=name_start),
-                    end=Position(line=position.line, character=end_char)
+                    start=Position(line=position.line, character=name_start), end=Position(line=position.line, character=end_char)
                 ),
-                "section_path": None  # Will be determined by parent context
+                "section_path": None,  # Will be determined by parent context
             }
-    
+
     # Check if cursor is on a keyword (only if it starts with a letter)
     keyword_match = _KEYWORD_PATTERN.match(line_text.strip())
     if keyword_match:
@@ -128,7 +129,7 @@ def resolve_cursor_context(text: str, position: Position) -> Optional[dict]:
         start_char = line_text.upper().find(name.upper())
         if start_char != -1:
             end_char = start_char + len(name)
-            
+
             # Only return if cursor is on the keyword name, not the value
             if start_char <= position.character <= end_char:
                 return {
@@ -137,11 +138,11 @@ def resolve_cursor_context(text: str, position: Position) -> Optional[dict]:
                     "line": line_text,
                     "range": Range(
                         start=Position(line=position.line, character=start_char),
-                        end=Position(line=position.line, character=end_char)
+                        end=Position(line=position.line, character=end_char),
                     ),
-                    "section_path": None
+                    "section_path": None,
                 }
-    
+
     # Check if cursor is on a variable reference
     for match in _VARIABLE_PATTERN.finditer(line_text):
         if match.start() <= position.character <= match.end():
@@ -151,11 +152,11 @@ def resolve_cursor_context(text: str, position: Position) -> Optional[dict]:
                 "line": line_text,
                 "range": Range(
                     start=Position(line=position.line, character=match.start()),
-                    end=Position(line=position.line, character=match.end())
+                    end=Position(line=position.line, character=match.end()),
                 ),
-                "section_path": None
+                "section_path": None,
             }
-    
+
     return None
 
 
@@ -166,23 +167,23 @@ def get_section_context(text: str, line_number: int) -> str:
     """
     lines = text.split("\n")
     context = []
-    
+
     for i in range(line_number + 1):  # Go up to the target line
         line = lines[i].strip()
         if not line:
             continue
-        
+
         # Skip comment lines
         if line.startswith("!") or line.startswith("#"):
             continue
-        
+
         # Check for section start (but not END)
         section_match = _SECTION_PATTERN.match(line)
         if section_match:
             section_name = section_match.group("name").upper()
             context.append(section_name)
             continue
-        
+
         # Check for section end
         end_match = _END_SECTION_PATTERN.match(line)
         if end_match:
@@ -199,7 +200,7 @@ def get_section_context(text: str, line_number: int) -> str:
                 if context:
                     context.pop()
             continue
-    
+
     return ".".join(context)
 
 
@@ -216,25 +217,25 @@ def find_matching_section_start(text: str, end_line: int, section_name: Optional
     """
     lines = text.split("\n")
     section_stack = []
-    
+
     for i, line in enumerate(lines):
         line_stripped = line.strip()
-        
+
         # Skip empty lines and comments
         if not line_stripped or line_stripped.startswith("!") or line_stripped.startswith("#"):
             continue
-        
+
         # Check for section start
         section_match = _SECTION_PATTERN.match(line_stripped)
         if section_match:
             section_stack.append((i, section_match.group("name").upper()))
             continue
-        
+
         # Check for section end
         end_match = _END_SECTION_PATTERN.match(line_stripped)
         if end_match:
             named_end = end_match.group("name")
-            
+
             if i == end_line:
                 # This is the &END we're looking for
                 if section_name:
@@ -247,7 +248,7 @@ def find_matching_section_start(text: str, end_line: int, section_name: Optional
                     if section_stack:
                         return section_stack[-1][0]
                 return None
-            
+
             # Update stack
             if named_end:
                 target_section = named_end.upper()
@@ -258,7 +259,7 @@ def find_matching_section_start(text: str, end_line: int, section_name: Optional
             else:
                 if section_stack:
                     section_stack.pop()
-    
+
     return None
 
 
@@ -274,10 +275,10 @@ def get_definition(text: str, position: Position, uri: str) -> Optional[Location
         A Location object pointing to the definition, or None if not found
     """
     context = resolve_cursor_context(text, position)
-    
+
     if context is None:
         return None
-    
+
     if context["type"] == "section":
         # Section definitions are in the schema
         if SCHEMA_AVAILABLE:
@@ -288,19 +289,13 @@ def get_definition(text: str, position: Position, uri: str) -> Optional[Location
                 if len(parts) > 1 and context["name"] in parts[-1]:
                     # It's the current section
                     pass
-            
+
             # For now, return a location pointing to the section itself
             # In the future, this could point to schema documentation
-            return Location(
-                uri=uri,
-                range=context["range"]
-            )
+            return Location(uri=uri, range=context["range"])
         else:
-            return Location(
-                uri=uri,
-                range=context["range"]
-            )
-    
+            return Location(uri=uri, range=context["range"])
+
     elif context["type"] == "end_section":
         # &END should navigate to the matching &SECTION
         if context["name"]:
@@ -309,7 +304,7 @@ def get_definition(text: str, position: Position, uri: str) -> Optional[Location
         else:
             # Anonymous &END - find the last opened section
             start_line = find_matching_section_start(text, position.line, None)
-        
+
         if start_line is not None:
             # Find the exact range of the section name
             lines = text.split("\n")
@@ -323,31 +318,27 @@ def get_definition(text: str, position: Position, uri: str) -> Optional[Location
                 if name_start == -1:
                     name_start = start_char
                 end_char = name_start + len(section_name)
-                
+
                 return Location(
                     uri=uri,
                     range=Range(
-                        start=Position(line=start_line, character=name_start),
-                        end=Position(line=start_line, character=end_char)
-                    )
+                        start=Position(line=start_line, character=name_start), end=Position(line=start_line, character=end_char)
+                    ),
                 )
-        
+
         return None
-    
+
     elif context["type"] == "keyword":
         # Keyword definitions are in the schema
         # For now, point to the keyword itself
         # In the future, this could open schema documentation
-        return Location(
-            uri=uri,
-            range=context["range"]
-        )
-    
+        return Location(uri=uri, range=context["range"])
+
     elif context["type"] == "variable":
         # Variable definitions start with @SET
         lines = text.split("\n")
         var_name = context["name"]
-        
+
         for i, line in enumerate(lines):
             set_match = _SET_PATTERN.match(line.strip())
             if set_match and set_match.group("name").upper() == var_name.upper():
@@ -357,17 +348,13 @@ def get_definition(text: str, position: Position, uri: str) -> Optional[Location
                 if start_char == -1:
                     continue
                 end_char = start_char + len(var_name)
-                
+
                 return Location(
-                    uri=uri,
-                    range=Range(
-                        start=Position(line=i, character=start_char),
-                        end=Position(line=i, character=end_char)
-                    )
+                    uri=uri, range=Range(start=Position(line=i, character=start_char), end=Position(line=i, character=end_char))
                 )
-        
+
         return None
-    
+
     return None
 
 
@@ -385,14 +372,14 @@ def find_section_references(text: str, section_name: str, uri: str) -> List[Loca
     references = []
     lines = text.split("\n")
     section_name_upper = section_name.upper()
-    
+
     for i, line in enumerate(lines):
         line_stripped = line.strip()
-        
+
         # Skip empty lines and comments
         if not line_stripped or line_stripped.startswith("!") or line_stripped.startswith("#"):
             continue
-        
+
         # Check for section definition
         section_match = _SECTION_PATTERN.match(line_stripped)
         if section_match:
@@ -406,15 +393,11 @@ def find_section_references(text: str, section_name: str, uri: str) -> List[Loca
                 end_char = name_start + len(matched_name)
                 references.append(
                     Location(
-                        uri=uri,
-                        range=Range(
-                            start=Position(line=i, character=name_start),
-                            end=Position(line=i, character=end_char)
-                        )
+                        uri=uri, range=Range(start=Position(line=i, character=name_start), end=Position(line=i, character=end_char))
                     )
                 )
             continue
-        
+
         # Check for section end
         end_match = _END_SECTION_PATTERN.match(line_stripped)
         if end_match:
@@ -427,14 +410,11 @@ def find_section_references(text: str, section_name: str, uri: str) -> List[Loca
                     references.append(
                         Location(
                             uri=uri,
-                            range=Range(
-                                start=Position(line=i, character=start_char),
-                                end=Position(line=i, character=end_char)
-                            )
+                            range=Range(start=Position(line=i, character=start_char), end=Position(line=i, character=end_char)),
                         )
                     )
             continue
-    
+
     return references
 
 
@@ -452,14 +432,14 @@ def find_keyword_references(text: str, keyword_name: str, uri: str) -> List[Loca
     references = []
     lines = text.split("\n")
     keyword_name_upper = keyword_name.upper()
-    
+
     for i, line in enumerate(lines):
         line_stripped = line.strip()
-        
+
         # Skip empty lines and comments
         if not line_stripped or line_stripped.startswith("!") or line_stripped.startswith("#"):
             continue
-        
+
         # Check for keyword
         keyword_match = _KEYWORD_PATTERN.match(line_stripped)
         if keyword_match:
@@ -472,13 +452,10 @@ def find_keyword_references(text: str, keyword_name: str, uri: str) -> List[Loca
                     references.append(
                         Location(
                             uri=uri,
-                            range=Range(
-                                start=Position(line=i, character=start_char),
-                                end=Position(line=i, character=end_char)
-                            )
+                            range=Range(start=Position(line=i, character=start_char), end=Position(line=i, character=end_char)),
                         )
                     )
-    
+
     return references
 
 
@@ -496,7 +473,7 @@ def find_variable_references(text: str, variable_name: str, uri: str) -> List[Lo
     references = []
     lines = text.split("\n")
     variable_name_upper = variable_name.upper()
-    
+
     for i, line in enumerate(lines):
         # Find @SET definitions
         set_match = _SET_PATTERN.match(line.strip())
@@ -506,28 +483,21 @@ def find_variable_references(text: str, variable_name: str, uri: str) -> List[Lo
                 end_char = start_char + len(variable_name)
                 references.append(
                     Location(
-                        uri=uri,
-                        range=Range(
-                            start=Position(line=i, character=start_char),
-                            end=Position(line=i, character=end_char)
-                        )
+                        uri=uri, range=Range(start=Position(line=i, character=start_char), end=Position(line=i, character=end_char))
                     )
                 )
             continue
-        
+
         # Find $VAR references
         for match in _VARIABLE_PATTERN.finditer(line):
             if match.group("name").upper() == variable_name_upper:
                 references.append(
                     Location(
                         uri=uri,
-                        range=Range(
-                            start=Position(line=i, character=match.start()),
-                            end=Position(line=i, character=match.end())
-                        )
+                        range=Range(start=Position(line=i, character=match.start()), end=Position(line=i, character=match.end())),
                     )
                 )
-    
+
     return references
 
 
@@ -545,13 +515,13 @@ def get_references(text: str, position: Position, uri: str, context: Optional[di
     """
     if context is None:
         context = resolve_cursor_context(text, position)
-    
+
     if context is None:
         return []
-    
+
     if context["type"] == "section":
         return find_section_references(text, context["name"], uri)
-    
+
     elif context["type"] == "end_section":
         # For &END, find references to the section it ends
         if context["name"]:
@@ -567,11 +537,11 @@ def get_references(text: str, position: Position, uri: str, context: Optional[di
                     section_name = match.group("name")
                     return find_section_references(text, section_name, uri)
         return []
-    
+
     elif context["type"] == "keyword":
         return find_keyword_references(text, context["name"], uri)
-    
+
     elif context["type"] == "variable":
         return find_variable_references(text, context["name"], uri)
-    
+
     return []

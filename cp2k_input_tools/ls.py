@@ -5,8 +5,8 @@ from lsprotocol.types import (
     TEXT_DOCUMENT_COMPLETION,
     TEXT_DOCUMENT_DID_CHANGE,
     TEXT_DOCUMENT_DID_CLOSE,
-    TEXT_DOCUMENT_DOCUMENT_SYMBOL,
     TEXT_DOCUMENT_DID_OPEN,
+    TEXT_DOCUMENT_DOCUMENT_SYMBOL,
     TEXT_DOCUMENT_HOVER,
     WORKSPACE_SYMBOL,
     CodeActionParams,
@@ -30,9 +30,9 @@ from .completion import get_completions
 from .hover import get_hover
 from .parser import CP2KInputParserSimplified
 from .parser_errors import ParserError
+from .symbols import get_document_symbols, get_workspace_symbols
 from .tokenizer import TokenizerError
 from .validator import validate_semantics
-from .symbols import get_document_symbols, get_workspace_symbols
 
 
 def _validate(ls, params: Union[DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams]):
@@ -57,9 +57,7 @@ def _validate(ls, params: Union[DidChangeTextDocumentParams, DidCloseTextDocumen
                 line = diag.line - 1 if diag.line > 0 else 0
                 diagnostics.append(
                     Diagnostic(
-                        range=Range(
-                            start=Position(line=line, character=0), end=Position(line=line, character=100)
-                        ),
+                        range=Range(start=Position(line=line, character=0), end=Position(line=line, character=100)),
                         message=diag.message,
                         severity=severity,
                         source="cp2k-lsp",
@@ -73,8 +71,8 @@ def _validate(ls, params: Union[DidChangeTextDocumentParams, DidCloseTextDocumen
                 ctx = exc.args[1]
                 line = ctx.line.rstrip() if ctx.line else ""
                 msg = f"Syntax error: {exc.args[0]} ({exc.__cause__})"
-                linenr = ctx.linenr - 1 if hasattr(ctx, 'linenr') and ctx.linenr else 0
-                colnr = ctx.colnr if hasattr(ctx, 'colnr') else None
+                linenr = ctx.linenr - 1 if hasattr(ctx, "linenr") and ctx.linenr else 0
+                colnr = ctx.colnr if hasattr(ctx, "colnr") else None
             else:
                 # Exception without context (e.g., NameRepetitionError)
                 line = ""
@@ -101,9 +99,7 @@ def _validate(ls, params: Union[DidChangeTextDocumentParams, DidCloseTextDocumen
                 # Clamp character values to valid range [0, 2147483647]
                 start_char = max(0, colnr + 1 - count)
                 end_char = colnr + 1
-                erange = Range(
-                    start=Position(line=linenr, character=start_char), end=Position(line=linenr, character=end_char)
-                )
+                erange = Range(start=Position(line=linenr, character=start_char), end=Position(line=linenr, character=end_char))
 
             else:
                 erange = Range(start=Position(line=linenr, character=1), end=Position(line=linenr, character=len(line)))

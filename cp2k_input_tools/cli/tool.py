@@ -10,14 +10,13 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 import click
 
 from cp2k_input_tools.parser import CP2KInputParser, Section
 from cp2k_input_tools.parser_errors import ParserError
 from cp2k_input_tools.tokenizer import TokenizerError
-
 
 # =============================================================================
 # Data Classes for JSON Output
@@ -27,6 +26,7 @@ from cp2k_input_tools.tokenizer import TokenizerError
 @dataclass
 class DiagRange:
     """Range for a diagnostic in a document."""
+
     start_line: int
     start_col: int
     end_line: int
@@ -44,6 +44,7 @@ class DiagRange:
 @dataclass
 class Diagnostic:
     """A diagnostic message for a CP2K input file."""
+
     severity: str  # "error" | "warning" | "info"
     source: str  # "cp2k-parser" | "cp2k-schema" | "cp2k-lint" | "cp2k-typecheck"
     code: str
@@ -64,6 +65,7 @@ class Diagnostic:
 @dataclass
 class DiagnosticsResult:
     """Result of running diagnostics on a file."""
+
     file: str
     diagnostics: List[Diagnostic] = field(default_factory=list)
 
@@ -87,6 +89,7 @@ class DiagnosticsResult:
 @dataclass
 class Position:
     """A position in a text document."""
+
     line: int  # 0-based
     character: int  # 0-based
 
@@ -97,6 +100,7 @@ class Position:
 @dataclass
 class Range:
     """A range in a text document."""
+
     start: Position
     end: Position
 
@@ -110,6 +114,7 @@ class Range:
 @dataclass
 class CompletionItem:
     """A completion item."""
+
     label: str
     kind: int  # CompletionItemKind
     detail: Optional[str] = None
@@ -127,6 +132,7 @@ class CompletionItem:
 @dataclass
 class DocumentSymbol:
     """A symbol in a document."""
+
     name: str
     kind: int  # SymbolKind
     range: Range
@@ -148,6 +154,7 @@ class DocumentSymbol:
 @dataclass
 class Location:
     """A location in a document."""
+
     uri: str
     range: Range
 
@@ -188,12 +195,11 @@ _VAR_REF_RE = re.compile(r"\$\{?(\w+)\}?")
 _INCLUDE_RE = re.compile(r"^\s*@INCLUDE\s+(.+)", re.IGNORECASE)
 
 
-def _get_section_context_at_position(
-    content: str, line_idx: int
-) -> Optional[Dict[str, Any]]:
+def _get_section_context_at_position(content: str, line_idx: int) -> Optional[Dict[str, Any]]:
     """Get section context information at a given position."""
-    from cp2k_input_tools import DEFAULT_CP2K_INPUT_XML
     import xml.etree.ElementTree as ET
+
+    from cp2k_input_tools import DEFAULT_CP2K_INPUT_XML
 
     try:
         spec = ET.parse(DEFAULT_CP2K_INPUT_XML)
@@ -432,8 +438,9 @@ def _get_hover_info(file_path: str, line: int, char: int) -> Dict[str, Any]:
     if kw_name:
         # Try to get documentation from schema
         try:
-            from cp2k_input_tools import DEFAULT_CP2K_INPUT_XML
             import xml.etree.ElementTree as ET
+
+            from cp2k_input_tools import DEFAULT_CP2K_INPUT_XML
 
             spec = ET.parse(DEFAULT_CP2K_INPUT_XML)
             root = spec.getroot()

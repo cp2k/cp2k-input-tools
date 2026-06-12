@@ -13,10 +13,9 @@ All functions use the schema index (cp2k_input.xml) as the single source of trut
 
 import re
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from . import DEFAULT_CP2K_INPUT_XML
-from .parser import CP2KInputParser, Section
 
 # Regex patterns for parsing CP2K input
 _SECTION_RE = re.compile(r"^(\s*)&([\w\-_]+)\s*(.*)", re.IGNORECASE)
@@ -179,11 +178,13 @@ def describe_language() -> Dict[str, Any]:
         name_node = sec_node.find("./NAME")
         if name_node is not None and name_node.text:
             desc_node = sec_node.find("./DESCRIPTION")
-            top_sections.append({
-                "name": name_node.text.upper(),
-                "description": desc_node.text if desc_node is not None and desc_node.text else "",
-                "repeats": sec_node.get("repeats") == "yes",
-            })
+            top_sections.append(
+                {
+                    "name": name_node.text.upper(),
+                    "description": desc_node.text if desc_node is not None and desc_node.text else "",
+                    "repeats": sec_node.get("repeats") == "yes",
+                }
+            )
 
     return {
         "language_name": "CP2K",
@@ -233,20 +234,24 @@ def describe_section(section_path: str) -> Optional[Dict[str, Any]]:
         kw_name_node = kw_node.find("./NAME")
         if kw_name_node is not None and kw_name_node.text:
             kw_type = _get_keyword_type(kw_node)
-            keywords.append({
-                "name": kw_name_node.text.upper(),
-                "type": kw_type,
-            })
+            keywords.append(
+                {
+                    "name": kw_name_node.text.upper(),
+                    "type": kw_type,
+                }
+            )
 
     # Extract subsections
     subsections = []
     for sub_node in section_node.iterfind("./SECTION"):
         sub_name_node = sub_node.find("./NAME")
         if sub_name_node is not None and sub_name_node.text:
-            subsections.append({
-                "name": sub_name_node.text.upper(),
-                "repeats": sub_node.get("repeats") == "yes",
-            })
+            subsections.append(
+                {
+                    "name": sub_name_node.text.upper(),
+                    "repeats": sub_node.get("repeats") == "yes",
+                }
+            )
 
     return {
         "name": name,
@@ -410,11 +415,13 @@ def suggest_next(text: str, position: int, uri: str) -> Dict[str, Any]:
             name_node = sec_node.find("./NAME")
             if name_node is not None and name_node.text:
                 desc_node = sec_node.find("./DESCRIPTION")
-                suggestions.append({
-                    "name": name_node.text.upper(),
-                    "kind": "section",
-                    "description": desc_node.text if desc_node is not None and desc_node.text else "",
-                })
+                suggestions.append(
+                    {
+                        "name": name_node.text.upper(),
+                        "kind": "section",
+                        "description": desc_node.text if desc_node is not None and desc_node.text else "",
+                    }
+                )
     else:
         # Inside a section, suggest subsections and keywords
         section_node = _resolve_section_path(current_path)
@@ -423,10 +430,12 @@ def suggest_next(text: str, position: int, uri: str) -> Dict[str, Any]:
             for sub_node in section_node.iterfind("./SECTION"):
                 name_node = sub_node.find("./NAME")
                 if name_node is not None and name_node.text:
-                    suggestions.append({
-                        "name": name_node.text.upper(),
-                        "kind": "section",
-                    })
+                    suggestions.append(
+                        {
+                            "name": name_node.text.upper(),
+                            "kind": "section",
+                        }
+                    )
 
             # Suggest keywords
             for kw_node in section_node.iterfind("./KEYWORD"):
@@ -458,10 +467,15 @@ def suggest_next(text: str, position: int, uri: str) -> Dict[str, Any]:
     line_ends_with_space = current_line.endswith(" ") or current_line.endswith("\t")
     line_ends_with_equals = "=" in current_line or current_stripped.endswith("=")
 
-    if last_keyword and (line_ends_with_equals or
-                          (current_kw_match and current_stripped == current_kw_match.group(2)) or
-                          (current_stripped and current_stripped.split()[-1].upper() == last_keyword and
-                           (line_ends_with_space or line_ends_with_equals or ctx.get("current_is_just_keyword", False)))):
+    if last_keyword and (
+        line_ends_with_equals
+        or (current_kw_match and current_stripped == current_kw_match.group(2))
+        or (
+            current_stripped
+            and current_stripped.split()[-1].upper() == last_keyword
+            and (line_ends_with_space or line_ends_with_equals or ctx.get("current_is_just_keyword", False))
+        )
+    ):
 
         # Use the keyword from current line if available, otherwise last_keyword
         if current_kw_match:
@@ -480,10 +494,12 @@ def suggest_next(text: str, position: int, uri: str) -> Dict[str, Any]:
                 # Suggest enum values
                 value_suggestions = []
                 for value in kw_info["enum_values"]:
-                    value_suggestions.append({
-                        "name": value,
-                        "kind": "value",
-                    })
+                    value_suggestions.append(
+                        {
+                            "name": value,
+                            "kind": "value",
+                        }
+                    )
                 if value_suggestions:
                     return {
                         "context": {

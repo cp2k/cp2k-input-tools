@@ -11,23 +11,18 @@ This module provides tools for evaluating LSP accuracy against a golden corpus:
 
 import dataclasses
 import json
-import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 from lsprotocol.types import (
-    Diagnostic,
     Position,
-    Range,
-    CompletionItem,
-    Hover,
 )
 
+from . import DEFAULT_CP2K_INPUT_XML
 from .linter import lint
 from .parser import CP2KInputParser
-from . import DEFAULT_CP2K_INPUT_XML
 
 
 @dataclass
@@ -181,11 +176,7 @@ class EvaluationHarness:
 
         precision = comparison.true_positives / total_actual if total_actual > 0 else 0.0
         recall = comparison.true_positives / total_golden if total_golden > 0 else 0.0
-        f1 = (
-            2 * precision * recall / (precision + recall)
-            if (precision + recall) > 0
-            else 0.0
-        )
+        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
 
         metrics = EvaluationMetrics(
             diagnostic_precision=precision,
@@ -266,10 +257,7 @@ class EvaluationHarness:
             actual_content = self._get_hover(fixture.input_content, position)
 
             # Check if covered (expected content appears in actual)
-            covered = (
-                actual_content is not None
-                and expected_content.lower() in actual_content.lower()
-            )
+            covered = actual_content is not None and expected_content.lower() in actual_content.lower()
 
             # Simple similarity score based on keyword overlap
             similarity_score = calculate_text_similarity(expected_content, actual_content or "")
@@ -330,9 +318,7 @@ class EvaluationHarness:
 
         return diagnostic_report
 
-    def calculate_aggregate_metrics(
-        self, reports: List[EvaluationReport]
-    ) -> EvaluationMetrics:
+    def calculate_aggregate_metrics(self, reports: List[EvaluationReport]) -> EvaluationMetrics:
         """Calculate aggregate metrics across all fixture reports.
 
         Args:
@@ -347,9 +333,7 @@ class EvaluationHarness:
         num_reports = len(reports)
 
         # Average diagnostic metrics
-        avg_diag_precision = sum(
-            r.metrics.diagnostic_precision for r in reports
-        ) / num_reports
+        avg_diag_precision = sum(r.metrics.diagnostic_precision for r in reports) / num_reports
         avg_diag_recall = sum(r.metrics.diagnostic_recall for r in reports) / num_reports
         avg_diag_f1 = sum(r.metrics.diagnostic_f1 for r in reports) / num_reports
 
@@ -410,7 +394,6 @@ class EvaluationHarness:
             List of diagnostic dictionaries.
         """
         # Use the linter module
-        from .validator import Diagnostic as ValidatorDiagnostic
 
         diagnostics = lint(content)
 
@@ -462,9 +445,7 @@ class EvaluationHarness:
         return None
 
 
-def compare_diagnostics(
-    actual: List[Dict[str, Any]], golden: List[Dict[str, Any]]
-) -> DiagnosticComparison:
+def compare_diagnostics(actual: List[Dict[str, Any]], golden: List[Dict[str, Any]]) -> DiagnosticComparison:
     """Compare actual diagnostics against golden expected diagnostics.
 
     Uses fuzzy matching: first tries exact match, then falls back to
@@ -492,10 +473,12 @@ def compare_diagnostics(
 
             if _diagnostics_equal(actual_diag, golden_diag):
                 comparison.true_positives += 1
-                comparison.matches.append({
-                    "actual": actual_diag,
-                    "golden": golden_diag,
-                })
+                comparison.matches.append(
+                    {
+                        "actual": actual_diag,
+                        "golden": golden_diag,
+                    }
+                )
                 matched_actual_indices.add(i)
                 matched_golden_indices.add(j)
                 break
@@ -511,11 +494,13 @@ def compare_diagnostics(
 
             if _diagnostics_fuzzy_match(actual_diag, golden_diag):
                 comparison.true_positives += 1
-                comparison.matches.append({
-                    "actual": actual_diag,
-                    "golden": golden_diag,
-                    "fuzzy": True,
-                })
+                comparison.matches.append(
+                    {
+                        "actual": actual_diag,
+                        "golden": golden_diag,
+                        "fuzzy": True,
+                    }
+                )
                 matched_actual_indices.add(i)
                 matched_golden_indices.add(j)
                 break
@@ -556,11 +541,7 @@ def _diagnostics_equal(d1: Dict[str, Any], d2: Dict[str, Any]) -> bool:
 def _diagnostics_fuzzy_match(d1: Dict[str, Any], d2: Dict[str, Any]) -> bool:
     """Check if two diagnostics match fuzzily (line and code)."""
     # Match by line and code
-    return (
-        d1.get("line") == d2.get("line")
-        and d1.get("code") == d2.get("code")
-        and d1.get("severity") == d2.get("severity")
-    )
+    return d1.get("line") == d2.get("line") and d1.get("code") == d2.get("code") and d1.get("severity") == d2.get("severity")
 
 
 def calculate_mrr(ranked_items: List[str], expected_items: Set[str]) -> float:
@@ -583,9 +564,7 @@ def calculate_mrr(ranked_items: List[str], expected_items: Set[str]) -> float:
     return 0.0
 
 
-def calculate_hit_at_k(
-    ranked_items: List[str], expected_items: Set[str], k: int
-) -> float:
+def calculate_hit_at_k(ranked_items: List[str], expected_items: Set[str], k: int) -> float:
     """Calculate hit@k metric for completion results.
 
     Args:
@@ -687,9 +666,7 @@ def generate_html_report(reports: List[EvaluationReport], output_path: str) -> N
     output.write_text(html)
 
 
-def _generate_html_content(
-    reports: List[EvaluationReport], aggregate: EvaluationMetrics
-) -> str:
+def _generate_html_content(reports: List[EvaluationReport], aggregate: EvaluationMetrics) -> str:
     """Generate HTML content for the report.
 
     Args:

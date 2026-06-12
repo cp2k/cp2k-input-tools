@@ -10,11 +10,8 @@ Test Cases:
 
 import sys
 from time import sleep
-from pathlib import Path
 
 import pytest
-
-from . import TEST_DIR
 
 if hasattr(sys, "pypy_version_info"):
     pytest.skip("pypy is currently not supported", allow_module_level=True)
@@ -22,16 +19,13 @@ if hasattr(sys, "pypy_version_info"):
 pygls = pytest.importorskip("pygls")
 
 from lsprotocol.types import (  # noqa: E402
-    TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_CODE_ACTION,
+    TEXT_DOCUMENT_DID_OPEN,
     CodeActionContext,
-    DidOpenTextDocumentParams,
-    TextDocumentItem,
-    Position,
-    Range,
     CodeActionParams,
+    DidOpenTextDocumentParams,
     TextDocumentIdentifier,
-    CodeActionKind,
+    TextDocumentItem,
 )
 
 CALL_TIMEOUT = 5
@@ -44,11 +38,7 @@ def _open_file(client, server, filepath):
         content = fhandle.read()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(testpath), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(testpath), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
     return content
@@ -59,20 +49,12 @@ def test_code_action_for_invalid_enum(client_server, tmp_path):
     client, server = client_server
 
     test_file = tmp_path / "invalid_enum.inp"
-    test_file.write_text(
-        "&FORCE_EVAL\n"
-        "   METHOD NOT_A_VALID_METHOD\n"
-        "&END FORCE_EVAL\n"
-    )
+    test_file.write_text("&FORCE_EVAL\n" "   METHOD NOT_A_VALID_METHOD\n" "&END FORCE_EVAL\n")
 
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -104,20 +86,12 @@ def test_code_action_for_unknown_keyword(client_server, tmp_path):
     client, server = client_server
 
     test_file = tmp_path / "unknown_keyword.inp"
-    test_file.write_text(
-        "&FORCE_EVAL\n"
-        "   FAKE_KEYWORD value\n"
-        "&END FORCE_EVAL\n"
-    )
+    test_file.write_text("&FORCE_EVAL\n" "   FAKE_KEYWORD value\n" "&END FORCE_EVAL\n")
 
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -141,11 +115,7 @@ def test_no_code_actions_for_syntax_errors(client_server, tmp_path):
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 

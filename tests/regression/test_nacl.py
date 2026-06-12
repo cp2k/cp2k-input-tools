@@ -11,8 +11,8 @@ Test Cases:
 """
 
 import sys
-from time import sleep
 from pathlib import Path
+from time import sleep
 
 import pytest
 
@@ -25,16 +25,16 @@ if hasattr(sys, "pypy_version_info"):
 pygls = pytest.importorskip("pygls")
 
 from lsprotocol.types import (  # noqa: E402
-    TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_COMPLETION,
+    TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_HOVER,
-    DidOpenTextDocumentParams,
-    TextDocumentItem,
-    Position,
     CompletionParams,
-    HoverParams,
-    TextDocumentIdentifier,
     DiagnosticSeverity,
+    DidOpenTextDocumentParams,
+    HoverParams,
+    Position,
+    TextDocumentIdentifier,
+    TextDocumentItem,
 )
 
 CALL_TIMEOUT = 5
@@ -47,11 +47,7 @@ def _open_file(client, server, filepath):
         content = fhandle.read()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(testpath), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(testpath), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
     return content
@@ -63,7 +59,7 @@ def test_nacl_completion_works(client_server):
     testpath = TEST_DIR / "inputs" / "NaCl.inp"
     content = _open_file(client, server, testpath)
 
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     # Test completion at various positions in the file
     test_positions = [
@@ -101,7 +97,7 @@ def test_nacl_hover_works(client_server):
     testpath = TEST_DIR / "inputs" / "NaCl.inp"
     content = _open_file(client, server, testpath)
 
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     # Find some keywords to test hover on
     keyword_lines = [

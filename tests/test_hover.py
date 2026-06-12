@@ -10,7 +10,6 @@ Test Cases:
 
 import sys
 from time import sleep
-from pathlib import Path
 
 import pytest
 
@@ -25,11 +24,10 @@ from lsprotocol.types import (  # noqa: E402
     TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_HOVER,
     DidOpenTextDocumentParams,
-    TextDocumentItem,
-    Position,
     HoverParams,
+    Position,
     TextDocumentIdentifier,
-    MarkedString,
+    TextDocumentItem,
 )
 
 CALL_TIMEOUT = 5
@@ -42,11 +40,7 @@ def _open_file(client, server, filepath):
         content = fhandle.read()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(testpath), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(testpath), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
     return content
@@ -58,22 +52,13 @@ def test_hover_on_keyword_shows_metadata(client_server, tmp_path):
 
     test_file = tmp_path / "hover_keyword.inp"
     test_file.write_text(
-        "&FORCE_EVAL\n"
-        "   METHOD QS\n"
-        "   &DFT\n"
-        "      BASIS_SET_FILE_NAME BASIS_DEFAULT\n"
-        "   &END DFT\n"
-        "&END FORCE_EVAL\n"
+        "&FORCE_EVAL\n" "   METHOD QS\n" "   &DFT\n" "      BASIS_SET_FILE_NAME BASIS_DEFAULT\n" "   &END DFT\n" "&END FORCE_EVAL\n"
     )
 
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -98,22 +83,13 @@ def test_hover_on_section_shows_description(client_server, tmp_path):
 
     test_file = tmp_path / "hover_section.inp"
     test_file.write_text(
-        "&FORCE_EVAL\n"
-        "   METHOD QS\n"
-        "   &DFT\n"
-        "      BASIS_SET_FILE_NAME BASIS_DEFAULT\n"
-        "   &END DFT\n"
-        "&END FORCE_EVAL\n"
+        "&FORCE_EVAL\n" "   METHOD QS\n" "   &DFT\n" "      BASIS_SET_FILE_NAME BASIS_DEFAULT\n" "   &END DFT\n" "&END FORCE_EVAL\n"
     )
 
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -136,20 +112,12 @@ def test_hover_on_enum_value_shows_info(client_server, tmp_path):
     client, server = client_server
 
     test_file = tmp_path / "hover_enum.inp"
-    test_file.write_text(
-        "&FORCE_EVAL\n"
-        "   METHOD QS\n"
-        "&END FORCE_EVAL\n"
-    )
+    test_file.write_text("&FORCE_EVAL\n" "   METHOD QS\n" "&END FORCE_EVAL\n")
 
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -166,8 +134,9 @@ def test_hover_on_enum_value_shows_info(client_server, tmp_path):
     if result is not None:
         hover_content = result.contents.value if hasattr(result.contents, "value") else str(result.contents)
         # Should mention either the value or the keyword
-        assert "QS" in hover_content.upper() or "METHOD" in hover_content.upper(), \
-            "Hover should mention the enum value or parent keyword"
+        assert (
+            "QS" in hover_content.upper() or "METHOD" in hover_content.upper()
+        ), "Hover should mention the enum value or parent keyword"
 
 
 def test_hover_inside_preprocessor_block(client_server, tmp_path):
@@ -176,22 +145,13 @@ def test_hover_inside_preprocessor_block(client_server, tmp_path):
 
     test_file = tmp_path / "hover_preprocessor.inp"
     test_file.write_text(
-        "@SET USE_DFT yes\n"
-        "&FORCE_EVAL\n"
-        "   @IF $USE_DFT == yes\n"
-        "      METHOD QS\n"
-        "   @ENDIF\n"
-        "&END FORCE_EVAL\n"
+        "@SET USE_DFT yes\n" "&FORCE_EVAL\n" "   @IF $USE_DFT == yes\n" "      METHOD QS\n" "   @ENDIF\n" "&END FORCE_EVAL\n"
     )
 
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -214,20 +174,12 @@ def test_hover_on_unknown_keyword_returns_none(client_server, tmp_path):
     client, server = client_server
 
     test_file = tmp_path / "hover_unknown.inp"
-    test_file.write_text(
-        "&FORCE_EVAL\n"
-        "   FAKE_KEYWORD xyz\n"
-        "&END FORCE_EVAL\n"
-    )
+    test_file.write_text("&FORCE_EVAL\n" "   FAKE_KEYWORD xyz\n" "&END FORCE_EVAL\n")
 
     content = test_file.read_text()
     client.lsp.notify(
         TEXT_DOCUMENT_DID_OPEN,
-        DidOpenTextDocumentParams(
-            text_document=TextDocumentItem(
-                uri=str(test_file), language_id="cp2k", version=1, text=content
-            )
-        ),
+        DidOpenTextDocumentParams(text_document=TextDocumentItem(uri=str(test_file), language_id="cp2k", version=1, text=content)),
     )
     sleep(CALL_TIMEOUT)
 
@@ -250,12 +202,12 @@ def test_hover_nacl_sample(client_server):
     testpath = TEST_DIR / "inputs" / "NaCl.inp"
     content = _open_file(client, server, testpath)
 
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     # Find a keyword line to test hover
     for i, line in enumerate(lines):
         stripped = line.strip()
-        if stripped and not stripped.startswith('&') and not stripped.startswith('!') and not stripped.startswith('@'):
+        if stripped and not stripped.startswith("&") and not stripped.startswith("!") and not stripped.startswith("@"):
             # Try hover on this line
             result = client.lsp.send_request(
                 TEXT_DOCUMENT_HOVER,

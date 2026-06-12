@@ -11,11 +11,12 @@ Features:
 
 TDD: Implementation written to pass tests in tests/test_hover.py
 """
+
 from typing import Optional
 
 from lsprotocol.types import Hover, Position
 
-from .cursor_context import CursorContext, resolve_cursor_context
+from .cursor_context import resolve_cursor_context
 from .schema_index import CP2KSchemaIndex, get_schema_index
 
 

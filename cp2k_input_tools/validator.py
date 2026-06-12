@@ -26,18 +26,15 @@ REMOVED_KEYWORDS = {
     # CP2K 2023.x removed
     "SINGLE_PRECISION_MATRICES": {
         "since": "2023.1",
-        "message": "SINGLE_PRECISION_MATRICES 已在 CP2K 2023.x 中移除。\n"
-        "建议：移除此关键字，精度控制现在通过其他参数实现。",
+        "message": "SINGLE_PRECISION_MATRICES 已在 CP2K 2023.x 中移除。\n" "建议：移除此关键字，精度控制现在通过其他参数实现。",
     },
     "BROYDEN_MIXING_NEW": {
         "since": "2024.1",
-        "message": "BROYDEN_MIXING_NEW 已在 CP2K 2024.x 中移除。\n"
-        "建议：使用 BROYDEN_MIXING 或其他混合方法。",
+        "message": "BROYDEN_MIXING_NEW 已在 CP2K 2024.x 中移除。\n" "建议：使用 BROYDEN_MIXING 或其他混合方法。",
     },
     "KP_RI_EXTENSION_FACTOR": {
         "since": "2024.1",
-        "message": "KP_RI_EXTENSION_FACTOR 已在 CP2K 2024.x 中移除。\n"
-        "建议：使用新的 K 点 RI 参数配置。",
+        "message": "KP_RI_EXTENSION_FACTOR 已在 CP2K 2024.x 中移除。\n" "建议：使用新的 K 点 RI 参数配置。",
     },
 }
 
@@ -50,8 +47,7 @@ DEPRECATED_KEYWORDS = {
     },
     "PEXSI": {
         "since": "2024.1",
-        "message": "PEXSI 支持已在 CP2K 2024.x 中标记为废弃。\n"
-        "建议：考虑使用其他电子结构方法。",
+        "message": "PEXSI 支持已在 CP2K 2024.x 中标记为废弃。\n" "建议：考虑使用其他电子结构方法。",
     },
 }
 
@@ -138,19 +134,98 @@ class CP2KSemanticValidator:
 
     # Element to atomic number (common elements)
     ELEMENT_Z = {
-        "H": 1, "He": 2, "Li": 3, "Be": 4, "B": 5, "C": 6, "N": 7, "O": 8,
-        "F": 9, "Ne": 10, "Na": 11, "Mg": 12, "Al": 13, "Si": 14, "P": 15,
-        "S": 16, "Cl": 17, "Ar": 18, "K": 19, "Ca": 20, "Sc": 21, "Ti": 22,
-        "V": 23, "Cr": 24, "Mn": 25, "Fe": 26, "Co": 27, "Ni": 28, "Cu": 29,
-        "Zn": 30, "Ga": 31, "Ge": 32, "As": 33, "Se": 34, "Br": 35, "Kr": 36,
-        "Rb": 37, "Sr": 38, "Y": 39, "Zr": 40, "Nb": 41, "Mo": 42, "Tc": 43,
-        "Ru": 44, "Rh": 45, "Pd": 46, "Ag": 47, "Cd": 48, "In": 49, "Sn": 50,
-        "Sb": 51, "Te": 52, "I": 53, "Xe": 54, "Cs": 55, "Ba": 56, "La": 57,
-        "Ce": 58, "Pr": 59, "Nd": 60, "Pm": 61, "Sm": 62, "Eu": 63, "Gd": 64,
-        "Tb": 65, "Dy": 66, "Ho": 67, "Er": 68, "Tm": 69, "Yb": 70, "Lu": 71,
-        "Hf": 72, "Ta": 73, "W": 74, "Re": 75, "Os": 76, "Ir": 77, "Pt": 78,
-        "Au": 79, "Hg": 80, "Tl": 81, "Pb": 82, "Bi": 83, "Po": 84, "At": 85,
-        "Rn": 86, "Fr": 87, "Ra": 88, "Ac": 89, "Th": 90, "Pa": 91, "U": 92,
+        "H": 1,
+        "He": 2,
+        "Li": 3,
+        "Be": 4,
+        "B": 5,
+        "C": 6,
+        "N": 7,
+        "O": 8,
+        "F": 9,
+        "Ne": 10,
+        "Na": 11,
+        "Mg": 12,
+        "Al": 13,
+        "Si": 14,
+        "P": 15,
+        "S": 16,
+        "Cl": 17,
+        "Ar": 18,
+        "K": 19,
+        "Ca": 20,
+        "Sc": 21,
+        "Ti": 22,
+        "V": 23,
+        "Cr": 24,
+        "Mn": 25,
+        "Fe": 26,
+        "Co": 27,
+        "Ni": 28,
+        "Cu": 29,
+        "Zn": 30,
+        "Ga": 31,
+        "Ge": 32,
+        "As": 33,
+        "Se": 34,
+        "Br": 35,
+        "Kr": 36,
+        "Rb": 37,
+        "Sr": 38,
+        "Y": 39,
+        "Zr": 40,
+        "Nb": 41,
+        "Mo": 42,
+        "Tc": 43,
+        "Ru": 44,
+        "Rh": 45,
+        "Pd": 46,
+        "Ag": 47,
+        "Cd": 48,
+        "In": 49,
+        "Sn": 50,
+        "Sb": 51,
+        "Te": 52,
+        "I": 53,
+        "Xe": 54,
+        "Cs": 55,
+        "Ba": 56,
+        "La": 57,
+        "Ce": 58,
+        "Pr": 59,
+        "Nd": 60,
+        "Pm": 61,
+        "Sm": 62,
+        "Eu": 63,
+        "Gd": 64,
+        "Tb": 65,
+        "Dy": 66,
+        "Ho": 67,
+        "Er": 68,
+        "Tm": 69,
+        "Yb": 70,
+        "Lu": 71,
+        "Hf": 72,
+        "Ta": 73,
+        "W": 74,
+        "Re": 75,
+        "Os": 76,
+        "Ir": 77,
+        "Pt": 78,
+        "Au": 79,
+        "Hg": 80,
+        "Tl": 81,
+        "Pb": 82,
+        "Bi": 83,
+        "Po": 84,
+        "At": 85,
+        "Rn": 86,
+        "Fr": 87,
+        "Ra": 88,
+        "Ac": 89,
+        "Th": 90,
+        "Pa": 91,
+        "U": 92,
     }
 
     def __init__(self):
@@ -573,8 +648,7 @@ class CP2KSemanticValidator:
                 self.diagnostics.append(
                     SemanticDiagnostic(
                         line=line,
-                        message=f"关键字 `{key}` 在 CP2K {info['since']} 中已废弃。\n"
-                        f"{info['message']}",
+                        message=f"关键字 `{key}` 在 CP2K {info['since']} 中已废弃。\n" f"{info['message']}",
                         severity="warning",
                         code="DEPRECATED_KEYWORD",
                         section=section_path,
@@ -619,7 +693,7 @@ class CP2KSemanticValidator:
         eps_scf_str = self._get_keyword_value(scf, "eps_scf", "1.0E-5")
         try:
             eps_scf = float(eps_scf_str)
-            if eps_scf > 1.0E-5:
+            if eps_scf > 1.0e-5:
                 line = self._get_section_line(scf)
                 self.diagnostics.append(
                     SemanticDiagnostic(

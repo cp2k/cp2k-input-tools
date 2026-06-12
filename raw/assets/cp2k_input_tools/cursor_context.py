@@ -13,10 +13,10 @@ Key features:
 
 TDD: Implementation written to pass tests in tests/test_cursor_context.py
 """
+
 import re
 from dataclasses import dataclass
 from typing import Optional, Tuple
-
 
 # Regular expressions for CP2K input parsing
 _SECTION_START = re.compile(r"^\s*&\s*([A-Za-z_][A-Za-z0-9_-]*)\b")

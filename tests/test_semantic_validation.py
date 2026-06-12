@@ -1,6 +1,5 @@
 """Tests for semantic validation of CP2K input files."""
 
-
 from cp2k_input_tools.parser import CP2KInputParserSimplified
 from cp2k_input_tools.validator import validate_semantics
 

@@ -80,9 +80,7 @@ def validate_file(file_path: str, base_dir: str = ".") -> ValidationResult:
     return result
 
 
-def run_cp2k_dryrun(
-    file_path: str, cp2k_exe: str = "cp2k.psmp", max_procs: int = 1
-) -> List[Diagnostic]:
+def run_cp2k_dryrun(file_path: str, cp2k_exe: str = "cp2k.psmp", max_procs: int = 1) -> List[Diagnostic]:
     """Run a CP2K dry-run and map output to diagnostics."""
     diagnostics = []
     cmd = [cp2k_exe, "--dry-run", "--input", file_path, "--max-procs", str(max_procs)]
@@ -122,6 +120,7 @@ def run_cp2k_dryrun(
     if proc.returncode != 0:
         # Parse CP2K error output for line numbers
         import re
+
         for line in output.split("\n"):
             # Look for line references in CP2K output
             line_match = re.search(r"line\s+(\d+)", line, re.IGNORECASE)

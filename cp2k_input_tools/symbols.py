@@ -38,12 +38,12 @@ def get_document_symbols(text: str, uri: str) -> List[SymbolInformation]:
         parser = CP2KInputParserSimplified()
         fhandle = io.StringIO(text)
         tree = parser.parse(fhandle)
-        
+
         # Extract symbols from the parsed tree
         symbols = []
         _extract_symbols_from_tree(tree, "", symbols, uri)
         return symbols
-        
+
     except Exception:
         # If parsing fails, return empty list rather than crash
         return []
@@ -67,18 +67,18 @@ def _extract_symbols_from_tree(
         if key.startswith("_"):
             # Skip metadata keys (section parameters)
             continue
-            
+
         # Convert key to uppercase for display
         key_upper = key.upper()
         current_path = f"{parent_path}.{key_upper}" if parent_path else key_upper
-        
+
         if isinstance(value, dict):
             # This is a section
             _add_section_symbol(key_upper, parent_path, symbols, uri)
-            
+
             # Recursively process children
             _extract_symbols_from_tree(value, current_path, symbols, uri)
-                
+
         elif isinstance(value, list):
             # This could be:
             # 1. A list of sections (repeated sections)
@@ -116,7 +116,7 @@ def _add_section_symbol(
     if parent_path:
         parts = parent_path.split(".")
         parent_name = parts[-1] if parts else ""
-    
+
     # Create a Location with URI and Range
     location = Location(
         uri=uri,
@@ -125,7 +125,7 @@ def _add_section_symbol(
             end=Position(line=0, character=0),
         ),
     )
-    
+
     symbol = SymbolInformation(
         name=name,
         kind=SymbolKind.Namespace,
@@ -151,13 +151,13 @@ def _add_keyword_symbol(
     """
     # Clean up keyword name (remove '+' prefix if present)
     clean_name = name.lstrip("+")
-    
+
     # Extract parent name from path
     parent_name = ""
     if parent_path:
         parts = parent_path.split(".")
         parent_name = parts[-1] if parts else ""
-    
+
     # Create a Location with URI and Range
     location = Location(
         uri=uri,
@@ -166,7 +166,7 @@ def _add_keyword_symbol(
             end=Position(line=0, character=0),
         ),
     )
-    
+
     symbol = SymbolInformation(
         name=clean_name,
         kind=SymbolKind.Field,
@@ -191,20 +191,17 @@ def get_workspace_symbols(
     """
     results = []
     query_upper = query.upper()
-    
+
     for file_uri, file_content in all_files.items():
         # Get all symbols from this file
         file_symbols = get_document_symbols(file_content, file_uri)
-        
+
         # Filter by query if provided
         if query:
-            matching_symbols = [
-                sym for sym in file_symbols
-                if query_upper in sym.name.upper()
-            ]
+            matching_symbols = [sym for sym in file_symbols if query_upper in sym.name.upper()]
             results.extend(matching_symbols)
         else:
             # No query, return all symbols
             results.extend(file_symbols)
-    
+
     return results

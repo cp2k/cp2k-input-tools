@@ -177,10 +177,7 @@ def serialize_diagnostics(
     file_type: str = "",
 ) -> list[dict[str, Any]]:
     """Serialize diagnostics deterministically for agents and snapshots."""
-    items = [
-        diagnostic_to_dict(item, software=software, path=path, file_type=file_type)
-        for item in diagnostics
-    ]
+    items = [diagnostic_to_dict(item, software=software, path=path, file_type=file_type) for item in diagnostics]
     return sorted(
         items,
         key=lambda item: (

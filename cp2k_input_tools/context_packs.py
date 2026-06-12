@@ -7,13 +7,13 @@ and diagnostics for agent consumption.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from io import StringIO
 from typing import Any
 
 from .agent_lsp import AgentLSP
-from .parser import CP2KInputParser, DEFAULT_CP2K_INPUT_XML
+from .parser import DEFAULT_CP2K_INPUT_XML, CP2KInputParser
 
 
 @dataclass
@@ -81,7 +81,7 @@ def get_context_pack(
 
     # Parse the input to get cursor context and diagnostics
     parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
-    
+
     try:
         with StringIO(text) as fhandle:
             ast = parser.parse(fhandle)
@@ -175,7 +175,7 @@ def _get_word_at_position(line: str, char: int) -> str:
         char = len(line) - 1
     if char < 0:
         char = 0
-    
+
     # Find word boundaries
     start = char
     while start > 0 and not line[start - 1].isspace():

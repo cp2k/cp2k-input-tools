@@ -12,14 +12,14 @@ Features:
 
 TDD: Implementation written to pass tests in tests/test_code_actions.py
 """
-from typing import List, Optional
+
 import difflib
+from typing import List, Optional
 
 from lsprotocol.types import (
     CodeAction,
     CodeActionKind,
     Range,
-    Position,
 )
 
 from .schema_index import CP2KSchemaIndex, get_schema_index
@@ -76,14 +76,14 @@ def get_code_actions(
                                 {
                                     "range": {
                                         "start": {"line": start_line + 1, "character": 0},
-                                        "end": {"line": start_line + 1, "character": 0}
+                                        "end": {"line": start_line + 1, "character": 0},
                                     },
-                                    "newText": "&END\n"
+                                    "newText": "&END\n",
                                 }
-                            ]
+                            ],
                         }
                     ]
-                }
+                },
             )
         )
 
@@ -128,11 +128,7 @@ def _suggest_keyword_sections(line_text: str, line_num: int, range_obj: Range, s
 
     # For now, just provide a generic message
     actions.append(
-        CodeAction(
-            title=f"Check if '{keyword_name}' belongs in a different section",
-            kind=CodeActionKind.QuickFix,
-            diagnostics=[]
-        )
+        CodeAction(title=f"Check if '{keyword_name}' belongs in a different section", kind=CodeActionKind.QuickFix, diagnostics=[])
     )
 
     return actions
