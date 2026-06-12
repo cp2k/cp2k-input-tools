@@ -1,0 +1,69 @@
+&FORCE_EVAL
+   METHOD Quickstep
+   &DFT
+      &KPOINTS
+         FULL_GRID .FALSE.
+         PARALLEL_GROUP_SIZE -1
+         # SCHEME MONKHORST-PACK 48 48 12
+         SCHEME MONKHORST-PACK 2 2 2
+         SYMMETRY .FALSE.
+      &END KPOINTS
+      &MGRID
+         CUTOFF 1000
+         REL_CUTOFF 100
+      &END MGRID
+      &POISSON
+         PERIODIC XYZ
+      &END POISSON
+      &PRINT
+         &OVERLAP_CONDITION ON
+            1-NORM .TRUE.
+            DIAGONALIZATION .TRUE.
+         &END OVERLAP_CONDITION
+      &END PRINT
+      &QS
+         EPS_DEFAULT 1e-16
+         EXTRAPOLATION USE_GUESS
+         METHOD GPW
+      &END QS
+      &SCF
+         ADDED_MOS 20
+         EPS_SCF 1e-08
+         MAX_SCF 80
+         &MIXING
+            ALPHA 0.4
+            METHOD BROYDEN_MIXING
+         &END MIXING
+         &SMEAR True
+            ELECTRONIC_TEMPERATURE [K] 300
+            METHOD FERMI_DIRAC
+         &END SMEAR
+      &END SCF
+      &XC
+         &XC_FUNCTIONAL PBE
+         &END XC_FUNCTIONAL
+      &END XC
+   &END DFT
+   &SUBSYS
+      &TOPOLOGY
+         COORD_FILE_NAME "deltatest_C_0.98.xyz"
+      &END TOPOLOGY
+      &CELL
+         &CELL_REF
+            A [angstrom] 2.62324706413 0.0 0.0
+            B [angstrom] -1.31162353206 2.27179859685 0.0
+            C [angstrom] 5.75261990387e-16 9.96382994087e-16 9.39474125184
+            PERIODIC XYZ
+         &END CELL_REF
+      &END CELL
+      &KIND C
+         ELEMENT C
+         POTENTIAL GTH-PBE-q4
+         BASIS_SET ORB TZVP-MOLOPT-SR-GTH
+      &END KIND
+   &END SUBSYS
+&END FORCE_EVAL
+&GLOBAL
+   PRINT_LEVEL MEDIUM
+   RUN_TYPE ENERGY
+&END GLOBAL

@@ -1,0 +1,21 @@
+# Energy
+wavenumber_e = h * c * wavenumber  # ṽ (nu-tilde) as energy
+kcalmol = 1e3 * calorie / mole
+kjmol = 1e3 * joule / mole
+K_e = kelvin * boltzmann_constant
+
+# Temperature
+au_temp = atomic_unit_of_temperature
+
+# Pressure
+au_p = E_h / bohr**3
+
+# Time
+au_t = atomic_unit_of_time
+# wavenumber_t = 
+
+# Potential
+au_pot = E_h / e
+
+# Force
+au_f = atomic_unit_of_force

@@ -1,0 +1,38 @@
+&FORCE_EVAL
+   &SUBSYS
+      &KIND Na
+         BASIS_SET TZVPd-MOLOPT-SR-GTH
+         ELEMENT Na
+         POTENTIAL GTH-PBE
+         &BS
+            &BETA
+               L 0
+               N 3
+               NEL -2
+            &END BETA
+            &ALPHA
+               L 0
+               N 3
+               NEL -2
+            &END ALPHA
+         &END BS
+      &END KIND
+      &KIND Cl
+         BASIS_SET TZVP-MOLOPT-GTH
+         ELEMENT Cl
+         POTENTIAL GTH-PBE
+         &BS
+            &BETA
+               L 1
+               N 3
+               NEL 2
+            &END BETA
+            &ALPHA
+               L 1
+               N 3
+               NEL 2
+            &END ALPHA
+         &END BS
+      &END KIND
+   &END SUBSYS
+&END FORCE_EVAL

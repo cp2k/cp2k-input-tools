@@ -1,0 +1,29 @@
+force_eval:
+  subsys:
+    kind:
+      Cl:
+        basis_set: TZVP-MOLOPT-GTH
+        element: Cl
+        potential: GTH-PBE
+        bs:
+          alpha:
+           l: 1
+           n: 3
+           nel: 2
+          beta:
+           l: 1
+           n: 3
+           nel: 2
+      Na:
+        basis_set: TZVPd-MOLOPT-SR-GTH
+        element: Na
+        potential: GTH-PBE
+        bs:
+          alpha:
+            l: 0
+            n: 3
+            nel: -2
+          beta:
+            l: 0
+            n: 3
+            nel: -2

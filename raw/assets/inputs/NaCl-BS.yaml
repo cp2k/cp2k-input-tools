@@ -1,0 +1,100 @@
++force_eval:
+- +dft:
+    +mgrid:
+      cutoff: 800.0
+      ngrids: 6
+      rel_cutoff: 80.0
+    +poisson:
+      periodic: xyz
+    +qs:
+      eps_default: 1.0e-20
+      eps_pgf_orb: 1.0e-12
+    +scf:
+      +ot:
+        _: true
+        linesearch: 3pnt
+        minimizer: cg
+        preconditioner: full_all
+        stepsize: 0.075
+      +outer_scf:
+        _: true
+        eps_scf: 1.0e-07
+        max_scf: 20
+      eps_scf: 1.0e-07
+      max_scf: 30
+      scf_guess: atomic
+    +xc:
+      +xc_functional:
+        _: PBE
+    basis_set_file_name:
+    - BASIS_MOLOPT
+    - BASIS_MOLOPT_UCL
+    potential_file_name: POTENTIAL
+    uks: true
+  +print:
+    +forces:
+      add_last: numeric
+      filename: forces
+    +stress_tensor:
+      add_last: numeric
+      filename: stress_tensor
+  +subsys:
+    +cell:
+      a:
+      - 5.98463077603454
+      - 0.0
+      - 0.0
+      b:
+      - 0.0
+      - 5.98463077603454
+      - 0.0
+      c:
+      - 0.0
+      - 0.0
+      - 5.98463077603454
+      periodic: xyz
+    +coord:
+      '*':
+      - Na  0.000000    0.000000    0.000000
+      - Na  0.000000    2.99231538801726995    2.99231538801726995
+      - Na  2.99231538801726995    0.000000    2.99231538801726995
+      - Na  2.99231538801726995    2.99231538801726995    0.000000
+      - Cl  2.99231538801726995    2.99231538801726995    2.99231538801726995
+      - Cl  2.99231538801726995    0.000000    0.000000
+      - Cl  0.000000    2.99231538801726995    0.000000
+      - Cl  0.000000    0.000000    2.99231538801726995
+    +kind:
+    - +bs:
+        +alpha:
+          l: 1
+          n: 3
+          nel: 2
+        +beta:
+          l: 1
+          n: 3
+          nel: 2
+      _: Cl
+      basis_set:
+      - TZVP-MOLOPT-GTH
+      element: Cl
+      potential: GTH-PBE
+    - +bs:
+        +alpha:
+          l: 0
+          n: 3
+          nel: -2
+        +beta:
+          l: 0
+          n: 3
+          nel: -2
+      _: Na
+      basis_set:
+      - TZVPd-MOLOPT-SR-GTH
+      element: Na
+      potential: GTH-PBE
+  method: quickstep
+  stress_tensor: analytical
++global:
+  print_level: medium
+  project_name: NaCl
+  run_type: energy_force

@@ -1,0 +1,10 @@
+&FORCE_EVAL
+   &DFT
+      &PRINT
+         &MOMENTS
+            PERIODIC .FALSE.
+            REFERENCE com
+         &END MOMENTS
+      &END PRINT
+   &END DFT
+&END FORCE_EVAL
