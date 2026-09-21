@@ -8,12 +8,10 @@ try:
 
     from cp2k_input_tools.ls import cp2k_server
 except ImportError:
-    print(
-        """Could not import the pygls package. You have to install the cp2k-input-tools with the 'lsp' extra:
+    print("""Could not import the pygls package. You have to install the cp2k-input-tools with the 'lsp' extra:
 
 pip install cp2k-input-tools[lsp]
-    """
-    )
+    """)
     sys.exit(1)
 
 
