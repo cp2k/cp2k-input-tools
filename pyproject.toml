@@ -18,7 +18,10 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.10,<4"
 transitions = ">=0.7,<0.10"
-Pint = ">=0.15,<0.25"
+Pint = [
+    {version = ">=0.15,<0.25", python = "<3.12"},
+    {version = ">=0.26,<0.27", python = ">=3.12"},
+]
 "ruamel.yaml" = {version = ">=0.16.5,<0.19.0", optional = true}
 pygls = {version = "^1.0.0", optional = true}
 Jinja2 = ">=2.11.3,<4.0.0"
