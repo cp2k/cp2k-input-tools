@@ -1,10 +1,12 @@
 # Change Log
 
 
-## [0.9.2] - 2026-02-xy
+## [0.9.2] - 2026-10-23
 
- * Specify XML format definmition fie via --xml command line switch or 
-   env variable ENV_VAR_FOR_CP2K_INPUT_XML 
+* specify the XML format definition file via the `--xml` command-line switch or
+  the `FROMCP2K_XML_DEFINITION` environment variable
+* allow Pint 0.26 on Python 3.12+ (older Pythons continue to use Pint <0.25)
+* increase the minimum required Python version to 3.10
 
 ## [0.9.1] - 2024-02-16
 
