@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 
@@ -7,17 +8,24 @@ from cp2k_input_tools.parser import CP2KInputParser
 from cp2k_input_tools.parser_errors import ParserError
 from cp2k_input_tools.tokenizer import TokenizerError
 
-from . import base_dir_option, fhandle_argument, var_values_option
+from . import ENV_VAR_FOR_CP2K_INPUT_XML, base_dir_option, fhandle_argument, var_values_option, xml_option
 
 
 @click.command()
 @fhandle_argument
 @var_values_option
 @base_dir_option
-def cp2klint(fhandle, var_values, base_dir):
+@xml_option
+def cp2klint(fhandle, var_values, base_dir, xml):
     """Check the passed CP2K file for syntax errors"""
 
-    cp2k_parser = CP2KInputParser(base_dir=base_dir)
+    if not xml:
+        xml = os.environ.get(ENV_VAR_FOR_CP2K_INPUT_XML)
+
+    if xml:
+        print(f"    Using XML definition '{xml}'", file=sys.stderr)
+
+    cp2k_parser = CP2KInputParser(xmlspec=xml, base_dir=base_dir)
 
     try:
         cp2k_parser.parse(fhandle, dict(var_values))
