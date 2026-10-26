@@ -26,9 +26,11 @@ class PseudopotentialDataNonLocal(BaseModel):
     coefficients: List[Decimal] = Field(..., alias="coeffs")
 
     @model_validator(mode="after")
-    def check_coefficients(cls, obj):
-        assert len(obj.coefficients) == obj.nproj * (obj.nproj + 1) // 2, "invalid number of coefficients for non-local projection"
-        return obj
+    def check_coefficients(self):
+        assert (
+            len(self.coefficients) == self.nproj * (self.nproj + 1) // 2
+        ), "invalid number of coefficients for non-local projection"
+        return self
 
     model_config = {
         "extra": "forbid",

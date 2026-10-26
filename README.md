@@ -18,7 +18,7 @@ For a description of the JSON/YAML formats used, see below.
 
 ## Requirements
 
-* Python 3.9+
+* Python 3.10+
 * https://pypi.org/project/transitions/
 * https://pypi.org/project/pint/
 * optional: https://pypi.org/project/ruamel.yaml/ for YAML support
@@ -69,23 +69,29 @@ Generate JSON, YAML or aiida-cp2k run script from a CP2K input file:
 
 ```console
 $ fromcp2k --help
-usage: fromcp2k [-h] [-y] [-c] [-b BASE_DIR] [-t TRAFO] <file>
+Usage: fromcp2k [OPTIONS] [<file>]
 
-Convert CP2K input to JSON (default) or YAML
+  Convert CP2K input to JSON (default), YAML or an aiida-cp2k run script
+  template
 
-positional arguments:
-  <file>                CP2K input file
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -y, --yaml            output yaml instead of json
-  -c, --canonical       use the canonical output format
-  -b BASE_DIR, --base-dir BASE_DIR
-                        search path used for relative @include's
-  -t TRAFO, --trafo TRAFO
-                        transformation applied to key and section names (auto,
-                        upper, lower)
+Options:
+  -f, --format [json|yaml|aiida-cp2k-calc]
+                                  output format
+  -c, --canonical                 use the canonical output format instead of
+                                  the simplified one
+  -b, --base-dir DIRECTORY        search path used for relative @include's
+                                  [default: .]
+  -t, --trafo [auto|lower|upper]  transformation applied to key and section
+                                  names
+  -E, --set key=value             preset the value for a CP2K preprocessor
+                                  variable
+  --xml FILE                      Use alternative XML format specification
+                                  file
+  --help                          Show this message and exit.
 ```
+
+The XML format specification file can also be specified with the environment
+variable FROMCP2K_XML_DEFINITION. If --xml is specified then it has precedency.
 
 Generate an [aiida-cp2k](https://github.com/aiidateam/aiida-cp2k) template run script:
 

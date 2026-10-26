@@ -1,5 +1,6 @@
 import functools
 import json
+import os
 import sys
 from enum import Enum
 from typing import Mapping, MutableSequence
@@ -12,7 +13,7 @@ from cp2k_input_tools.parser import (
     CP2KInputParserSimplified,
 )
 
-from . import base_dir_option, canonical_option, fhandle_argument, var_values_option
+from . import ENV_VAR_FOR_CP2K_INPUT_XML, base_dir_option, canonical_option, fhandle_argument, var_values_option, xml_option
 
 
 def _key_trafo(string):
@@ -21,11 +22,19 @@ def _key_trafo(string):
     return string.lower()
 
 
+if sys.version_info >= (3, 13):
+    from enum import member
+else:
+
+    def member(value):
+        return value
+
+
 class Trafos(Enum):
     # see https://stackoverflow.com/a/40486992 need to wrap functions in function objects
-    auto = functools.partial(_key_trafo)
-    lower = functools.partial(str.lower)
-    upper = functools.partial(str.upper)
+    auto = member(functools.partial(_key_trafo))
+    lower = member(functools.partial(str.lower))
+    upper = member(functools.partial(str.upper))
 
 
 @click.command()
@@ -44,8 +53,15 @@ class Trafos(Enum):
     help="transformation applied to key and section names",
 )
 @var_values_option
-def fromcp2k(fhandle, oformat, canonical, base_dir, trafo, var_values):
+@xml_option
+def fromcp2k(fhandle, oformat, canonical, base_dir, trafo, var_values, xml):
     """Convert CP2K input to JSON (default), YAML or an aiida-cp2k run script template"""
+
+    if not xml:
+        xml = os.environ.get(ENV_VAR_FOR_CP2K_INPUT_XML)
+
+    if xml:
+        print(f"    Using XML definition '{xml}'", file=sys.stderr)
 
     if oformat == "aiida-cp2k-calc":
         if canonical:
@@ -55,11 +71,11 @@ def fromcp2k(fhandle, oformat, canonical, base_dir, trafo, var_values):
                 "Any key transformation function other than 'auto' is ignored when generating an aiida-cp2k run script template",
                 file=sys.stderr,
             )
-        cp2k_parser = CP2KInputParserAiiDA(base_dir=base_dir)
+        cp2k_parser = CP2KInputParserAiiDA(xmlspec=xml, base_dir=base_dir)
     elif canonical:
-        cp2k_parser = CP2KInputParser(base_dir=base_dir, key_trafo=trafo.value)
+        cp2k_parser = CP2KInputParser(xmlspec=xml, base_dir=base_dir, key_trafo=trafo.value)
     else:
-        cp2k_parser = CP2KInputParserSimplified(base_dir=base_dir, key_trafo=trafo.value)
+        cp2k_parser = CP2KInputParserSimplified(xmlspec=xml, base_dir=base_dir, key_trafo=trafo.value)
 
     tree = cp2k_parser.parse(fhandle, dict(var_values))
 

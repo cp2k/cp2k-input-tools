@@ -1,5 +1,11 @@
 # Change Log
 
+
+## [0.9.2] - 2026-02-xy
+
+ * Specify XML format definmition fie via --xml command line switch or 
+   env variable ENV_VAR_FOR_CP2K_INPUT_XML 
+
 ## [0.9.1] - 2024-02-16
 
  * chores

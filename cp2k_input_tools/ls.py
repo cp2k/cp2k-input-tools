@@ -23,7 +23,7 @@ def _validate(ls, params: Union[DidChangeTextDocumentParams, DidCloseTextDocumen
 
     diagnostics = []
 
-    text_doc = ls.workspace.get_document(params.text_document.uri)
+    text_doc = ls.workspace.get_text_document(params.text_document.uri)
     parser = CP2KInputParser()
 
     with open(text_doc.path, "r") as fhandle:
