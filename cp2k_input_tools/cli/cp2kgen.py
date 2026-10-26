@@ -1,4 +1,5 @@
 import itertools
+import os
 import pathlib
 import re
 import sys
@@ -9,8 +10,8 @@ import click
 from cp2k_input_tools.generator import CP2KInputGenerator
 from cp2k_input_tools.parser import CP2KInputParser, CP2KInputParserSimplified
 
-from .. import __version__
-from . import base_dir_option, canonical_option, fhandle_argument, var_values_option
+from .. import DEFAULT_CP2K_INPUT_XML, __version__
+from . import ENV_VAR_FOR_CP2K_INPUT_XML, base_dir_option, canonical_option, fhandle_argument, var_values_option, xml_option
 
 
 @click.command()
@@ -22,7 +23,8 @@ from . import base_dir_option, canonical_option, fhandle_argument, var_values_op
 @click.option(
     "zipped", "--zip/--no-zip", default=False, help="whether multiple expressions are zip'ed or a cartesian product is built"
 )
-def cp2kgen(fhandle, expressions, base_dir, canonical, var_values, zipped):
+@xml_option
+def cp2kgen(fhandle, expressions, base_dir, canonical, var_values, zipped, xml):
     """
     Generates variations of the given CP2K input file
 
@@ -31,10 +33,16 @@ def cp2kgen(fhandle, expressions, base_dir, canonical, var_values, zipped):
     "force_eval/dft/mgrid/cutoff=[300,400,500,800]", "force_eval/subsys/cell/a/0=10.0"
     """
 
+    if not xml:
+        xml = os.environ.get(ENV_VAR_FOR_CP2K_INPUT_XML)
+
+    if xml:
+        print(f"    Using XML definition '{xml}'", file=sys.stderr)
+
     if canonical:
-        cp2k_parser = CP2KInputParser(base_dir=base_dir, key_trafo=str.lower)
+        cp2k_parser = CP2KInputParser(xmlspec=xml, base_dir=base_dir, key_trafo=str.lower)
     else:
-        cp2k_parser = CP2KInputParserSimplified(base_dir=base_dir, key_trafo=str.lower)
+        cp2k_parser = CP2KInputParserSimplified(xmlspec=xml, base_dir=base_dir, key_trafo=str.lower)
 
     tree = cp2k_parser.parse(fhandle, dict(var_values))
 
@@ -98,6 +106,6 @@ def cp2kgen(fhandle, expressions, base_dir, canonical, var_values, zipped):
             fouthandle.write(f"! Generated with the CP2K input tool cp2kgen v{__version__}\n! ")
             fouthandle.write(" \\\n!   ".join(f"'{arg}'" for arg in sys.argv))
             fouthandle.write("\n")
-            cp2k_generator = CP2KInputGenerator()
+            cp2k_generator = CP2KInputGenerator(xmlspec=xml or DEFAULT_CP2K_INPUT_XML)
             for line in cp2k_generator.line_iter(curr_tree):
                 fouthandle.write(f"{line}\n")
