@@ -230,6 +230,8 @@ line   36: @IF ${HP
                ~~~~^
 ```
 
+As with `fromcp2k`, an alternative XML format specification file can be given with `--xml` or the environment variable `FROMCP2K_XML_DEFINITION`. If `--xml` is specified then it has precedence.
+
 Generate input files for a `CUTOFF` convergence study (multiple expressions will be combined as a cartesian product):
 
 ```console
