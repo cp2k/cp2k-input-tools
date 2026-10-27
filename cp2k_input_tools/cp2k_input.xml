@@ -446737,7 +446737,7 @@ c        : Contraction coefficient
       <LOCATION>input_cp2k_subsys.F:2134</LOCATION>
       <KEYWORD repeats="yes" removed="no">
        <NAME type="default">LIST</NAME>
-       <DATA_TYPE kind="integer">
+       <DATA_TYPE kind="string">
         <N_VAR>-1</N_VAR>
        </DATA_TYPE>
        <USAGE>LIST {integer}</USAGE>
