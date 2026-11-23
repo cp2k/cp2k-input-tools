@@ -53,14 +53,12 @@ def test_undefined_preprocessor_var():
 def test_multiple_defined_non_repeating_section():
     cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
 
-    fhandle = io.StringIO(
-        """
+    fhandle = io.StringIO("""
         &GLOBAL
         &END GLOBAL
         &GLOBAL
         &END GLOBAL
-        """
-    )
+        """)
 
     with pytest.raises(InvalidNameError) as excinfo:
         cp2k_parser.parse(fhandle)
@@ -71,27 +69,23 @@ def test_multiple_defined_non_repeating_section():
 def test_missing_section_end():
     cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
 
-    fhandle = io.StringIO(
-        """
+    fhandle = io.StringIO("""
         &GLOBAL
         ! &END GLOBAL
         &FORCE_EVAL
         &END FORCE_EVAL
-        """
-    )
+        """)
 
     with pytest.raises(InvalidSectionError) as excinfo:
         cp2k_parser.parse(fhandle)
 
     assert "invalid section" in excinfo.value.args[0]
 
-    fhandle = io.StringIO(
-        """
+    fhandle = io.StringIO("""
         &GLOBAL
         &END GLOBAL
         &FORCE_EVAL
-        """
-    )
+        """)
 
     with pytest.raises(SectionMismatchError) as excinfo:
         cp2k_parser.parse(fhandle)
@@ -102,14 +96,12 @@ def test_missing_section_end():
 def test_section_end_mismatch():
     cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
 
-    fhandle = io.StringIO(
-        """
+    fhandle = io.StringIO("""
         &GLOBAL
         &END GLOBI
         &FORCE_EVAL
         &END FORCE_EVAL
-        """
-    )
+        """)
 
     with pytest.raises(SectionMismatchError) as excinfo:
         cp2k_parser.parse(fhandle)
@@ -120,12 +112,10 @@ def test_section_end_mismatch():
 def test_section_parameter_error():
     cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
 
-    fhandle = io.StringIO(
-        """
+    fhandle = io.StringIO("""
         &GLOBAL invalidparam
         &END GLOBAL
-        """
-    )
+        """)
 
     with pytest.raises(InvalidParameterError) as excinfo:
         cp2k_parser.parse(fhandle)
@@ -136,15 +126,13 @@ def test_section_parameter_error():
 def test_invalid_keyword():
     cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
 
-    fhandle = io.StringIO(
-        """
+    fhandle = io.StringIO("""
         &FORCE_EVAL
            &SUBSYS
               BASIS_SET TZVPd-MOLOPT-SR-GTH
            &END SUBSYS
         &END FORCE_EVAL
-        """
-    )
+        """)
 
     with pytest.raises(InvalidNameError) as excinfo:
         cp2k_parser.parse(fhandle)
@@ -160,8 +148,7 @@ def test_internal_cp2k_unit():
 
     cp2k_parser = CP2KInputParser(DEFAULT_CP2K_INPUT_XML)
 
-    fhandle_no_extra_unit = io.StringIO(
-        """
+    fhandle_no_extra_unit = io.StringIO("""
         &FORCE_EVAL
           METHOD  FIST
           &MM
@@ -182,13 +169,11 @@ def test_internal_cp2k_unit():
             &END FORCEFIELD
           &END MM
         &END FORCE_EVAL
-        """
-    )
+        """)
 
     cp2k_parser.parse(fhandle_no_extra_unit)
 
-    fhandle_extra_unit = io.StringIO(
-        """
+    fhandle_extra_unit = io.StringIO("""
         &FORCE_EVAL
           METHOD  FIST
           &MM
@@ -209,8 +194,7 @@ def test_internal_cp2k_unit():
             &END FORCEFIELD
           &END MM
         &END FORCE_EVAL
-        """
-    )
+        """)
 
     with pytest.raises(InvalidParameterError) as excinfo:
         cp2k_parser.parse(fhandle_extra_unit)
